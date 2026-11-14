@@ -21,7 +21,36 @@ const formatUnreadFix = (entries: UnreadStylesheets[]) =>
 const formatNoStylesheetsHelp = (cwd: string, also = "") =>
     `Looked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}:\n\n  content: ["../css/**/*.css"]\n\n${also}See ${color.cyan(LINKS.CONFIGURATION)} for more information.`;
 
+const formatCause = (error: unknown) => (error instanceof Error ? `: ${error.message}` : "");
+
 export const ErrorMessages = {
+    MARKUP_TOO_MANY_FILES: (count: number, limit: number) =>
+        `Found ${count} files to scan (limit: ${limit}). Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`,
+
+    MARKUP_TOO_LARGE: (limitMB: number) =>
+        `Total source size exceeds ${limitMB}MB. Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`,
+
+    WATCH_MANY_MARKUP_FILES: (count: number, limit: number) =>
+        `Watching ${count} files for markup changes (limit: ${limit}). This can make watch mode slow. Set \`content\` in your config to narrow the directories that are scanned.`,
+
+    COMPONENT_NOT_FOUND: (name: string, available: string[]) =>
+        `Component '${name}' not found in registry\nAvailable components: ${available.join(", ")}`,
+
+    COMPONENT_WRITE_FAILED: (name: string, error: unknown) =>
+        `Failed to write component file for "${name}"${formatCause(error)}`,
+
+    CUBE_PATH_ESCAPES: (module: string) =>
+        `Invalid file path detected in CUBE module "${module}": path escapes target directory`,
+
+    CUBE_WRITE_FAILED: (module: string, error: unknown) =>
+        `Failed to write CUBE module "${module}"${formatCause(error)}`,
+
+    OUTPUT_DIR_CREATE_FAILED: (error: unknown) =>
+        `Failed to create output directory${formatCause(error)}`,
+
+    FILES_WILL_BE_OVERWRITTEN: (kind: "component" | "cube", files: string[]) =>
+        `The following file(s) already exist and will be overwritten:\n\n${kind === "component" ? "Component files" : "CUBE CSS files"}:\n${files.map((file) => `  - ${file}`).join("\n")}`,
+
     CONFIG_EXISTS: () =>
         `A sugarcube config file already exists in this project.\n\nTo start over, remove it and run ${color.cyan(COMMANDS.INIT)} again.`,
 
@@ -80,12 +109,13 @@ export const ErrorMessages = {
             ? "No token files found.\n\nToken files end .json or .tokens."
             : `No token files found. These JSON files use no DTCG property, such as $value or $type:\n${otherFiles.map((p) => `  - ${p}`).join("\n")}`,
 
-    COMPONENTS_FRAMEWORK_REQUIRED: () =>
-        `Framework is required when specifying components. Use --framework to specify a framework (react, css-only) or run without arguments for interactive mode.\n\nSee ${color.cyan(
+    COMPONENTS_FRAMEWORK_REQUIRED: (frameworks: readonly string[]) =>
+        `Framework is required when specifying components. Use --framework to specify a framework (${frameworks.join(", ")}) or run without arguments for interactive mode.\n\nSee ${color.cyan(
             LINKS.COMPONENTS_CLI,
         )} for more information.`,
 
-    COMPONENTS_INVALID_FRAMEWORK: () => "Invalid framework. Must be one of: react, css-only.",
+    COMPONENTS_INVALID_FRAMEWORK: (frameworks: readonly string[]) =>
+        `Invalid framework. Must be one of: ${frameworks.join(", ")}.`,
 
     LINT_NO_FILES_SCANNED: (cwd: string) =>
         `No stylesheets found, so nothing was linted.\n\n${formatNoStylesheetsHelp(cwd, `Or name it for one run: ${color.cyan("sugarcube lint ../css")}\n\n`)}`,

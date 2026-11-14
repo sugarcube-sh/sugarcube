@@ -1,13 +1,13 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "pathe";
 import { CLIError } from "../cli-error.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { getRegistryFiles, getRegistryIndex } from "../registry/client.js";
 
 function isWithinDirectory(filePath: string, directory: string): boolean {
     const resolvedPath = resolve(filePath);
     const resolvedDir = resolve(directory);
     const relativePath = relative(resolvedDir, resolvedPath);
-    // Path escapes if it starts with ".." or is absolute (Windows edge case)
     return !relativePath.startsWith("..") && !isAbsolute(relativePath);
 }
 
@@ -32,9 +32,7 @@ export async function installCUBE(cssOutputDirectory: string) {
             const filePath = resolve(stylesDir, relativePath);
 
             if (!isWithinDirectory(filePath, stylesDir)) {
-                throw new CLIError(
-                    `Invalid file path detected in CUBE module "${module}": path escapes target directory`,
-                );
+                throw new CLIError(ErrorMessages.CUBE_PATH_ESCAPES(module));
             }
 
             const fileDir = dirname(filePath);
@@ -44,8 +42,7 @@ export async function installCUBE(cssOutputDirectory: string) {
                 await writeFile(filePath, file.content);
                 createdFiles.push(filePath);
             } catch (error) {
-                const errorMessage = error instanceof Error ? `: ${error.message}` : "";
-                throw new CLIError(`Failed to write CUBE module "${module}"${errorMessage}`);
+                throw new CLIError(ErrorMessages.CUBE_WRITE_FAILED(module, error));
             }
         }
     }

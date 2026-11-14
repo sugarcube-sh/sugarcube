@@ -3,27 +3,26 @@ import color from "picocolors";
 import { CLIError } from "../cli-error.js";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
-import { installComponents } from "../installation/components.js";
+import { writeComponentFiles } from "../installation/components.js";
 import { installDependencies } from "../installation/dependencies.js";
-import { collectComponentOverwriteWarnings } from "../overwrite-warnings/collect-overwrite-warnings.js";
-import { formatOverwriteWarnings } from "../overwrite-warnings/format-overwrite-warnings.js";
-import { getComponentsDir } from "../project/output-dirs.js";
 import {
-    confirmOverwrite,
-    promptComponentFramework,
-    promptComponentSelectionFiltered,
-} from "../prompts/prompts.js";
+    confirmOverwriting,
+    findComponentFilesToOverwrite,
+} from "../overwrite-warnings/collect-overwrite-warnings.js";
+import { getComponentsDir } from "../project/output-dirs.js";
+import { promptComponentFramework, promptComponentSelectionFiltered } from "../prompts/prompts.js";
 import { getRegistryIndex } from "../registry/client.js";
 import { resolveTree } from "../registry/dependency-tree.js";
+import type { RegistryItem } from "../types/registry.js";
 
-import { cancel } from "@clack/prompts";
 import { isPackageInstalled } from "../project/is-package-installed.js";
 import { getPackageManager } from "../project/package-manager.js";
-import { printWarning } from "../prompts/box-with-badge.js";
 import { intro, label } from "../prompts/common.js";
 import { log, rawLog } from "../prompts/log.js";
 
-type SupportedFramework = "react" | "css-only";
+const SUPPORTED_FRAMEWORKS = ["react", "css-only"] as const;
+
+type SupportedFramework = (typeof SUPPORTED_FRAMEWORKS)[number];
 
 export interface RunComponentsOptions {
     framework?: string;
@@ -44,98 +43,36 @@ export async function runComponents(
     }
 
     const { directory: componentsOutputDirectory } = await getComponentsDir(options.output);
+    const { framework, selectedComponents, registryIndex } = await chooseComponents(
+        componentArgs,
+        options.framework,
+    );
+    const packageManager = await getPackageManager(process.cwd(), { withFallback: true });
+    const componentsToInstall = await resolveTree(registryIndex, selectedComponents, framework);
 
-    let selectedComponents: string[] = [];
-    let componentType: SupportedFramework;
-
-    if (componentArgs.length > 0 || options.framework) {
-        if (!options.framework) {
-            throw new CLIError(ErrorMessages.COMPONENTS_FRAMEWORK_REQUIRED());
-        }
-
-        const validFrameworks = ["react", "css-only"] as const;
-        if (!validFrameworks.includes(options.framework as SupportedFramework)) {
-            throw new CLIError(ErrorMessages.COMPONENTS_INVALID_FRAMEWORK());
-        }
-
-        componentType = options.framework as SupportedFramework;
-        selectedComponents = componentArgs;
-    } else {
-        componentType = (await promptComponentFramework(false)) as SupportedFramework;
-
-        const registryIndex = await getRegistryIndex();
-        if (!registryIndex) {
-            cancel("Failed to fetch component list");
-            process.exit(1);
-        }
-
-        selectedComponents = await promptComponentSelectionFiltered(registryIndex, componentType);
-    }
-
-    const packageManager = await getPackageManager(process.cwd(), {
-        withFallback: true,
-    });
-
-    const registryIndex = await getRegistryIndex();
-    const tree = await resolveTree(registryIndex, selectedComponents, componentType);
-
-    const warnings = await collectComponentOverwriteWarnings({
-        selectedComponents,
-        componentType,
+    const filesToOverwrite = findComponentFilesToOverwrite({
+        components: componentsToInstall,
+        framework,
         componentsOutputDirectory,
     });
-
-    const warningMessage = formatOverwriteWarnings(warnings);
-    if (warningMessage && !options.force && !options.silent) {
-        printWarning(warningMessage, { plain: false });
-        const confirmed = await confirmOverwrite("Continue?", false, {
-            exitOnDecline: !options.continueOnDecline,
-        });
-        if (!confirmed) return;
-    }
+    if (!(await confirmOverwriting("component", filesToOverwrite, options))) return;
 
     const tasks = [];
-    const allCreatedFiles: string[] = [];
-
-    const npmDeps = new Set<string>();
-    for (const component of tree) {
-        const frameworkDeps = component.dependencies?.[componentType] || [];
-        for (const dep of frameworkDeps) {
-            npmDeps.add(dep);
-        }
-    }
-
-    const depsToInstall = Array.from(npmDeps).filter(
-        (dep) => !isPackageInstalled(dep, process.cwd()),
-    );
-
+    const depsToInstall = getMissingDependencies(componentsToInstall, framework);
     if (depsToInstall.length > 0) {
         tasks.push({
             pending: `Install ${depsToInstall.length} dependencies`,
             start: `Installing ${depsToInstall.join(", ")}...`,
             end: `Installed ${depsToInstall.join(", ")}`,
-            while: async () => {
-                await installDependencies(depsToInstall, process.cwd(), packageManager);
-            },
+            while: () => installDependencies(depsToInstall, process.cwd(), packageManager),
         });
     }
-
-    for (const component of tree) {
+    for (const component of componentsToInstall) {
         tasks.push({
             pending: `Write component files for ${component.name}`,
             start: `Writing component files for ${component.name}...`,
             end: `Wrote component files for ${component.name}`,
-            while: async () => {
-                const result = await installComponents({
-                    registryIndex,
-                    selectedComponents: [component.name],
-                    componentType,
-                    componentsOutputDirectory,
-                    overwrite: options.force || false,
-                    packageManager,
-                });
-                allCreatedFiles.push(...result.createdFiles);
-            },
+            while: () => writeComponentFiles(component, framework, componentsOutputDirectory),
         });
     }
 
@@ -150,11 +87,53 @@ export async function runComponents(
     }
 }
 
+async function chooseComponents(
+    componentArgs: string[],
+    frameworkFlag: string | undefined,
+): Promise<{
+    framework: SupportedFramework;
+    selectedComponents: string[];
+    registryIndex: RegistryItem[];
+}> {
+    if (componentArgs.length === 0 && !frameworkFlag) {
+        const framework = (await promptComponentFramework(false)) as SupportedFramework;
+        const registryIndex = await getRegistryIndex();
+        const selectedComponents = await promptComponentSelectionFiltered(registryIndex, framework);
+        return { framework, selectedComponents, registryIndex };
+    }
+
+    if (!frameworkFlag) {
+        throw new CLIError(ErrorMessages.COMPONENTS_FRAMEWORK_REQUIRED(SUPPORTED_FRAMEWORKS));
+    }
+    if (!isSupportedFramework(frameworkFlag)) {
+        throw new CLIError(ErrorMessages.COMPONENTS_INVALID_FRAMEWORK(SUPPORTED_FRAMEWORKS));
+    }
+    return {
+        framework: frameworkFlag,
+        selectedComponents: componentArgs,
+        registryIndex: await getRegistryIndex(),
+    };
+}
+
+function isSupportedFramework(framework: string): framework is SupportedFramework {
+    return (SUPPORTED_FRAMEWORKS as readonly string[]).includes(framework);
+}
+
+function getMissingDependencies(
+    components: RegistryItem[],
+    framework: SupportedFramework,
+): string[] {
+    const dependencies = new Set(
+        components.flatMap((component) => component.dependencies?.[framework] ?? []),
+    );
+    return [...dependencies].filter((name) => !isPackageInstalled(name, process.cwd()));
+}
+
 export const components = new Command()
     .name("components")
     .description("Add components to your project")
     .argument("[components...]", "Components to add (e.g., button card)")
-    .option("-f, --framework <type>", "Framework to use (react, css-only)")
+    .option("-f, --framework <type>", `Framework to use (${SUPPORTED_FRAMEWORKS.join(", ")})`)
     .option("-o, --output <dir>", "Components output directory (e.g., 'src/components')")
     .option("-s, --silent", "Suppress logs and prompts")
     .option("--force", "Skip overwrite confirmation")

@@ -2,16 +2,14 @@ import { readFile } from "node:fs/promises";
 import { extname } from "pathe";
 import { glob } from "tinyglobby";
 import { CLIError } from "./cli-error.js";
+import { ErrorMessages } from "./constants/error-messages.js";
 import {
     MARKUP_EXTENSIONS,
     MARKUP_GLOB_PATTERN,
     MARKUP_IGNORE_PATTERNS,
 } from "./constants/markup.js";
 
-// Safety limits to prevent OOM crashes
-// Can't just search up etc because CLI has to work with the simplest possible setup
-// e.g. no git repo, no package.json, no node_modules, no build tools etc.
-const MAX_FILES = 10_000;
+export const MAX_MARKUP_FILES = 10_000;
 const MAX_SIZE_MB = 100;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
@@ -32,10 +30,8 @@ export async function getMarkupFiles(content?: readonly string[]): Promise<strin
 
     const files = usingContent ? matched.filter(isMarkupFile) : matched;
 
-    if (files.length > MAX_FILES) {
-        throw new CLIError(
-            `Found ${files.length} files to scan (limit: ${MAX_FILES}). Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`,
-        );
+    if (files.length > MAX_MARKUP_FILES) {
+        throw new CLIError(ErrorMessages.MARKUP_TOO_MANY_FILES(files.length, MAX_MARKUP_FILES));
     }
 
     return files.sort();
@@ -47,9 +43,6 @@ export async function readMarkupSources(files: string[]): Promise<string[]> {
     const sources: string[] = [];
     let totalSize = 0;
 
-    // Read in bounded batches. Batches are awaited in order and Promise.all keeps
-    // within-batch order, so pushing preserves the original file order. Size is
-    // checked as each batch lands so an oversized project still aborts early-ish.
     for (let start = 0; start < files.length; start += READ_CONCURRENCY) {
         const batch = files.slice(start, start + READ_CONCURRENCY);
         const contents = await Promise.all(batch.map((file) => readFile(file, "utf8")));
@@ -58,9 +51,7 @@ export async function readMarkupSources(files: string[]): Promise<string[]> {
             totalSize += content.length;
 
             if (totalSize > MAX_SIZE_BYTES) {
-                throw new CLIError(
-                    `Total source size exceeds ${MAX_SIZE_MB}MB. Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`,
-                );
+                throw new CLIError(ErrorMessages.MARKUP_TOO_LARGE(MAX_SIZE_MB));
             }
 
             sources.push(content);

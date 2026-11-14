@@ -1,4 +1,5 @@
 import { CLIError } from "../cli-error.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import type { Framework, RegistryItem } from "../types/registry.js";
 
 export async function resolveTree(index: RegistryItem[], names: string[], framework: Framework) {
@@ -9,15 +10,12 @@ export async function resolveTree(index: RegistryItem[], names: string[], framew
         if (seen.has(name)) return;
         seen.add(name);
 
-        const entry = index.find((entry) => entry.name === name);
+        const entry = index.find((item) => item.name === name);
         if (!entry) {
             const available = index
                 .filter((item) => item.type === "component")
-                .map((item) => item.name)
-                .join(", ");
-            throw new CLIError(
-                `Component '${name}' not found in registry\nAvailable components: ${available}`,
-            );
+                .map((item) => item.name);
+            throw new CLIError(ErrorMessages.COMPONENT_NOT_FOUND(name, available));
         }
 
         const registryDeps = entry.registryDependencies?.[framework] || [];

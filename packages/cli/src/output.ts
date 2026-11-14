@@ -12,7 +12,6 @@ export function addBanner(output: CSSFileOutput): CSSFileOutput {
 
 export function wrapInLayer(output: CSSFileOutput, layerName: string): CSSFileOutput {
     return output.map((file) => {
-        // Need extra formatting for @layer blocks
         const indentedCss = file.css
             .split("\n")
             .map((line) => (line.trim() ? `    ${line}` : line))

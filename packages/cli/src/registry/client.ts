@@ -1,6 +1,6 @@
 import { CLIError } from "../cli-error.js";
 import { ErrorMessages } from "../constants/error-messages.js";
-import type { Framework, RegistryItemType } from "../types/registry.js";
+import type { Framework, RegistryItem, RegistryItemType } from "../types/registry.js";
 import { isFileContent, isRegistryIndex } from "./answers.js";
 
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "https://sugarcube.sh/r";
@@ -63,16 +63,17 @@ export async function getRegistryFiles({
         throw new CLIError(ErrorMessages.REGISTRY_ITEM_NOT_FOUND(type, name, availableItems));
     }
 
-    let selectedFiles = item.files;
-    if (type === "component" && framework) {
-        selectedFiles = item.files.filter(
-            (file): file is typeof file & { framework: Framework } =>
-                "framework" in file && file.framework === framework,
-        );
-    }
+    return { item, files: await getItemFiles(item, framework) };
+}
 
-    const files = await Promise.all(
-        selectedFiles.map(async (file) => {
+export function selectFiles(item: RegistryItem, framework?: Framework): RegistryItem["files"] {
+    if (item.type !== "component" || !framework) return item.files;
+    return item.files.filter((file) => "framework" in file && file.framework === framework);
+}
+
+export async function getItemFiles(item: RegistryItem, framework?: Framework) {
+    return Promise.all(
+        selectFiles(item, framework).map(async (file) => {
             const url = `${REGISTRY_URL}/${file.path}.json`;
             const result: unknown = await fetchRegistry(url);
             if (!isFileContent(result)) {
@@ -86,11 +87,6 @@ export async function getRegistryFiles({
             };
         }),
     );
-
-    return {
-        item,
-        files,
-    };
 }
 
 export async function fetchStarterKit(kitChoice: string) {

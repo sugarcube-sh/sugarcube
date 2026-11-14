@@ -1,10 +1,6 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import {
-    type DefaultDirs,
-    fillDefaultsWithDirs,
-    validateSugarcubeConfig,
-} from "../../shared/config.js";
+import { type DefaultDirs, fillDefaultsWithDirs } from "../../shared/config.js";
 import type { InternalConfig, SugarcubeConfig } from "../../types/config.js";
 
 function getDefaultStylesDir(cwd: string): string {
@@ -41,14 +37,4 @@ export function fillDefaults(
     cwd: string = process.cwd(),
 ): InternalConfig {
     return fillDefaultsWithDirs(userConfig, detectDefaultDirs(cwd));
-}
-
-/**
- * Checks a config and fills in its defaults.
- *
- * @param config - The settings, such as `{ resolver: "./tokens.resolver.json" }`.
- * @throws ConfigError if the config has mistakes.
- */
-export function validateConfig(config: Partial<SugarcubeConfig>): InternalConfig {
-    return fillDefaults(validateSugarcubeConfig(config));
 }

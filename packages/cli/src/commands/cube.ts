@@ -3,15 +3,16 @@ import { Command } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
 import { CLIError } from "../cli-error.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { installCUBE } from "../installation/cube.js";
-import { collectCubeOverwriteWarnings } from "../overwrite-warnings/collect-overwrite-warnings.js";
-import { formatOverwriteWarnings } from "../overwrite-warnings/format-overwrite-warnings.js";
+import {
+    confirmOverwriting,
+    findCubeFilesToOverwrite,
+} from "../overwrite-warnings/collect-overwrite-warnings.js";
 import { getCubeDir } from "../project/output-dirs.js";
-import { printWarning } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-import { confirmOverwrite } from "../prompts/prompts.js";
 
 export interface RunCubeOptions {
     silent?: boolean;
@@ -32,22 +33,11 @@ export async function runCube(options: RunCubeOptions = {}): Promise<void> {
     try {
         await mkdir(cssOutputDirectory, { recursive: true });
     } catch (error) {
-        const errorMessage = error instanceof Error ? `: ${error.message}` : "";
-        throw new CLIError(`Failed to create output directory${errorMessage}`);
+        throw new CLIError(ErrorMessages.OUTPUT_DIR_CREATE_FAILED(error));
     }
 
-    const warnings = await collectCubeOverwriteWarnings({
-        cubeDirectory: cssOutputDirectory,
-    });
-
-    const warningMessage = formatOverwriteWarnings(warnings);
-    if (warningMessage && !options.force && !options.silent) {
-        printWarning(warningMessage, { plain: false });
-        const confirmed = await confirmOverwrite("Continue?", false, {
-            exitOnDecline: !options.continueOnDecline,
-        });
-        if (!confirmed) return;
-    }
+    const filesToOverwrite = await findCubeFilesToOverwrite(cssOutputDirectory);
+    if (!(await confirmOverwriting("cube", filesToOverwrite, options))) return;
 
     const createdFiles = await installCUBE(cssOutputDirectory);
 
