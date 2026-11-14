@@ -293,7 +293,7 @@ describe("valueEdit", () => {
     it("names one undo field for each row, each part and each control", () => {
         const name = (row = base!, part?: (string | number)[], control?: string) =>
             valueEdit(state.tokens, "color.text.default", row, "{color.neutral.800}", part, control)
-                .options.merge;
+                .options.mergeKey;
 
         expect(name()).toBe(name());
         expect(name()).not.toBe(name(dark));

@@ -45,7 +45,7 @@ const refusalReasons: {
             : `\`${name}\` can't be a name: ${character === "$" ? "a leading `$` marks a property" : `\`${character}\` is used by references`}`,
     "inherited": ({ path, from }) =>
         `\`${path}\` comes from \`${from}\` through \`$extends\`; change it there`,
-    "no-permutation": ({ input, why }) =>
+    "no-permutation": ({ input, cause: why }) =>
         `there is no permutation for ${quoteInput(input)}: ${permutationErrorMessages[why]}`,
     "several-contexts": ({ input }) =>
         `an override for ${quoteInput(input)} at once can't be written: no file is read by that combination alone`,
@@ -57,12 +57,12 @@ const refusalReasons: {
         `\`${path}\` can't be overridden for ${quoteInput(input)}: \`${file}\` is read after its files, so it would still win`,
     "no-shared-value": ({ path }) =>
         `no file every permutation reads writes \`${path}\`, only contexts do; change it for one context`,
-    "not-written-there": ({ path, at }) =>
+    "not-a-definition": ({ path, at }) =>
         `\`${path}\` isn't written at that place in \`${at.file}\`; take the place from \`getDefinitions\``,
     "part-in-reference": ({ path, part }) =>
         `\`${path}\` refers to another token on the way to \`${part.join(".")}\`, so that part isn't written there`,
     "no-such-part": ({ path, part }) => `\`${path}\` has no part \`${part.join(".")}\``,
-    "gone-elsewhere": ({ path, file }) =>
+    "removed-since": ({ path, file }) =>
         `${path === undefined ? "what your edit changes" : `\`${path}\``} in \`${file}\` was removed or renamed since, so yours can't be written over it`,
 };
 
@@ -74,9 +74,9 @@ const permutationErrorMessages: Record<PermutationErrorDetail["reason"], string>
     "not-read": "the read didn't build it",
 };
 
-export function refuse(facts: RefusalDetail): { refused: Refusal } {
+export function refuse(facts: RefusalDetail): { refusal: Refusal } {
     const reason = (refusalReasons[facts.kind] as (facts: RefusalDetail) => string)(facts);
-    return { refused: { ...facts, reason } as Refusal };
+    return { refusal: { ...facts, reason } as Refusal };
 }
 
 export function createConflict(op: FileOp, kind: Conflict["kind"]): Conflict {
@@ -88,7 +88,7 @@ function formatConflictReason(op: FileOp, kind: Conflict["kind"]): string {
         "jsonPath" in op ? `\`${op.jsonPath.join(".")}\` in \`${op.file}\`` : `\`${op.file}\``;
     switch (kind) {
         case "not-read":
-            return op.kind === "createFile"
+            return op.kind === "create-file"
                 ? `nothing reads \`${op.file}\`, so it would be lost`
                 : `\`${op.file}\` is not one of the files read`;
         case "gone":
@@ -96,7 +96,7 @@ function formatConflictReason(op: FileOp, kind: Conflict["kind"]): string {
         case "changed":
             return `${location} has changed since the edit was made`;
         case "taken":
-            return op.kind === "renameKey"
+            return op.kind === "rename-key"
                 ? `${location} can't be renamed: a sibling is already called \`${op.name}\``
                 : `${location} already holds something else`;
         case "not-a-group":

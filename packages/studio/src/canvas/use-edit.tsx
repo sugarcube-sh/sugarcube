@@ -1,11 +1,11 @@
-import type { OpResult, Question, StepOptions } from "@sugarcube-sh/dtcg-edit";
+import type { OperationResult, Question, StepOptions } from "@sugarcube-sh/dtcg-edit";
 import { type ReactNode, useState } from "react";
 import { reasonsFor } from "../controllers/held";
 import { useStudio, useStudioState } from "../providers/studio-context";
 import { useHeld } from "./use-held";
 
 export function useEdit(): {
-    run(result: OpResult, options?: StepOptions): boolean;
+    run(result: OperationResult, options?: StepOptions): boolean;
     view: ReactNode;
 } {
     const studio = useStudio();
@@ -13,7 +13,7 @@ export function useEdit(): {
     const [asking, holdAsking] = useHeld<Question>(tokens);
     const [reasons = [], holdReasons] = useHeld<readonly string[]>(tokens);
 
-    const run = (result: OpResult, options?: StepOptions): boolean => {
+    const run = (result: OperationResult, options?: StepOptions): boolean => {
         const done = studio.do(result, options);
         holdAsking(done.question, studio.state.tokens);
         holdReasons(reasonsFor(done), studio.state.tokens);

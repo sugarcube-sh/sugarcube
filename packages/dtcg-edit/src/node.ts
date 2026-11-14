@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { type TokensOnDisk, getAbsoluteFilePath, read } from "@sugarcube-sh/dtcg/node";
-import { changedFiles } from "./apply.js";
-import type { Edits } from "./index.js";
+import { getChangedFiles } from "./apply.js";
+import type { ChangedFiles, Edits } from "./index.js";
 
 /**
  * Applies edits to the files of design tokens on disk, given by their resolver or token file and
@@ -14,12 +14,12 @@ import type { Edits } from "./index.js";
  *
  * Every edit is applied in memory before any file is written, so if one fails, nothing is
  * written. Each file is written to a temporary copy and then renamed into place, so no file is
- * left half-written. Gives back what {@link changedFiles} gives: the design tokens as read from
+ * left half-written. Gives back what {@link getChangedFiles} gives: the design tokens as read from
  * the files written, each file written with its new text, and the files deleted.
  *
  * @example
  * const onDisk = { entryFile: "tokens/tokens.resolver.json", options };
- * const saved = await applyToDisk(onDisk, session.unsaved);
+ * const saved = await applyToDisk(onDisk, session.unsavedEdits);
  * if (saved.tokens) {
  *     session.markSaved();
  *     session.rebase(saved.tokens);
@@ -28,11 +28,11 @@ import type { Edits } from "./index.js";
 export async function applyToDisk(
     { entryFile, options }: TokensOnDisk,
     edits: Edits,
-): Promise<ReturnType<typeof changedFiles>> {
-    const changes = changedFiles(await read(entryFile, options), edits);
+): Promise<ChangedFiles> {
+    const changes = getChangedFiles(await read(entryFile, options), edits);
     if (changes.conflicts) return changes;
 
-    const { written, deleted } = changes;
+    const { textByFile: written, deleted } = changes;
     await replaceFiles(
         Object.entries(written).map(([file, text]) => [getAbsoluteFilePath(entryFile, file), text]),
     );

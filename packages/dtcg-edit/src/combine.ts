@@ -1,9 +1,9 @@
 import { type DesignTokens, tokenPath } from "@sugarcube-sh/dtcg";
 import { apply } from "./apply.js";
 import { exceptionMessages } from "./error-messages.js";
-import type { FileOp, OpResult, Operation } from "./index.js";
+import type { FileOp, OperationResult, Operation } from "./index.js";
 
-type AcceptedResult = Extract<OpResult, { ops: readonly FileOp[] }>;
+type AcceptedResult = Extract<OperationResult, { ops: readonly FileOp[] }>;
 
 /**
  * Puts several edits together as one: each operation is given the design tokens the operations
@@ -14,7 +14,7 @@ type AcceptedResult = Extract<OpResult, { ops: readonly FileOp[] }>;
  * @example
  * const edit = combine(tokens, unused.map((path) => (current) => remove(current, path)));
  */
-export function combine(tokens: DesignTokens, operations: readonly Operation[]): OpResult {
+export function combine(tokens: DesignTokens, operations: readonly Operation[]): OperationResult {
     return runOperations(tokens, tokens, operations, []);
 }
 
@@ -23,12 +23,12 @@ function runOperations(
     from: DesignTokens,
     operations: readonly Operation[],
     before: AcceptedResult[],
-): OpResult {
+): OperationResult {
     let current = from;
     const operationResults = [...before];
     for (const [index, operation] of operations.entries()) {
         const result = operation(current);
-        if (result.refused) return result;
+        if (result.refusal) return result;
         if (result.question) {
             const { question } = result;
             const rest = operations.slice(index + 1);
@@ -53,20 +53,20 @@ function mergeResults(
     tokens: DesignTokens,
     finalTokens: DesignTokens,
     made: AcceptedResult[],
-): OpResult {
+): OperationResult {
     const affected = new Set(
-        made.flatMap(({ alsoAffects }) =>
-            alsoAffects.map(({ input }) => tokens.getPermutation(input)),
+        made.flatMap(({ affectedPermutations }) =>
+            affectedPermutations.map(({ input }) => tokens.getPermutation(input)),
         ),
     );
-    const brokenPaths = made.flatMap(({ broken = [] }, index) => {
+    const brokenPaths = made.flatMap(({ pathsWithBrokenReferences: broken = [] }, index) => {
         const later = made.slice(index + 1).flatMap(({ moves }) => moves);
         return broken.map((path) => tokenPath.applyMoves(path, later));
     });
     return {
         ops: made.flatMap(({ ops }) => ops),
-        alsoAffects: tokens.permutations.select((each) => affected.has(each)),
-        broken: [...new Set(brokenPaths)].filter((path) =>
+        affectedPermutations: tokens.permutations.select((each) => affected.has(each)),
+        pathsWithBrokenReferences: [...new Set(brokenPaths)].filter((path) =>
             finalTokens.getDiagnostics(path).some(({ kind }) => kind === "missing-reference"),
         ),
         moves: made.flatMap(({ moves }) => moves),

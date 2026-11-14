@@ -23,7 +23,7 @@ export function Clashes() {
             {rows.map((row) => (
                 <li key={JSON.stringify(row.clash.step)}>
                     <Line row={row} />{" "}
-                    {row.keepable && (
+                    {row.canKeepYours && (
                         <>
                             <button type="button" onClick={() => keepYours(row.clash)}>
                                 Keep yours

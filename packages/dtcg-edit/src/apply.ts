@@ -1,7 +1,16 @@
 import { type DesignTokens, type JsonValue, isEqualJson } from "@sugarcube-sh/dtcg";
 import { type Node, findNodeAtLocation, getNodeValue, parseTree } from "jsonc-parser";
 import { createConflict } from "./error-messages.js";
-import type { Applied, Committed, Conflict, EditStep, Edits, FileOp, OpResult } from "./index.js";
+import type {
+    ApplyResult,
+    ChangedFiles,
+    CommitResult,
+    Conflict,
+    EditStep,
+    Edits,
+    FileOp,
+    OperationResult,
+} from "./index.js";
 import {
     type Splice,
     detectIndentUnit,
@@ -11,8 +20,8 @@ import {
 } from "./json-text.js";
 import { getRenameSplices, getSetSplices, getValueAt } from "./text-edits.js";
 
-type MemberOp = Exclude<FileOp, { kind: "createFile" | "deleteFile" }>;
-type FileLevelOp = Extract<FileOp, { kind: "createFile" | "deleteFile" }>;
+type MemberOp = Exclude<FileOp, { kind: "create-file" | "delete-file" }>;
+type FileLevelOp = Extract<FileOp, { kind: "create-file" | "delete-file" }>;
 type MemberOpResult = { conflict: Conflict["kind"] } | "stale" | undefined;
 type TextByFile = Record<string, string | null>;
 
@@ -41,7 +50,7 @@ interface FileTexts {
  * if (next.conflicts) showConflicts(next.conflicts);
  * else tokens = next.tokens;
  */
-export function apply(tokens: DesignTokens, ops: readonly FileOp[]): Applied {
+export function apply(tokens: DesignTokens, ops: readonly FileOp[]): ApplyResult {
     const changes = applyToTexts(tokens, ops);
     return changes.conflicts ? { conflicts: changes.conflicts } : { tokens: changes.tokens };
 }
@@ -49,30 +58,21 @@ export function apply(tokens: DesignTokens, ops: readonly FileOp[]): Applied {
 /**
  * What saving edits would do to the files, without saving them: the new text of each file the edits
  * change, and the files they delete, with the design tokens as read from the result. Only a
- * `deleteFile` edit deletes a file, so one the resolver stops naming is kept. For saving somewhere
+ * `delete-file` edit deletes a file, so one the resolver stops naming is kept. For saving somewhere
  * that takes whole files, such as a pull request. All or nothing, as {@link apply}: if any edit no
  * longer applies, the answer is the conflicts.
  *
  * @example
- * const changes = changedFiles(tokens, session.unsaved);
+ * const changes = getChangedFiles(tokens, session.unsavedEdits);
  * if (changes.conflicts) showConflicts(changes.conflicts);
  * else await openPullRequest(changes);
  */
-export function changedFiles(tokens: DesignTokens, edits: Edits): ChangedFiles {
+export function getChangedFiles(tokens: DesignTokens, edits: Edits): ChangedFiles {
     return applyToTexts(
         tokens,
         edits.steps.flatMap((step) => step.ops),
     );
 }
-
-type ChangedFiles =
-    | {
-          tokens: DesignTokens;
-          written: Record<string, string>;
-          deleted: string[];
-          conflicts?: undefined;
-      }
-    | { conflicts: Conflict[]; tokens?: undefined };
 
 function applyToTexts(tokens: DesignTokens, ops: readonly FileOp[]): ChangedFiles {
     const { changed, conflicts } = editTexts(tokens, [{ ops, moves: [] }]);
@@ -88,7 +88,7 @@ function applyToTexts(tokens: DesignTokens, ops: readonly FileOp[]): ChangedFile
         )
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
     const deleted = Object.keys(changed).filter((file) => changed[file] === null);
-    return { tokens: next, written: Object.fromEntries(written), deleted: deleted.sort() };
+    return { tokens: next, textByFile: Object.fromEntries(written), deleted: deleted.sort() };
 }
 
 export function applyStepsThatFit(
@@ -157,7 +157,7 @@ function editTexts(tokens: DesignTokens, steps: readonly EditStep[]) {
 }
 
 function findUnreadCreates(next: DesignTokens, ops: readonly FileOp[]): FileOp[] {
-    return ops.filter((op) => op.kind === "createFile" && next.getText(op.file) === undefined);
+    return ops.filter((op) => op.kind === "create-file" && next.getText(op.file) === undefined);
 }
 
 /**
@@ -168,7 +168,7 @@ function findUnreadCreates(next: DesignTokens, ops: readonly FileOp[]): FileOp[]
  * const done = commit(tokens, rename(tokens, "color.brand", "primary"));
  * if (done.tokens) tokens = done.tokens;
  */
-export function commit(tokens: DesignTokens, result: OpResult): Committed {
+export function commit(tokens: DesignTokens, result: OperationResult): CommitResult {
     if (!result.ops) return result;
     const next = apply(tokens, result.ops);
     if (next.conflicts) return next;
@@ -184,7 +184,7 @@ function applyOp(
         flushDraft,
     }: { getDraft: (file: string) => Draft | undefined; flushDraft: (file: string) => void },
 ): Conflict["kind"] | undefined {
-    if (op.kind === "createFile" || op.kind === "deleteFile") {
+    if (op.kind === "create-file" || op.kind === "delete-file") {
         flushDraft(op.file);
         return applyFileOp(texts, op, style);
     }
@@ -202,7 +202,7 @@ function applyFileOp(
     style: string,
 ): Conflict["kind"] | undefined {
     const existing = texts.get(op.file);
-    if (op.kind === "deleteFile") {
+    if (op.kind === "delete-file") {
         if (existing === undefined) return undefined;
         if (existing !== op.was) return "changed";
         texts.set(op.file, null);
@@ -247,7 +247,7 @@ function applyMemberOp(draft: Draft, op: MemberOp): MemberOpResult {
             if (!node) return undefined;
             if (!isEqualJson(currentValue, op.was)) return { conflict: "changed" };
             return addSplices("not-a-group");
-        case "renameKey": {
+        case "rename-key": {
             if (!node) {
                 const renamed =
                     root && findNodeAtLocation(root, [...op.jsonPath.slice(0, -1), op.name]);
@@ -269,7 +269,7 @@ function getOpSplices(text: string, root: Node, op: MemberOp): Splice[] | undefi
 
 function getReadRanges(node: Node, op: MemberOp): { offset: number; length: number }[] {
     const container =
-        op.kind === "renameKey" ? (node.parent?.parent ?? node) : (node.parent ?? node);
+        op.kind === "rename-key" ? (node.parent?.parent ?? node) : (node.parent ?? node);
     const keys: Node[] = [];
     for (let at = node.parent; at; at = at.parent) {
         const key = at.type === "property" ? at.children?.[0] : undefined;

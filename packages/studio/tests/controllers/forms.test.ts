@@ -32,7 +32,7 @@ describe("settingEdit", () => {
 
     it("names one undo field for each setting, on each row", () => {
         const name = (key: string, row?: string) =>
-            settingEdit(field(key, row), write, rem).options.merge;
+            settingEdit(field(key, row), write, rem).options.mergeKey;
 
         expect(name("base.min")).toBe(name("base.min"));
         expect(name("base.min")).not.toBe(name("base.max"));

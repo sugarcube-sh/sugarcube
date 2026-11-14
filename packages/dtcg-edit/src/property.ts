@@ -1,6 +1,6 @@
 import type { DesignTokens, JsonValue } from "@sugarcube-sh/dtcg";
 import { createWriteOps } from "./file-text.js";
-import type { OpResult } from "./index.js";
+import type { OperationResult } from "./index.js";
 import { createQuestion, getDefinitionMembers, findPropertyPlacement } from "./placement.js";
 
 export function setProperty(
@@ -9,12 +9,12 @@ export function setProperty(
     key: "$description" | "$deprecated",
     value: JsonValue | null,
     chosenFile?: string,
-): OpResult {
+): OperationResult {
     const copies = getDefinitionMembers(tokens, path);
-    if ("refused" in copies) return copies;
+    if ("refusal" in copies) return copies;
     if (copies.kind === "token") {
         const ops = copies.members.flatMap((at) => createWriteOps(tokens, at, [key], value));
-        return { ops, alsoAffects: copies.alsoAffects, moves: [] };
+        return { ops, affectedPermutations: copies.affectedPermutations, moves: [] };
     }
     const placement = findPropertyPlacement(tokens, path, key, copies.members, chosenFile);
     if ("choice" in placement) {
@@ -22,7 +22,7 @@ export function setProperty(
             setProperty(tokens, path, key, value, file),
         );
     }
-    if ("refused" in placement) return placement;
+    if ("refusal" in placement) return placement;
     const ops = createWriteOps(tokens, placement.at, [key], value);
-    return { ops, alsoAffects: placement.alsoAffects, moves: [] };
+    return { ops, affectedPermutations: placement.affectedPermutations, moves: [] };
 }

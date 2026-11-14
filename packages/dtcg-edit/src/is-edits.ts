@@ -4,7 +4,7 @@ import type { Edits } from "./index.js";
  * Whether a value is well-formed {@link Edits}: a list of steps, every edit in each one of the six
  * kinds, with the members its kind needs, and every move a `from` and a `to`. For edits from
  * outside the session, such as a request, a link or storage, before they go to
- * {@link Session.restore}, {@link changedFiles} or `applyToDisk`.
+ * {@link Session.restore}, {@link getChangedFiles} or `applyToDisk`.
  *
  * @example
  * const sent: unknown = JSON.parse(body);
@@ -30,11 +30,11 @@ function isOp(value: unknown): boolean {
             return isJsonPath(value.jsonPath) && "value" in value;
         case "remove":
             return isJsonPath(value.jsonPath) && "was" in value;
-        case "renameKey":
+        case "rename-key":
             return isJsonPath(value.jsonPath) && typeof value.name === "string" && "was" in value;
-        case "createFile":
+        case "create-file":
             return "value" in value;
-        case "deleteFile":
+        case "delete-file":
             return typeof value.was === "string";
         default:
             return false;

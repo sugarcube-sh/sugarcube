@@ -12,7 +12,7 @@ declare const sessionStorage: {
 const key = "unsaved-edits";
 
 session.subscribe(() => {
-    sessionStorage.setItem(key, JSON.stringify(session.unsaved));
+    sessionStorage.setItem(key, JSON.stringify(session.unsavedEdits));
 });
 
 export function restore(): void {

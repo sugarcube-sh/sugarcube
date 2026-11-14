@@ -10,7 +10,7 @@
       "fixes": [
         {
           "title": "write it as `#/g`",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",
@@ -31,7 +31,7 @@
       "fixes": [
         {
           "title": "write it as `#/color/ink/$value/colorSpace`",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",
@@ -51,7 +51,7 @@
       "fixes": [
         {
           "title": "write it as `#/color/ink/$value`",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",
@@ -71,7 +71,7 @@
       "fixes": [
         {
           "title": "write it as `#/a~0b/$value`",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",

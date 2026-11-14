@@ -1,7 +1,7 @@
 import type { DesignTokens, JsonPath, JsonValue } from "@sugarcube-sh/dtcg";
 import { isJsonObject, parseReference } from "@sugarcube-sh/dtcg/values";
 import { refuse } from "./error-messages.js";
-import type { FileOp, OpResult, Refusal, ValueOptions } from "./index.js";
+import type { FileOp, OperationResult, Refusal, ValueOptions } from "./index.js";
 import { createQuestion, getOwnProperties, findPlacement } from "./placement.js";
 import { createWriteOps } from "./file-text.js";
 import { setProperty } from "./property.js";
@@ -48,7 +48,7 @@ export function setValue(
     path: string,
     value: JsonValue,
     options: ValueOptions = {},
-): OpResult {
+): OperationResult {
     return setValueInFile(tokens, path, value, options);
 }
 
@@ -58,30 +58,30 @@ function setValueInFile(
     value: JsonValue,
     options: ValueOptions,
     chosenFile?: string,
-): OpResult {
+): OperationResult {
     const placement = findPlacement(tokens, path, options, chosenFile);
     if ("choice" in placement) {
         return createQuestion(placement.choice, (file) =>
             setValueInFile(tokens, path, value, options, file),
         );
     }
-    if ("refused" in placement) return placement;
+    if ("refusal" in placement) return placement;
     const part = options.part ?? [];
     if ("at" in placement) {
-        const { at, alsoAffects } = placement;
+        const { at, affectedPermutations } = placement;
         const currentValue = isJsonObject(at.json) ? at.json.$value : undefined;
         const newValue = replacePart(path, currentValue, part, value);
-        if ("refused" in newValue) return newValue;
+        if ("refusal" in newValue) return newValue;
         return {
             ops: createWriteOps(tokens, at, ["$value", ...part], value),
-            alsoAffects,
+            affectedPermutations,
             moves: [],
         };
     }
-    const { token, into, alsoAffects } = placement;
+    const { token, into, affectedPermutations } = placement;
     const ownProperties = getOwnProperties(token);
     const newValue = replacePart(path, ownProperties.$value, part, value);
-    if ("refused" in newValue) return newValue;
+    if ("refusal" in newValue) return newValue;
     const override = { ...ownProperties, $value: newValue.value };
     const op: FileOp = {
         kind: "add",
@@ -89,7 +89,7 @@ function setValueInFile(
         jsonPath: path.split("."),
         value: override,
     };
-    return { ops: [op], alsoAffects, moves: [] };
+    return { ops: [op], affectedPermutations, moves: [] };
 }
 
 function replacePart(
@@ -98,7 +98,7 @@ function replacePart(
     part: JsonPath,
     value: JsonValue,
     depth = 0,
-): { value: JsonValue } | { refused: Refusal } {
+): { value: JsonValue } | { refusal: Refusal } {
     if (depth === part.length) return { value };
     if (parseReference(whole)) return refuse({ kind: "part-in-reference", path, part });
     const step = part[depth];
@@ -110,12 +110,12 @@ function replacePart(
         step < whole.length
     ) {
         const newChild = replacePart(path, whole[step], part, value, depth + 1);
-        if ("refused" in newChild) return newChild;
+        if ("refusal" in newChild) return newChild;
         return { value: whole.map((each, index) => (index === step ? newChild.value : each)) };
     }
     if (isJsonObject(whole) && typeof step === "string") {
         const newChild = replacePart(path, whole[step], part, value, depth + 1);
-        if ("refused" in newChild) return newChild;
+        if ("refusal" in newChild) return newChild;
         return { value: { ...whole, [step]: newChild.value } };
     }
     return refuse({ kind: "no-such-part", path, part });
@@ -138,6 +138,6 @@ export function setDescription(
     tokens: DesignTokens,
     path: string,
     description: string | null,
-): OpResult {
+): OperationResult {
     return setProperty(tokens, path, "$description", description);
 }

@@ -4,7 +4,7 @@ import { type DesignTokens, type Diagnostic, type Span, read } from "@sugarcube-
 import { describe, expect, it } from "vitest";
 import { type Case, loadCases, readOptions } from "../../dtcg/tests/read/case-options.js";
 import { withSpans } from "../../dtcg/tests/read/positions.js";
-import { type Fix, fixesFor } from "../src/index.js";
+import { type Fix, getFixes } from "../src/index.js";
 import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
 import { read as readFromDisk } from "@sugarcube-sh/dtcg/node";
 
@@ -30,7 +30,7 @@ function expectedFor({ name, files }: Case): Offered[] {
 
 function offered(tokens: DesignTokens): Offered[] {
     return tokens.diagnostics.flatMap((diagnostic) => {
-        const fixes = fixesFor(tokens, diagnostic);
+        const fixes = getFixes(tokens, diagnostic);
         return fixes.length > 0 ? [{ kind: diagnostic.kind, span: diagnostic.span, fixes }] : [];
     });
 }
@@ -62,7 +62,7 @@ describe.each(cases.map((each) => [each.name, each] as const))("%s", (_, each) =
 
     it("leaves each place a safe fix mends reading clean", async () => {
         const opened = await openCase(each);
-        const safe = offered(opened).flatMap(({ fixes }) => fixes.filter((fix) => fix.safe));
+        const safe = offered(opened).flatMap(({ fixes }) => fixes.filter((fix) => fix.isSafe));
         for (const fix of safe) {
             expect(fix.edits).toHaveLength(1);
             expect(leftAfter(opened, fix), fix.title).toStrictEqual([]);
@@ -83,7 +83,7 @@ describe("fixes that depend on other tokens", () => {
         });
         const [problem] = opened.diagnostics;
         expect(problem?.kind).toBe("invalid-value");
-        expect(problem && fixesFor(opened, problem)).toStrictEqual([]);
+        expect(problem && getFixes(opened, problem)).toStrictEqual([]);
     });
 
     it("offers a pointer when the target's whole value fits the place", async () => {
@@ -94,8 +94,8 @@ describe("fixes that depend on other tokens", () => {
             }),
         });
         const [problem] = opened.diagnostics;
-        const [fix] = problem ? fixesFor(opened, problem) : [];
-        expect(fix?.safe).toBe(true);
+        const [fix] = problem ? getFixes(opened, problem) : [];
+        expect(fix?.isSafe).toBe(true);
         expect(fix?.edits.map(({ text }) => text)).toStrictEqual(['{ "$ref": "#/base/$value" }']);
         expect(fix && leftAfter(opened, fix)).toStrictEqual([]);
     });
@@ -145,7 +145,7 @@ describe("fixes that depend on other tokens", () => {
             }),
         });
         const missing = opened.diagnostics.find(({ kind }) => kind === "missing-reference");
-        const [fix] = missing ? fixesFor(opened, missing) : [];
+        const [fix] = missing ? getFixes(opened, missing) : [];
         expect(missing?.relatedInformation?.length).toBe(1);
         expect(fix?.edits.map(({ text }) => text)).toStrictEqual([
             '"#/color/ink/$value/components/0"',
@@ -160,7 +160,7 @@ describe("fixes that depend on other tokens", () => {
         });
         const [problem] = untyped.diagnostics;
         expect(problem?.kind).toBe("unknown-type");
-        expect(problem && fixesFor(untyped, problem)).toStrictEqual([]);
+        expect(problem && getFixes(untyped, problem)).toStrictEqual([]);
     });
 });
 

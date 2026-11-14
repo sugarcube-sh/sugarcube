@@ -22,7 +22,7 @@ describe("keepYours", () => {
         const done = session.do(keepYours(session.tokens, clash));
 
         expect(done.tokens && at(done.tokens, "color.json", [...brand, "$value"])).toEqual(red);
-        expect(opsIn(session.unsaved)).toEqual([
+        expect(opsIn(session.unsavedEdits)).toEqual([
             {
                 kind: "set",
                 file: "color.json",
@@ -53,8 +53,8 @@ describe("keepYours", () => {
         session.do(setValue(session.tokens, "color.brand.500", red));
         const clash = clashOf(session, changed(demo, [["color.json", brand, undefined]]));
 
-        expect(keepYours(session.tokens, clash).refused).toMatchObject({
-            kind: "gone-elsewhere",
+        expect(keepYours(session.tokens, clash).refusal).toMatchObject({
+            kind: "removed-since",
             path: "color.brand.500",
             file: "color.json",
             reason: expect.any(String),
@@ -69,6 +69,6 @@ describe("keepYours", () => {
             changed(demo, [["color.json", ["color", "text", "default"], undefined]]),
         );
 
-        expect(keepYours(session.tokens, clash).refused?.kind).toBe("gone-elsewhere");
+        expect(keepYours(session.tokens, clash).refusal?.kind).toBe("removed-since");
     });
 });

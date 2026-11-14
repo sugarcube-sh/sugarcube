@@ -9,7 +9,7 @@
       "fixes": [
         {
           "title": "write it as `#/base/$value`",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",

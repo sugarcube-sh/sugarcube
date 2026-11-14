@@ -18,7 +18,7 @@ async function demo() {
     const onDisk = { entryFile: copy.config.resolver, options: createReadOptions(copy.config) };
     const session = createSession(await read(onDisk.entryFile, onDisk.options));
     session.do(setValue(session.tokens, "color.brand.500", lighter));
-    return { ...copy, onDisk, edits: session.unsaved };
+    return { ...copy, onDisk, edits: session.unsavedEdits };
 }
 
 describe("saveEdits", () => {

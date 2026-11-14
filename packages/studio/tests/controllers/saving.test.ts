@@ -51,7 +51,7 @@ describe("saving", () => {
 
     it("keeps every edit when the host refuses the save, and gives its conflicts", async () => {
         const conflict = {
-            op: { kind: "deleteFile", file: "x.json", was: "" },
+            op: { kind: "delete-file", file: "x.json", was: "" },
             kind: "gone",
             reason: "x.json is gone",
         } as const;
@@ -99,7 +99,7 @@ describe("saving", () => {
     it("turns a refused save's files into clashes, the files showing theirs", async () => {
         const theirs = darkFile().replace("{color.neutral.50}", "{color.neutral.200}");
         const conflict = {
-            op: { kind: "deleteFile", file: "x.json", was: "" },
+            op: { kind: "delete-file", file: "x.json", was: "" },
             kind: "changed",
             reason: "changed",
         } as const;

@@ -1,29 +1,29 @@
 import type { DesignTokens, JsonValue } from "@sugarcube-sh/dtcg";
 import { refuse } from "./error-messages.js";
-import type { Clash, ClashPart, FileOp, OpResult } from "./index.js";
+import type { Clash, ClashPart, FileOp, OperationResult } from "./index.js";
 import { isGone } from "./clashes.js";
 import { findAffectedPermutations } from "./placement.js";
 
 /**
  * Settles a {@link Clash} by keeping your side: what your step wrote is written over theirs at
  * every part it changes, expecting theirs, as an edit like any other to commit with
- * {@link Session.do}; a part you removed is removed. Refused (`gone-elsewhere`) when the clash
- * isn't {@link Clash.keepable}: a part was removed or renamed since, and in a file a rename looks
+ * {@link Session.do}; a part you removed is removed. Refused (`removed-since`) when the clash
+ * isn't {@link Clash.canKeepYours}: a part was removed or renamed since, and in a file a rename looks
  * the same as a removal, so yours isn't written over something else. Keeping theirs needs no edit:
  * the files already show it.
  *
  * @example
  * for (const clash of session.rebase(fresh)) {
- *     if (clash.keepable && (await askKeepYours(clash))) {
+ *     if (clash.canKeepYours && (await askKeepYours(clash))) {
  *         session.do(keepYours(session.tokens, clash));
  *     }
  * }
  */
-export function keepYours(tokens: DesignTokens, clash: Clash): OpResult {
+export function keepYours(tokens: DesignTokens, clash: Clash): OperationResult {
     const gonePart = clash.parts.find(isGone);
     if (gonePart) {
         return refuse({
-            kind: "gone-elsewhere",
+            kind: "removed-since",
             file: gonePart.file,
             ...(gonePart.path !== undefined && { path: gonePart.path }),
         });
@@ -31,7 +31,7 @@ export function keepYours(tokens: DesignTokens, clash: Clash): OpResult {
     const parts = clash.parts.filter(hasTheirs);
     return {
         ops: parts.map((part) => toYourOp(tokens, part)),
-        alsoAffects: findAffectedPermutations(
+        affectedPermutations: findAffectedPermutations(
             tokens,
             parts.map((part) => part.file),
         ),
@@ -48,7 +48,7 @@ function toYourOp(
     { file, jsonPath, yours, theirs }: ClashPart & { theirs: JsonValue },
 ): FileOp {
     if (yours === undefined && jsonPath.length === 0) {
-        return { kind: "deleteFile", file, was: tokens.getText(file) as string };
+        return { kind: "delete-file", file, was: tokens.getText(file) as string };
     }
     if (yours === undefined) return { kind: "remove", file, jsonPath, was: theirs };
     return { kind: "set", file, jsonPath, value: yours, was: theirs };

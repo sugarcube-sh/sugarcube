@@ -18,10 +18,10 @@ import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
  *
  * @example
  * for (const diagnostic of tokens.diagnostics) {
- *   for (const fix of fixesFor(tokens, diagnostic)) menu.add(fix.title, fix.edits);
+ *   for (const fix of getFixes(tokens, diagnostic)) menu.add(fix.title, fix.edits);
  * }
  */
-export function fixesFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix[] {
+export function getFixes(tokens: DesignTokens, diagnostic: Diagnostic): Fix[] {
     const fix = findFix(tokens, diagnostic);
     return fix ? [fix] : [];
 }
@@ -38,7 +38,7 @@ function findFix(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined 
             return (
                 edits && {
                     title: fixTitles.deleteEarlier(diagnostic.detail.key),
-                    safe: true,
+                    isSafe: true,
                     edits,
                 }
             );
@@ -159,7 +159,7 @@ function deleteEmptyType(
 ): Fix | undefined {
     const edits = getDeletionEdits(tokens, span.file, node);
     if (!edits || !isCleanAfter(tokens, edits)) return undefined;
-    return { title: fixTitles.deleteType, safe: true, edits };
+    return { title: fixTitles.deleteType, isSafe: true, edits };
 }
 
 function isCleanAfter(tokens: DesignTokens, edits: readonly TextEdit[]): boolean {
@@ -217,9 +217,9 @@ function replaceWith(span: Span, value: string): TextEdit {
 }
 
 function createSafeFix(title: string, change: TextEdit): Fix {
-    return { title, safe: true, edits: [change] };
+    return { title, isSafe: true, edits: [change] };
 }
 
 function createGuessFix(title: string, edits: readonly TextEdit[]): Fix {
-    return { title, safe: false, edits };
+    return { title, isSafe: false, edits };
 }

@@ -8,5 +8,5 @@ export async function saveEdits(onDisk: TokensOnDisk, sent: unknown): Promise<Sa
     if (!isEdits(sent)) throw new Error(ErrorMessages.NOT_EDITS);
     const saved = await applyToDisk(onDisk, sent);
     if (saved.conflicts) return { conflicts: saved.conflicts };
-    return { written: Object.keys(saved.written), deleted: saved.deleted };
+    return { written: Object.keys(saved.textByFile), deleted: saved.deleted };
 }

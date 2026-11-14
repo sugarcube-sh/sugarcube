@@ -1,7 +1,7 @@
 import type { DesignTokens, JsonPath, JsonValue, Permutations } from "@sugarcube-sh/dtcg";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 import { createWriteOps } from "./file-text.js";
-import type { FileOp, OpResult, PlaceOptions } from "./index.js";
+import type { FileOp, OperationResult, EditOptions } from "./index.js";
 import {
     createQuestion,
     findExtensionPlacement,
@@ -46,8 +46,8 @@ export function setExtension(
     path: string,
     jsonPath: readonly [string, ...JsonPath],
     value: JsonValue | null,
-    options: PlaceOptions = {},
-): OpResult {
+    options: EditOptions = {},
+): OperationResult {
     return setExtensionInFile(tokens, path, jsonPath, value, options);
 }
 
@@ -56,23 +56,23 @@ function setExtensionInFile(
     path: string,
     jsonPath: readonly [string, ...JsonPath],
     value: JsonValue | null,
-    options: PlaceOptions,
+    options: EditOptions,
     chosenFile?: string,
-): OpResult {
+): OperationResult {
     const placement = findSettingPlacement(tokens, path, jsonPath, options, chosenFile);
     if ("choice" in placement) {
         return createQuestion(placement.choice, (file) =>
             setExtensionInFile(tokens, path, jsonPath, value, options, file),
         );
     }
-    if ("refused" in placement) return placement;
-    const { alsoAffects } = placement;
+    if ("refusal" in placement) return placement;
+    const { affectedPermutations } = placement;
     if ("at" in placement) {
         const { at, currentExtension } = placement;
         if (currentExtension === undefined) {
             return {
                 ops: createWriteOps(tokens, at, ["$extensions", ...jsonPath], value),
-                alsoAffects,
+                affectedPermutations,
                 moves: [],
             };
         }
@@ -82,7 +82,7 @@ function setExtensionInFile(
             newExtension === currentExtension
                 ? []
                 : createWriteOps(tokens, at, ["$extensions", key], newExtension ?? null);
-        return { ops, alsoAffects, moves: [] };
+        return { ops, affectedPermutations, moves: [] };
     }
     const { into, current, settingPath } = placement;
     const newExtension = replaceSetting(current, settingPath, value);
@@ -90,7 +90,7 @@ function setExtensionInFile(
         newExtension === current || newExtension === undefined
             ? []
             : [{ kind: "add", file: into, jsonPath: placement.jsonPath, value: newExtension }];
-    return { ops, alsoAffects, moves: [] };
+    return { ops, affectedPermutations, moves: [] };
 }
 
 type SettingPlacement =
@@ -100,39 +100,39 @@ type SettingPlacement =
           jsonPath: JsonPath;
           current: JsonValue | undefined;
           settingPath: JsonPath;
-          alsoAffects: Permutations;
+          affectedPermutations: Permutations;
       };
 
 function findSettingPlacement(
     tokens: DesignTokens,
     path: string,
     [key, ...settingPath]: readonly [string, ...JsonPath],
-    options: PlaceOptions,
+    options: EditOptions,
     chosenFile: string | undefined,
 ): SettingPlacement {
     const pathKeys = path.split(".");
     if (!tokens.permutations.some((perm) => perm.getToken(path))) {
         const placement = findExtensionPlacement(tokens, path, key, options, chosenFile);
         if (!("into" in placement)) return placement;
-        const { into, currentExtension, alsoAffects } = placement;
+        const { into, currentExtension, affectedPermutations } = placement;
         return {
             into,
             jsonPath: [...pathKeys, "$extensions", key],
             current: currentExtension,
             settingPath,
-            alsoAffects,
+            affectedPermutations,
         };
     }
     const placement = findPlacement(tokens, path, options, chosenFile);
     if (!("token" in placement)) return placement;
-    const { into, token, alsoAffects } = placement;
+    const { into, token, affectedPermutations } = placement;
     const own = getOwnProperties(token);
     return {
         into,
         jsonPath: pathKeys,
         current: own,
         settingPath: ["$extensions", key, ...settingPath],
-        alsoAffects,
+        affectedPermutations,
     };
 }
 

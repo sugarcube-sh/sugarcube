@@ -9,7 +9,7 @@
       "fixes": [
         {
           "title": "write it as `#/sets/base`",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.resolver.json",

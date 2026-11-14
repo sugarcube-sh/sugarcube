@@ -1,4 +1,4 @@
-import type { Committed } from "@sugarcube-sh/dtcg-edit";
+import type { CommitResult } from "@sugarcube-sh/dtcg-edit";
 
 export interface Held<T> {
     readonly value: T;
@@ -10,8 +10,8 @@ export function heldFor<T>(held: Held<T> | undefined, about: unknown): T | undef
 }
 
 export function reasonsFor(
-    done: Pick<Committed, "refused" | "conflicts"> | undefined,
+    done: Pick<CommitResult, "refusal" | "conflicts"> | undefined,
 ): readonly string[] {
-    if (done?.refused) return [done.refused.reason];
+    if (done?.refusal) return [done.refusal.reason];
     return (done?.conflicts ?? []).map((conflict) => conflict.reason);
 }

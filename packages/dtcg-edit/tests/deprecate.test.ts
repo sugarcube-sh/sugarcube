@@ -79,7 +79,7 @@ describe("deprecate", () => {
                     was: "Old.",
                 },
             ],
-            alsoAffects: [],
+            affectedPermutations: [],
             moves: [],
         });
     });
@@ -99,7 +99,7 @@ describe("deprecate", () => {
     });
 
     it("is refused for a path that is neither a token nor a group", () => {
-        expect(deprecate(demo, "color.nope", true).refused?.kind).toBe("not-found");
+        expect(deprecate(demo, "color.nope", true).refusal?.kind).toBe("not-found");
     });
 
     it("is refused for a token a generator makes", () => {
@@ -118,7 +118,7 @@ describe("deprecate", () => {
         };
 
         expect(
-            deprecate(opened(files, { generators: [steps] }), "space.1", true).refused?.kind,
+            deprecate(opened(files, { generators: [steps] }), "space.1", true).refusal?.kind,
         ).toBe("generated");
     });
 });
@@ -158,7 +158,7 @@ describe("a group that extends another", () => {
     });
 
     it("can't be changed where it is there only because of $extends", () => {
-        expect(deprecate(tokens, "primary.icon", true).refused).toMatchObject({
+        expect(deprecate(tokens, "primary.icon", true).refusal).toMatchObject({
             kind: "inherited",
             path: "primary.icon",
             from: "button",

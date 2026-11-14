@@ -9,7 +9,7 @@
       "fixes": [
         {
           "title": "use `description`, which has a similar name",
-          "safe": false,
+          "isSafe": false,
           "edits": [
             {
               "file": "tokens.resolver.json",
@@ -29,7 +29,7 @@
       "fixes": [
         {
           "title": "use `default`, which has a similar name",
-          "safe": false,
+          "isSafe": false,
           "edits": [
             {
               "file": "tokens.resolver.json",
@@ -49,7 +49,7 @@
       "fixes": [
         {
           "title": "use `sources`, which has a similar name",
-          "safe": false,
+          "isSafe": false,
           "edits": [
             {
               "file": "tokens.resolver.json",

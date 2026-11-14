@@ -3,7 +3,7 @@ import { applyStepsThatFit, commit } from "./apply.js";
 import { findClashes } from "./clashes.js";
 import { exceptionMessages } from "./error-messages.js";
 import { mergeSteps } from "./merge.js";
-import type { Committed, EditStep, Edits, OpResult, Session } from "./index.js";
+import type { CommitResult, EditStep, Edits, OperationResult, Session } from "./index.js";
 
 /**
  * Starts an editing session on design tokens.
@@ -11,13 +11,13 @@ import type { Committed, EditStep, Edits, OpResult, Session } from "./index.js";
  * @example
  * const session = createSession(tokens);
  * session.do(setValue(session.tokens, "color.brand", "#e11d48"));
- * await save(session.unsaved);
+ * await save(session.unsavedEdits);
  * session.markSaved();
  */
 export function createSession(tokens: DesignTokens): Session {
-    let current = tokens;
-    let opened = tokens;
-    let unsaved: Edits = { steps: [] };
+    let currentTokens = tokens;
+    let savedTokens = tokens;
+    let unsavedEdits: Edits = { steps: [] };
     let undoStack: readonly UndoEntry[] = [];
     let redoStack: readonly RedoEntry[] = [];
     let mergeKey: string | undefined;
@@ -30,18 +30,18 @@ export function createSession(tokens: DesignTokens): Session {
     };
     const setUndoStack = (next: readonly UndoEntry[]) => {
         undoStack = next;
-        unsaved = { steps: next.map(({ step }) => step) };
+        unsavedEdits = { steps: next.map(({ step }) => step) };
     };
 
     return {
         get tokens() {
-            return current;
+            return currentTokens;
         },
-        get opened() {
-            return opened;
+        get savedTokens() {
+            return savedTokens;
         },
-        get unsaved() {
-            return unsaved;
+        get unsavedEdits() {
+            return unsavedEdits;
         },
         get canUndo() {
             return undoStack.length > 0;
@@ -49,33 +49,33 @@ export function createSession(tokens: DesignTokens): Session {
         get canRedo() {
             return redoStack.length > 0;
         },
-        do(result: OpResult, options = {}): Committed {
-            const committed = commit(current, result);
+        do(result: OperationResult, options = {}): CommitResult {
+            const committed = commit(currentTokens, result);
             if (!committed.tokens) return committed;
             const step = { ops: committed.ops, moves: committed.moves };
             const last = undoStack.at(-1);
             const earlier = undoStack.slice(0, -1);
             redoStack = [];
-            if (last?.before && options.merge !== undefined && options.merge === mergeKey) {
+            if (last?.before && options.mergeKey !== undefined && options.mergeKey === mergeKey) {
                 const mergedStep = mergeSteps(last.step, step);
                 if (mergedStep.ops.length > 0 || mergedStep.moves.length > 0) {
                     setUndoStack([...earlier, { step: mergedStep, before: last.before }]);
-                    current = committed.tokens;
-                    ids = trackIDs(ids, committed.moves, current, idCounter);
+                    currentTokens = committed.tokens;
+                    ids = trackIDs(ids, committed.moves, currentTokens, idCounter);
                 } else {
                     setUndoStack(earlier);
-                    current = last.before.tokens;
+                    currentTokens = last.before.tokens;
                     ids = last.before.ids;
                     mergeKey = undefined;
                 }
             } else {
-                setUndoStack([...undoStack, { step, before: { tokens: current, ids } }]);
-                current = committed.tokens;
-                ids = trackIDs(ids, committed.moves, current, idCounter);
-                mergeKey = options.merge;
+                setUndoStack([...undoStack, { step, before: { tokens: currentTokens, ids } }]);
+                currentTokens = committed.tokens;
+                ids = trackIDs(ids, committed.moves, currentTokens, idCounter);
+                mergeKey = options.mergeKey;
             }
             notify();
-            return { ...committed, tokens: current };
+            return { ...committed, tokens: currentTokens };
         },
         endStep() {
             mergeKey = undefined;
@@ -90,10 +90,10 @@ export function createSession(tokens: DesignTokens): Session {
             const before = last.before ?? replayVersionBefore(earlier, last.step);
             redoStack = [
                 ...redoStack,
-                { step: last.step, before, after: { tokens: current, ids } },
+                { step: last.step, before, after: { tokens: currentTokens, ids } },
             ];
             setUndoStack(earlier);
-            current = before.tokens;
+            currentTokens = before.tokens;
             ids = before.ids;
             mergeKey = undefined;
             notify();
@@ -103,53 +103,59 @@ export function createSession(tokens: DesignTokens): Session {
             if (!last) return;
             redoStack = redoStack.slice(0, -1);
             setUndoStack([...undoStack, { step: last.step, before: last.before }]);
-            current = last.after.tokens;
+            currentTokens = last.after.tokens;
             ids = last.after.ids;
             notify();
         },
-        changes() {
-            return current.getChangesSince(opened, { moves: getMoves(unsaved.steps) });
+        getChanges() {
+            return currentTokens.getChangesSince(savedTokens, {
+                moves: getMoves(unsavedEdits.steps),
+            });
         },
-        markSaved(saved) {
-            const count = saved ? countSavedSteps(saved, unsaved) : unsaved.steps.length;
+        markSaved(sent) {
+            const count = sent ? countSavedSteps(sent, unsavedEdits) : unsavedEdits.steps.length;
             if (count === 0) return;
-            const savedSteps = unsaved.steps.slice(0, count);
-            if (count === unsaved.steps.length) {
-                opened = current;
+            const savedSteps = unsavedEdits.steps.slice(0, count);
+            if (count === unsavedEdits.steps.length) {
+                savedTokens = currentTokens;
                 savedIDs = ids;
             } else {
-                opened = applyStepsThatFit(opened, savedSteps).tokens;
-                savedIDs = trackIDs(savedIDs, getMoves(savedSteps), opened, idCounter, ids);
+                savedTokens = applyStepsThatFit(savedTokens, savedSteps).tokens;
+                savedIDs = trackIDs(savedIDs, getMoves(savedSteps), savedTokens, idCounter, ids);
             }
             setUndoStack(undoStack.slice(count));
             redoStack = [];
             notify();
         },
         discard() {
-            current = opened;
+            currentTokens = savedTokens;
             setUndoStack([]);
             ids = savedIDs;
             redoStack = [];
             notify();
         },
         restore(edits) {
-            const { tokens: next, applied, skipped } = applyStepsThatFit(current, edits.steps);
-            const clashes = findClashes(skipped, current, next);
+            const {
+                tokens: next,
+                applied,
+                skipped,
+            } = applyStepsThatFit(currentTokens, edits.steps);
+            const clashes = findClashes(skipped, currentTokens, next);
             if (applied.length === 0) return clashes;
-            current = next;
+            currentTokens = next;
             setUndoStack([...undoStack, ...applied.map((step) => ({ step }))]);
-            ids = trackIDs(ids, getMoves(applied), current, idCounter);
+            ids = trackIDs(ids, getMoves(applied), currentTokens, idCounter);
             redoStack = [];
             notify();
             return clashes;
         },
         rebase(fresh) {
-            const { tokens: next, applied, skipped } = applyStepsThatFit(fresh, unsaved.steps);
-            const clashes = findClashes(skipped, fresh, next, [current, opened]);
+            const { tokens: next, applied, skipped } = applyStepsThatFit(fresh, unsavedEdits.steps);
+            const clashes = findClashes(skipped, fresh, next, [currentTokens, savedTokens]);
             savedIDs = trackIDs(savedIDs, [], fresh, idCounter);
             ids = trackIDs(ids, [], next, idCounter, savedIDs);
-            opened = fresh;
-            current = next;
+            savedTokens = fresh;
+            currentTokens = next;
             setUndoStack(applied.map((step) => ({ step })));
             redoStack = [];
             notify();
@@ -159,17 +165,17 @@ export function createSession(tokens: DesignTokens): Session {
             listeners.add(listener);
             return () => listeners.delete(listener);
         },
-        idOf(path) {
+        getID(path) {
             return ids.idByPath.get(path);
         },
-        pathOf(id) {
+        getPath(id) {
             return ids.pathByID.get(id);
         },
     };
 
     function replayVersionBefore(earlier: readonly UndoEntry[], step: EditStep): Version {
         const steps = earlier.map((each) => each.step);
-        const { tokens: before, skipped } = applyStepsThatFit(opened, steps);
+        const { tokens: before, skipped } = applyStepsThatFit(savedTokens, steps);
         if (skipped.length > 0) throw new Error(exceptionMessages.stepsNoLongerFit);
         const known = reverseMoves(ids, step.moves);
         return {
@@ -248,9 +254,9 @@ function trackIDs(
     return { pathByID, idByPath };
 }
 
-function countSavedSteps(saved: Edits, unsaved: Edits): number {
-    const isPrefix = saved.steps.every((step, index) => unsaved.steps[index] === step);
-    return isPrefix ? saved.steps.length : 0;
+function countSavedSteps(sent: Edits, unsavedEdits: Edits): number {
+    const isPrefix = sent.steps.every((step, index) => unsavedEdits.steps[index] === step);
+    return isPrefix ? sent.steps.length : 0;
 }
 
 function getMoves(steps: readonly EditStep[]): Move[] {

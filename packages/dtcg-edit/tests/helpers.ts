@@ -7,7 +7,7 @@ import {
     readFromMemory,
     type JsonValue,
 } from "@sugarcube-sh/dtcg";
-import { type Clash, type Edits, type FileOp, type OpResult, commit } from "../src/index.js";
+import { type Clash, type Edits, type FileOp, type OperationResult, commit } from "../src/index.js";
 import { removeAt, setAt } from "../src/text-edits.js";
 
 const folder = join(import.meta.dirname, "fixtures/demo");
@@ -22,16 +22,18 @@ export const demo = readFromMemory({
 export const at = (tokens: DesignTokens, file: string, jsonPath: JsonPath): JsonValue | undefined =>
     jsonPath.reduce((value, step) => value?.[step], JSON.parse(tokens.getText(file) ?? "null"));
 
-export function plainly(result: OpResult) {
-    return result.ops ? { ...result, alsoAffects: result.alsoAffects.inputs } : result;
+export function plainly(result: OperationResult) {
+    return result.ops
+        ? { ...result, affectedPermutations: result.affectedPermutations.inputs }
+        : result;
 }
 
-export function opsOf(result: OpResult): readonly FileOp[] {
+export function opsOf(result: OperationResult): readonly FileOp[] {
     if (!result.ops) throw new Error(JSON.stringify(result));
     return result.ops;
 }
 
-export function committed(tokens: DesignTokens, result: OpResult): DesignTokens {
+export function committed(tokens: DesignTokens, result: OperationResult): DesignTokens {
     const done = commit(tokens, result);
     if (!done.tokens) throw new Error(JSON.stringify(done));
     return done.tokens;

@@ -5,7 +5,7 @@ import { demo, at, opsOf, committed, resolver, opened, plainly } from "./helpers
 const dark = { input: { mode: "dark" } };
 
 const refusal = (kind: string, facts: object) => ({
-    refused: { kind, ...facts, reason: expect.any(String) },
+    refusal: { kind, ...facts, reason: expect.any(String) },
 });
 
 describe("create, which file", () => {
@@ -20,7 +20,7 @@ describe("create, which file", () => {
                 value: { $value: "#0a1f44" },
             },
         ]);
-        expect(result.ops && result.alsoAffects.inputs).toEqual([
+        expect(result.ops && result.affectedPermutations.inputs).toEqual([
             { mode: "light" },
             { mode: "dark" },
         ]);
@@ -315,7 +315,7 @@ describe("create, for every permutation", () => {
         };
         for (const contexts of [darkFirst, lightFirst]) {
             expect(
-                create(read(contexts, brandInDark), "brand.x", { $value: "#ff0000" }).refused,
+                create(read(contexts, brandInDark), "brand.x", { $value: "#ff0000" }).refusal,
             ).toMatchObject({
                 kind: "not-a-group",
                 path: "brand",
@@ -366,8 +366,8 @@ describe("remove", () => {
                     was: at(demo, "color.json", ["color", "brand", "500"]),
                 },
             ],
-            alsoAffects: [{ mode: "light" }, { mode: "dark" }],
-            broken: pointing,
+            affectedPermutations: [{ mode: "light" }, { mode: "dark" }],
+            pathsWithBrokenReferences: pointing,
             moves: [],
         });
         const after = committed(demo, result);
@@ -414,7 +414,7 @@ describe("remove", () => {
                 was: at(demo, "color.json", ["color", "brand"]),
             },
         ]);
-        const broken = result.ops ? (result.broken ?? []) : [];
+        const broken = result.ops ? (result.pathsWithBrokenReferences ?? []) : [];
         expect(broken.length).toBeGreaterThan(0);
         expect(broken.filter((path) => inside.includes(path))).toEqual([]);
         expect(
@@ -435,7 +435,7 @@ describe("remove", () => {
             }),
         });
 
-        expect(remove(tokens, "brand")).toMatchObject({ broken: ["button"] });
+        expect(remove(tokens, "brand")).toMatchObject({ pathsWithBrokenReferences: ["button"] });
     });
 
     it("names a token once in broken when it refers to two things inside the group", () => {
@@ -460,7 +460,7 @@ describe("remove", () => {
             }),
         });
 
-        expect(remove(tokens, "space")).toMatchObject({ broken: ["lifted"] });
+        expect(remove(tokens, "space")).toMatchObject({ pathsWithBrokenReferences: ["lifted"] });
     });
 
     it("names no context in design tokens without modifiers", () => {
@@ -470,7 +470,7 @@ describe("remove", () => {
         });
 
         const removed = remove(tokens, "bg");
-        expect(removed.ops && removed.alsoAffects.inputs).toEqual([]);
+        expect(removed.ops && removed.affectedPermutations.inputs).toEqual([]);
     });
 
     it("is refused for a path that is neither a token nor a group", () => {

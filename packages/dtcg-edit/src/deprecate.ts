@@ -1,5 +1,5 @@
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
-import type { OpResult } from "./index.js";
+import type { OperationResult } from "./index.js";
 import { setProperty } from "./property.js";
 
 /**
@@ -21,6 +21,6 @@ export function deprecate(
     tokens: DesignTokens,
     path: string,
     reason: string | boolean | null,
-): OpResult {
+): OperationResult {
     return setProperty(tokens, path, "$deprecated", reason);
 }

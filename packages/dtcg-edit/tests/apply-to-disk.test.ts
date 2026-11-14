@@ -14,8 +14,8 @@ let folder: string;
 let entryFile: string;
 const read = (file: string) => readFileSync(join(folder, file), "utf8");
 const write = (file: string, text: string) => writeFileSync(join(folder, file), text);
-const written = (result: Awaited<ReturnType<typeof applyToDisk>>) =>
-    "written" in result ? Object.keys(result.written) : undefined;
+const writtenFiles = (result: Awaited<ReturnType<typeof applyToDisk>>) =>
+    "textByFile" in result ? Object.keys(result.textByFile) : undefined;
 
 beforeEach(() => {
     folder = mkdtempSync(join(tmpdir(), "dtcg-edit-"));
@@ -38,7 +38,7 @@ describe("applyToDisk", () => {
             asEdits(opsOf(setValue(demo, "radius.md", half))),
         );
 
-        expect(written(result)).toStrictEqual(["radius.json"]);
+        expect(writtenFiles(result)).toStrictEqual(["radius.json"]);
         expect(result).toMatchObject({ deleted: [] });
         expect(JSON.parse(read("radius.json")).radius.md.$value).toEqual(half);
         for (const [file, text] of before) {
@@ -86,7 +86,7 @@ describe("applyToDisk", () => {
     it("writes nothing when any edit no longer fits, though others would", async () => {
         const fits = opsOf(setValue(demo, "radius.md", half));
         const clashes: FileOp = {
-            kind: "renameKey",
+            kind: "rename-key",
             file: "color.json",
             jsonPath: ["color", "brand", "500"],
             name: "600",
@@ -117,7 +117,7 @@ describe("applyToDisk", () => {
     });
 
     it("won't delete a file the design tokens aren't read from", async () => {
-        const op: FileOp = { kind: "deleteFile", file: "package.json", was: "anything" };
+        const op: FileOp = { kind: "delete-file", file: "package.json", was: "anything" };
         const result = await applyToDisk({ entryFile }, asEdits([op]));
 
         expect(result).toMatchObject({ deleted: [] });
@@ -125,7 +125,7 @@ describe("applyToDisk", () => {
     });
 
     it("won't make a file nothing reads, and makes one the same edits add to the resolver", async () => {
-        const make: FileOp = { kind: "createFile", file: "extra.json", value: { extra: {} } };
+        const make: FileOp = { kind: "create-file", file: "extra.json", value: { extra: {} } };
         expect(await applyToDisk({ entryFile }, asEdits([make]))).toEqual({
             conflicts: [expect.objectContaining({ kind: "not-read" })],
         });
@@ -141,14 +141,14 @@ describe("applyToDisk", () => {
             was,
         };
         const result = await applyToDisk({ entryFile }, asEdits([make, reference]));
-        expect(written(result)).toStrictEqual(["extra.json", "tokens.resolver.json"]);
+        expect(writtenFiles(result)).toStrictEqual(["extra.json", "tokens.resolver.json"]);
         expect(JSON.parse(read("extra.json"))).toEqual({ extra: {} });
     });
 
     it("makes the folder a new file goes in", async () => {
         const result = await applyToDisk({ entryFile }, asEdits(madeAndRead("more/extra.json")));
 
-        expect(written(result)).toStrictEqual(["more/extra.json", "tokens.resolver.json"]);
+        expect(writtenFiles(result)).toStrictEqual(["more/extra.json", "tokens.resolver.json"]);
         expect(JSON.parse(read("more/extra.json"))).toEqual({ extra: {} });
     });
 
@@ -164,10 +164,10 @@ describe("applyToDisk", () => {
     });
 
     it("deletes a file the edits delete", async () => {
-        const gone: FileOp = { kind: "deleteFile", file: "motion.json", was: read("motion.json") };
+        const gone: FileOp = { kind: "delete-file", file: "motion.json", was: read("motion.json") };
         const result = await applyToDisk({ entryFile }, asEdits([gone]));
 
-        expect(written(result)).toStrictEqual([]);
+        expect(writtenFiles(result)).toStrictEqual([]);
         expect(result).toMatchObject({ deleted: ["motion.json"] });
         expect(readdirSync(folder)).not.toContain("motion.json");
     });
@@ -207,7 +207,7 @@ function madeAndRead(...files: string[]): FileOp[] {
     const sources = ["resolutionOrder", 0, "sources"];
     const was = at(demo, "tokens.resolver.json", sources) as JsonValue[];
     return [
-        ...files.map((file): FileOp => ({ kind: "createFile", file, value: { extra: {} } })),
+        ...files.map((file): FileOp => ({ kind: "create-file", file, value: { extra: {} } })),
         {
             kind: "set",
             file: "tokens.resolver.json",

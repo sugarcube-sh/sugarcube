@@ -7,7 +7,12 @@ import type {
     Span,
     Token,
 } from "@sugarcube-sh/dtcg";
-import { type Clash, type ValueOptions, overridable, setValue } from "@sugarcube-sh/dtcg-edit";
+import {
+    type Clash,
+    type ValueOptions,
+    getOverridableContexts,
+    setValue,
+} from "@sugarcube-sh/dtcg-edit";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 import type { ExtensionForm } from "./adapter";
 import {
@@ -53,7 +58,7 @@ export function valueEdit(
     return {
         result: setValue(tokens, path, value, { ...row.where, part }),
         options: {
-            merge: fieldKey({ path, writes: "value", place: row.label, part, control }),
+            mergeKey: fieldKey({ path, writes: "value", place: row.label, part, control }),
         },
     };
 }
@@ -73,7 +78,7 @@ export function valueView(
         return { rows: [], offers: [], actions: false };
     }
     const places = placeRows(tokens, path);
-    const offered = overridable(tokens, path);
+    const offered = getOverridableContexts(tokens, path);
     const written = places
         .filter((place) => place.label === undefined || !adding.includes(place.label))
         .map((place) => ({
@@ -171,7 +176,7 @@ export function tokenPage(
     };
 }
 
-export type ClashRow = { readonly clash: Clash; readonly keepable: boolean } & (
+export type ClashRow = { readonly clash: Clash; readonly canKeepYours: boolean } & (
     | { readonly kind: "renamed"; readonly from: string; readonly to: string }
     | {
           readonly kind: "changed" | "gone" | "removed";
@@ -184,15 +189,15 @@ export type ClashRow = { readonly clash: Clash; readonly keepable: boolean } & (
 
 export function clashRows(tokens: DesignTokens, clashes: readonly Clash[]): ClashRow[] {
     return clashes.map((clash) => {
-        const { keepable } = clash;
+        const { canKeepYours } = clash;
         const [move] = clash.step.moves;
-        if (move) return { clash, keepable, kind: "renamed", from: move.from, to: move.to };
+        if (move) return { clash, canKeepYours, kind: "renamed", from: move.from, to: move.to };
         const [part] = clash.parts;
         const path = part?.path ?? part?.file ?? "";
         return {
             clash,
-            keepable,
-            kind: !keepable ? "gone" : part?.yours === undefined ? "removed" : "changed",
+            canKeepYours,
+            kind: !canKeepYours ? "gone" : part?.yours === undefined ? "removed" : "changed",
             path,
             label: placeRows(tokens, path).find(({ at }) => at.file === part?.file)?.label,
             yours: valueOf(part?.yours),

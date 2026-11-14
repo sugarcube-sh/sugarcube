@@ -7,7 +7,7 @@ import type {
     Token,
     TokenType,
 } from "@sugarcube-sh/dtcg";
-import { type PlaceAt, combine, setExtension, setValue } from "@sugarcube-sh/dtcg-edit";
+import { type DefinitionOptions, combine, setExtension, setValue } from "@sugarcube-sh/dtcg-edit";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 import type { ExtensionForm, FormField } from "../controllers/adapter";
 
@@ -34,7 +34,7 @@ const exponentialSettings: readonly Setting[] = [
 export function sugarcubeForm(
     tokens: DesignTokens,
     node: Token | Group,
-    at?: PlaceAt["at"],
+    at?: DefinitionOptions["at"],
 ): ExtensionForm | undefined {
     if (node.kind === "group") return scaleForm(tokens, node);
     if (node.generated) return stepForm(node);
@@ -44,7 +44,7 @@ export function sugarcubeForm(
 function fluidForm(
     tokens: DesignTokens,
     token: Token,
-    at: PlaceAt["at"],
+    at: DefinitionOptions["at"],
 ): ExtensionForm | undefined {
     if (token.type !== "dimension") return undefined;
     const { path } = token;

@@ -267,7 +267,7 @@ describe("what the page shows goes with what it is about", () => {
     it("drops a refusal once another edit is made", async () => {
         const { studio, Page } = studioPage("space.s");
         const screen = await render(<Page />);
-        const refused = rename(studio.state.tokens, "space.s", "a.b").refused?.reason ?? "";
+        const refused = rename(studio.state.tokens, "space.s", "a.b").refusal?.reason ?? "";
         const form = screen.getByRole("form", { name: "Rename" });
 
         await form.getByRole("textbox", { name: "Name" }).fill("a.b");

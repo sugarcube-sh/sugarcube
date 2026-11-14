@@ -31,4 +31,4 @@ for (const t of tokens.getPermutation().getGroup("color.button")?.tokens ?? []) 
 }
 
 const done = session.do(setValues(session.tokens, changes));
-if (done.refused) showMessage(done.refused.reason);
+if (done.refusal) showMessage(done.refusal.reason);

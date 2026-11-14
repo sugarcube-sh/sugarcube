@@ -10,10 +10,10 @@ import {
 } from "@sugarcube-sh/dtcg";
 import {
     type Clash,
-    type Committed,
+    type CommitResult,
     type Edits,
-    type OpResult,
-    type PlaceAt,
+    type OperationResult,
+    type DefinitionOptions,
     type StepOptions,
     createSession,
     keepYours,
@@ -29,7 +29,7 @@ export interface StudioState {
     readonly tokens: DesignTokens;
     readonly showing: Permutation;
     readonly value: BuildOutput["value"];
-    formFor(node: Token | Group, at?: PlaceAt["at"]): ExtensionForm | undefined;
+    formFor(node: Token | Group, at?: DefinitionOptions["at"]): ExtensionForm | undefined;
     readonly css: string;
     readonly problems: readonly BuildProblem[];
     readonly changes: readonly Change[];
@@ -47,14 +47,14 @@ export interface Studio {
     destroy(): void;
     show(input: Input): void;
     receive(message: StudioMessage): void;
-    do(result: OpResult, options?: StepOptions): Committed;
+    do(result: OperationResult, options?: StepOptions): CommitResult;
     undo(): void;
     redo(): void;
     discard(): void;
     restore(edits: Edits): void;
-    keep(clash: Clash, side: "yours" | "theirs"): Committed | undefined;
-    idOf(path: string): string | undefined;
-    pathOf(id: string): string | undefined;
+    keep(clash: Clash, side: "yours" | "theirs"): CommitResult | undefined;
+    getID(path: string): string | undefined;
+    getPath(id: string): string | undefined;
     save?(): Promise<SaveOutcome | undefined>;
 }
 
@@ -82,12 +82,12 @@ export function createStudio(
             formFor: (node, at) => adapter.formFor?.(tokens, node, at),
             css: written.css,
             problems: [...message.adapter.problems, ...written.problems],
-            changes: session.changes(),
+            changes: session.getChanges(),
             clashes,
             canUndo: session.canUndo,
             canRedo: session.canRedo,
             saving,
-            saved: heldFor(lastSave, session.unsaved),
+            saved: heldFor(lastSave, session.unsavedEdits),
         };
     }
 
@@ -104,8 +104,8 @@ export function createStudio(
     }
 
     function takeIn(files: StudioMessage["files"]): boolean {
-        const fresh = session.opened.rereadAll(files);
-        if (fresh === session.opened) return false;
+        const fresh = session.savedTokens.rereadAll(files);
+        if (fresh === session.savedTokens) return false;
         settled(session.rebase(fresh));
         return true;
     }
@@ -113,13 +113,13 @@ export function createStudio(
     const save = saveEdits
         ? async () => {
               session.endStep();
-              const sent = session.unsaved;
+              const sent = session.unsavedEdits;
               saving = true;
               publish({ ...state, saving });
               let saved: SaveOutcome | undefined;
               let shown: SaveShown;
               try {
-                  saved = await saveEdits(sent, session.changes());
+                  saved = await saveEdits(sent, session.getChanges());
                   if (!saved.conflicts) session.markSaved(sent);
                   if (saved.files) takeIn(saved.files);
                   shown = saved;
@@ -127,7 +127,7 @@ export function createStudio(
                   shown = { failed: failedText(error) };
               }
               saving = false;
-              lastSave = { value: shown, about: session.unsaved };
+              lastSave = { value: shown, about: session.unsavedEdits };
               publish(built(state.showing.input));
               return saved;
           }
@@ -139,7 +139,7 @@ export function createStudio(
             return state;
         },
         get unsaved() {
-            return session.unsaved;
+            return session.unsavedEdits;
         },
         subscribe(listener) {
             listeners.add(listener);
@@ -175,11 +175,11 @@ export function createStudio(
             settled(clashes.filter((each) => each !== clash));
             return done;
         },
-        idOf(path) {
-            return session.idOf(path);
+        getID(path) {
+            return session.getID(path);
         },
-        pathOf(id) {
-            return session.pathOf(id);
+        getPath(id) {
+            return session.getPath(id);
         },
         receive(next) {
             const previous = message;

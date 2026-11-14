@@ -22,7 +22,7 @@ export type Removal =
 
 export function removal(tokens: DesignTokens, path: string): Removal {
     const result = remove(tokens, path);
-    const breaks = (result.ops && result.broken) || [];
+    const breaks = (result.ops && result.pathsWithBrokenReferences) || [];
     const edit = { result, options: {} };
     return breaks.length > 0 ? { kind: "asks", edit, breaks } : { kind: "now", edit };
 }

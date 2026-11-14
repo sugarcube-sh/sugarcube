@@ -15,7 +15,7 @@ export function findClashes(
     const pathByMember = getPathByMember([mine, theirs, ...earlierVersions], files);
     return skipped.map((step) => {
         const parts = getClashParts(step, theirs, mine, pathByMember);
-        return { step, parts, keepable: !parts.some(isGone) };
+        return { step, parts, canKeepYours: !parts.some(isGone) };
     });
 }
 
@@ -61,8 +61,8 @@ function getMemberPath(op: FileOp): JsonPath {
 }
 
 function applyYours(text: string | undefined, op: FileOp): string | undefined {
-    if (text === undefined || op.kind === "deleteFile") return undefined;
-    if (op.kind === "createFile") return JSON.stringify(op.value);
+    if (text === undefined || op.kind === "delete-file") return undefined;
+    if (op.kind === "create-file") return JSON.stringify(op.value);
     return applyOpToText(text, op) ?? text;
 }
 

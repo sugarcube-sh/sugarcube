@@ -9,7 +9,7 @@
       "fixes": [
         {
           "title": "write the hex with six digits, `#ffffff`",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",
@@ -29,7 +29,7 @@
       "fixes": [
         {
           "title": "write the hex with eight digits, `#00000088`",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",

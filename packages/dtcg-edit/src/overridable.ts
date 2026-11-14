@@ -1,5 +1,5 @@
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
-import type { Overridable } from "./index.js";
+import type { OverridableContext } from "./index.js";
 import { getInputContext, findContextPlacement } from "./placement.js";
 
 /**
@@ -10,16 +10,19 @@ import { getInputContext, findContextPlacement } from "./placement.js";
  * shared one.
  *
  * @example
- * for (const { input, label } of overridable(tokens, "color.brand")) {
+ * for (const { input, label } of getOverridableContexts(tokens, "color.brand")) {
  *     offer(`Override for ${label}`, (value) => setValue(tokens, "color.brand", value, { input }));
  * }
  */
-export function overridable(tokens: DesignTokens, path: string): readonly Overridable[] {
+export function getOverridableContexts(
+    tokens: DesignTokens,
+    path: string,
+): readonly OverridableContext[] {
     return (tokens.resolver?.modifiers ?? []).flatMap((modifier) =>
         modifier.contexts.flatMap((context) => {
             const input = { [modifier.name]: context.name };
             const chosen = getInputContext(tokens, input);
-            if (!chosen || "refused" in chosen) return [];
+            if (!chosen || "refusal" in chosen) return [];
             const placement = findContextPlacement(tokens, path, chosen, undefined);
             return "into" in placement || "choice" in placement
                 ? [{ input, label: chosen.permutation.label }]

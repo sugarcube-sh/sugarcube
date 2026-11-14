@@ -1,6 +1,6 @@
 import { type DesignTokens, type JsonValue, tokenPath } from "@sugarcube-sh/dtcg";
 import { refuse } from "./error-messages.js";
-import type { FileOp, NewToken, OpResult, Where } from "./index.js";
+import type { FileOp, NewToken, OperationResult, ContextOptions } from "./index.js";
 import { createQuestion, findNewPlacement } from "./placement.js";
 
 /**
@@ -25,8 +25,8 @@ export function create(
     tokens: DesignTokens,
     path: string,
     token: NewToken | { group: true },
-    options: Where & { after?: string } = {},
-): OpResult {
+    options: ContextOptions & { after?: string } = {},
+): OperationResult {
     return createInFile(tokens, path, token, options);
 }
 
@@ -34,9 +34,9 @@ function createInFile(
     tokens: DesignTokens,
     path: string,
     token: NewToken | { group: true },
-    options: Where & { after?: string },
+    options: ContextOptions & { after?: string },
     chosenFile?: string,
-): OpResult {
+): OperationResult {
     if (options.after !== undefined) throw new Error("not implemented yet");
     for (const name of path.split(".")) {
         const problem = tokenPath.findNameProblem(name);
@@ -49,7 +49,7 @@ function createInFile(
         );
     }
     if (!("into" in placement)) return placement;
-    const { into: file, alsoAffects } = placement;
+    const { into: file, affectedPermutations } = placement;
 
     const value: JsonValue =
         "group" in token
@@ -60,5 +60,5 @@ function createInFile(
                   ...(token.$description !== undefined && { $description: token.$description }),
               };
     const op: FileOp = { kind: "add", file, jsonPath: path.split("."), value };
-    return { ops: [op], alsoAffects, moves: [] };
+    return { ops: [op], affectedPermutations, moves: [] };
 }

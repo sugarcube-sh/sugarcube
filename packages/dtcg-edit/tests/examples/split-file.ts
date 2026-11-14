@@ -16,4 +16,4 @@ const done = commit(
     ]),
 );
 if (done.tokens) tokens = done.tokens;
-else if (done.refused) showMessage(done.refused.reason);
+else if (done.refusal) showMessage(done.refusal.reason);
