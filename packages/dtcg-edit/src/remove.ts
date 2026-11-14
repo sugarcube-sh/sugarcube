@@ -4,16 +4,18 @@ import { refuse } from "./error-messages.js";
 import { getDefinitionMembers } from "./placement.js";
 
 /**
- * Removes a token or group from every file that writes it: the copy that wins, any copy an earlier
- * file writes that it replaces, and each context's own. Never refused for what refers to it: the
- * tokens and groups left referring to nothing are listed in `pathsWithBrokenReferences`.
+ * Removes a token or group from every file that writes it.
  *
- * Refused, with the reason: a path that is neither a token nor a group, a token a generator makes,
- * or a token or group inherited through `$extends`.
+ * References don't stop it. Tokens left with broken references are in
+ * `pathsWithBrokenReferences`.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param path - The token or group, such as `"color.blue.300"`.
  *
  * @example
- * const result = remove(tokens, "color.legacy");
- * if (result.pathsWithBrokenReferences?.length) warn(result.pathsWithBrokenReferences);
+ * // dark.json's color.primary refers to color.blue.300
+ * remove(tokens, "color.blue.300").pathsWithBrokenReferences
+ * // => ["color.primary"]
  */
 export function remove(tokens: DesignTokens, path: string): OperationResult {
     if (path === "") return refuse({ kind: "top-level" });

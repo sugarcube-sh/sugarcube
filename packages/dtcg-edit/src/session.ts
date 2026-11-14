@@ -6,13 +6,16 @@ import { mergeSteps } from "./merge.js";
 import type { CommitResult, EditStep, Edits, OperationResult, Session } from "./index.js";
 
 /**
- * Starts an editing session on design tokens.
+ * Starts an editing session.
+ *
+ * @param tokens - The design tokens to start from.
  *
  * @example
+ * // One edit is one unsaved step
  * const session = createSession(tokens);
- * session.do(setValue(session.tokens, "color.brand", "#e11d48"));
- * await save(session.unsavedEdits);
- * session.markSaved();
+ * session.do(setValue(session.tokens, "color.primary", "{color.blue.300}"));
+ * session.unsavedEdits.steps.length
+ * // => 1
  */
 export function createSession(tokens: DesignTokens): Session {
     let currentTokens = tokens;

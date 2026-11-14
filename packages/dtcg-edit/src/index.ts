@@ -12,47 +12,58 @@ import type {
 } from "@sugarcube-sh/dtcg";
 
 /**
- * A replacement of some text in a file. The offset and length count UTF-16 code units, as a
- * `Span` in `@sugarcube-sh/dtcg` does.
+ * A replacement of text in one file.
+ *
+ * Offsets and lengths count UTF-16 code units, as a `Span` in `@sugarcube-sh/dtcg` does.
  */
 export interface TextEdit {
+    /** The file, such as `"color.json"`. */
     file: string;
+    /** Where the text to replace starts. */
     offset: number;
+    /** How long the text to replace is. It's `0` for an insertion. */
     length: number;
+    /** The new text. */
     text: string;
 }
 
-/** A change that would mend a diagnostic, as {@link getFixes} offers it. */
+/** A change that would mend a diagnostic, from {@link getFixes}. */
 export interface Fix {
-    /** What the fix does, for a menu or a prompt, such as "use `color.brand`, which has a similar name". */
+    /** What the fix does, such as "use `color.primary`, which has a similar name". */
     title: string;
     /**
-     * Whether it can be applied without a person checking it. A safe fix, applied, leaves the place
-     * it mends reading clean and changes nothing else the files mean; one that is not safe is a
-     * likely guess a person should confirm.
+     * Whether it's safe to apply without asking a person.
+     *
+     * A safe fix mends the problem and changes nothing else the files mean. A fix that isn't safe
+     * is a likely guess, such as a similar name.
      */
     isSafe: boolean;
+    /** The text to replace. */
     edits: readonly TextEdit[];
 }
 
 export { getFixes } from "./fixes.js";
 
 /**
- * One change to one file, addressed by its route through the file's JSON (`jsonPath`), so it still
- * applies if the file has changed elsewhere since it was read.
+ * One change to one file's JSON.
  *
- * - `set` changes something that exists. Its parent must exist.
- * - `add` adds something new, creating any missing groups on the way. It must not already exist.
- * - `remove` removes something. Nothing happens if it is already gone.
- * - `rename-key` renames a key, keeping its value and position. Nothing happens if a sibling
- *   already has the new name and holds `was`.
- * - `create-file` creates a file holding `value`. It must not already exist.
- * - `delete-file` deletes a file.
+ * It finds its place by `jsonPath`, so it still applies after other changes to the file.
  *
- * `set`, `remove` and `delete-file` record `was`, what they expect to find. If that has changed by
- * the time the edit is applied, the edit is a conflict rather than written over the change,
- * unless what it would write is already there. `rename-key` records `was`, the value at the key,
- * only to tell when the rename is already done: the key is renamed whatever its value now.
+ * - `set` - changes a value that exists. Its parent must exist.
+ * - `add` - adds a value, making any missing groups. Nothing must be there yet.
+ * - `remove` - removes a value. Nothing happens if it's already gone.
+ * - `rename-key` - renames a key, keeping its value and position.
+ * - `create-file` - creates a file containing `value`. The file must not exist yet.
+ * - `delete-file` - deletes a file.
+ *
+ * `was` is what the edit expects to find. If the file has changed there since, the edit is a
+ * {@link Conflict}. For `rename-key`, `was` only tells whether the rename is already done.
+ *
+ * @example
+ * // The shared value of color.primary, in color.json
+ * setValue(tokens, "color.primary", "{color.blue.300}").ops
+ * // => [{ kind: "set", file: "color.json", jsonPath: ["color", "primary", "$value"],
+ * //       value: "{color.blue.300}", was: "{color.blue.500}" }]
  */
 export type FileOp = Readonly<
     | { kind: "set"; file: string; jsonPath: JsonPath; value: JsonValue; was: JsonValue }
@@ -64,92 +75,120 @@ export type FileOp = Readonly<
 >;
 
 /**
- * A question an operation can't answer from the files alone. Ask the person, then call `answer`
- * with their choice: it gives the operation's result as if it had been told. A file that can't
- * hold the change is asked about again.
+ * A choice an operation needs a person to make.
  *
- * - `placement`: several files could hold the change; `files` are the ones that could.
- *
- * `path` is the token the question is about, which matters when one operation changes several.
+ * Ask which of `files` to use, then pass it to `answer`. If the file can't take the change, the
+ * result is the question again.
  *
  * @example
- * let edit = setValue(tokens, "color.danger", "#fca5a5", { input: { mode: "dark" } });
- * if (edit.question) edit = edit.question.answer(await askWhichFile(edit.question.files));
+ * // dark reads dark.json and dark-brand.json, and neither writes button.background
+ * const { question } = setValue(tokens, "button.background", "{color.blue.300}", {
+ *     input: { mode: "dark" },
+ * });
+ * question?.files
+ * // => ["dark.json", "dark-brand.json"]
  */
 export interface Question {
+    /** What is asked. `"placement"` asks which file a change goes in. */
     kind: "placement";
+    /** The token the question is about, such as `"button.background"`. */
     path: string;
+    /** The files to choose from. */
     files: readonly string[];
+    /**
+     * Carries on with the chosen file.
+     *
+     * @param file - One of `files`, such as `"dark-brand.json"`.
+     *
+     * @example
+     * // Put dark's button.background in dark-brand.json
+     * question.answer("dark-brand.json").ops
+     * // => [{ kind: "add", file: "dark-brand.json", jsonPath: ["button", "background"],
+     * //       value: { $type: "color", $value: "{color.blue.300}" } }]
+     */
     answer(file: string): OperationResult;
 }
 
 /**
- * What an operation returns: the edits, a question, or a refusal with its reason. Test it by its
- * field: `edit.question`, `edit.refusal`, and otherwise `edit.ops` are the edits.
+ * What an operation returns.
+ *
+ * It has `ops` when it worked, `question` when it needs a choice, or `refusal` when it can't be
+ * done.
  *
  * @example
- * const edit = rename(tokens, "color.brand", "primary");
- * if (edit.refusal) return showWhy(edit.refusal.reason);
+ * // color.blue is already a group
+ * rename(tokens, "color.primary", "blue").refusal?.kind
+ * // => "taken"
  */
 export type OperationResult =
     | {
+          /** The edits, for {@link commit} or {@link Session.do}. */
           ops: readonly FileOp[];
           /**
-           * The permutations, other than the one edited, where the change shows, labelled
-           * (`affectedPermutations.label`, such as `"mode: dark"`). Only permutations the read built are
-           * listed, so a read limited by `inputs` lists only those.
+           * The other permutations the change shows in, such as `mode: dark`.
+           *
+           * Permutations this read didn't build aren't included.
            */
           affectedPermutations: Permutations;
           /**
-           * The tokens and groups left referring to nothing, after a {@link remove}, a
-           * {@link rename} of a token generated tokens refer to, or a {@link combine} holding one.
+           * Tokens and groups left with references to nothing.
+           *
+           * Set by {@link remove}, {@link rename} and {@link combine}.
            */
           pathsWithBrokenReferences?: readonly string[];
-          /** Tokens and groups whose path changed, such as after a {@link rename}. Empty when none did. */
+          /** Tokens and groups whose path changed, such as after a {@link rename}. */
           moves: readonly Move[];
           question?: undefined;
           refusal?: undefined;
       }
-    | { question: Question; ops?: undefined; refusal?: undefined }
-    | { refusal: Refusal; ops?: undefined; question?: undefined };
+    | {
+          /** The choice to ask a person to make. */
+          question: Question;
+          ops?: undefined;
+          refusal?: undefined;
+      }
+    | {
+          /** Why it can't be done. */
+          refusal: Refusal;
+          ops?: undefined;
+          question?: undefined;
+      };
 
 /**
- * Why an operation can't be done: a `kind`, the facts it is about, and a `reason` worded from
- * them, so a tool can show the reason or word its own from the facts.
+ * Why an operation can't be done.
  *
- * - `not-found`: no token or group at `path`.
- * - `top-level`: the path is `""`, the top level of a file, which has no name to change and holds
- *   everything in the file, so it can't be renamed or removed.
- * - `not-a-group`: `path` is a token, so nothing can be made inside it.
- * - `taken`: a token or group is already at `path`.
- * - `override-instead`: the token at `path` is shared, so `input` gets its own value by changing
- *   it for that context ({@link setValue}), not by making it again.
- * - `invalid-name`: `name` can't be a name: `character` is the one the spec forbids (Format
- *   5.1.1). It's absent for an empty name.
- * - `generated`: a generator makes the token, from the extension at `extension` on the group at
- *   `from` (`""` for the top level of a file).
- * - `inherited`: the token or group comes from the group at `from`, through `$extends`.
- * - `no-permutation`: there is no permutation for `input`; `why` says whether a modifier or
- *   context isn't declared, a context isn't a string, a modifier with no default was left out, or
- *   the read didn't build it.
- * - `several-contexts`: `input` names more than one context away from its default; no file is
- *   read by that combination alone.
- * - `no-file-for-context`: the context `input` names reads no whole file of its own to hold the
- *   edit.
- * - `no-shared-file`: no whole file every permutation reads can hold the edit.
- * - `hidden-by-later-file`: an override for `input` would be hidden by `file`, read after it.
- * - `no-shared-value`: no file every permutation reads writes the token; only contexts do.
- * - `not-a-definition`: `at` is not a place the token at `path` is written in these design
- *   tokens, such as a place from an older read.
- * - `removed-since`: a {@link Clash} can't be settled by keeping yours: what your step changes,
- *   the token or group at `path` in `file`, was removed or renamed since. In a file, a rename
- *   and a removal look the same, so yours isn't written over something else.
- * - `part-in-reference`: on the way to `part`, the value refers to another token, so that part
- *   isn't written there to change.
- * - `no-such-part`: the value written has nowhere to put `part`: a step goes into a value that
- *   isn't an object or a list, or into a list at anything but the index of an item in it.
+ * `reason` is a sentence to show. The other fields depend on `kind`.
+ *
+ * - `not-found` - nothing is at `path`.
+ * - `top-level` - the path is `""`, the top level of a file. It can't be renamed or removed.
+ * - `not-a-group` - `path` is a token, so nothing can go inside it.
+ * - `taken` - something is already at `path`.
+ * - `override-instead` - the token is shared. Change it for `input` with {@link setValue}.
+ * - `invalid-name` - `character` can't be in a name. It's absent for an empty name.
+ * - `generated` - a generator makes the token, from `extension` on the group `from`.
+ * - `inherited` - the token or group comes from the group `from`, through `$extends`.
+ * - `no-permutation` - there is no permutation for `input`. `cause` says why.
+ * - `several-contexts` - `input` names two contexts away from their defaults.
+ * - `no-file-for-context` - no whole file is read by that context alone.
+ * - `no-shared-file` - no whole file is read by every permutation.
+ * - `hidden-by-later-file` - `file` is read later, so it would hide the override.
+ * - `no-shared-value` - only contexts write the token, so there's no shared value.
+ * - `not-a-definition` - `at` isn't one of the token's definitions, such as one from an older read.
+ * - `removed-since` - what your step changes in `file` was removed or renamed since.
+ * - `part-in-reference` - the value refers to another token on the way to `part`.
+ * - `no-such-part` - the value has nowhere to put `part`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
+ *
+ * @example
+ * // color.primary already exists
+ * create(tokens, "color.primary", { $value: "{color.blue.300}" }).refusal
+ * // => { kind: "taken", path: "color.primary", reason: "`color.primary` already exists" }
  */
-export type Refusal = { reason: string } & (
+export type Refusal = {
+    /** A sentence to show, such as "`color.primary` already exists". */
+    reason: string;
+} & (
     | { kind: "not-found"; path: string }
     | { kind: "top-level" }
     | { kind: "not-a-group"; path: string }
@@ -174,27 +213,30 @@ export type Refusal = { reason: string } & (
     | { kind: "no-such-part"; path: string; part: JsonPath }
 );
 
-/** Where an edit goes. */
+/** Options for an edit to one context. */
 export interface ContextOptions {
     /**
-     * The context the edit is for, as an input such as `{ mode: "dark" }`. Modifiers at their
-     * default are ignored, so a permutation's full input can be passed as it is. Naming two
-     * non-default contexts is refusal: no file is read only by that combination.
-     * @default the base value, which every permutation shares
+     * The context the edit is for, such as `{ mode: "dark" }`.
+     *
+     * Modifiers at their default are ignored, so a permutation's whole input works.
+     *
+     * @default the shared value, which every permutation reads
      */
     input?: Input;
 }
 
-/** A new token, as it will be written into the file. */
+/** A token to create. It's written to the file as passed. */
 export interface NewToken {
     /**
-     * Its type. Leave it out when the group declares one, or when the value is a reference: the
-     * token then takes its type from there, as the spec allows. Written as given either way: when
-     * no type can be worked out, the read reports it.
+     * The token's type, such as `"color"`.
+     *
+     * Leave it out when its group or a reference sets it. If nothing sets a type, the read
+     * reports it.
      */
     $type?: TokenType;
-    /** Written exactly as given. */
+    /** The token's value, such as `"{color.blue.300}"`. */
     $value: JsonValue;
+    /** The token's description. */
     $description?: string;
 }
 
@@ -202,53 +244,60 @@ export { rename } from "./rename.js";
 
 export { setDescription, setValue } from "./set-value.js";
 
-/** A context a token can be given its own value for, as {@link getOverridableContexts} lists it. */
+/** A context a token can have its own value in, from {@link getOverridableContexts}. */
 export interface OverridableContext {
-    /** The input {@link setValue} writes the override with, such as `{ mode: "dark" }`. */
+    /** The input to pass to {@link setValue}, such as `{ mode: "dark" }`. */
     input: Input;
-    /** The context as a permutation's label words it, such as `"mode: dark"`. */
+    /** The context's label, such as `"mode: dark"`. */
     label: string;
 }
 
 export { getOverridableContexts } from "./overridable.js";
 
-/** Where an edit goes: for a context, or at one place the token or group is written. */
+/**
+ * Where an edit goes.
+ *
+ * It's for one context, with {@link ContextOptions}, or at one definition, with
+ * {@link DefinitionOptions}.
+ */
 export type EditOptions = (ContextOptions & { at?: undefined }) | DefinitionOptions;
 
 /**
- * How a value change is made: for a context or at a place the token is written, and which part of
- * the value it changes.
+ * Options for a value change.
+ *
+ * They say where it goes, as {@link EditOptions} do, and which part of the value changes.
  */
 export type ValueOptions = EditOptions & {
     /**
-     * A part of the value to change on its own, such as `["color"]` of a shadow or
-     * `[1, "color"]` of its second layer, leaving every other part as written. A member the value
-     * doesn't write yet, such as a shadow's `inset`, is added. A new override is the value in
-     * force for that context with the part changed.
+     * The part of a composite value to change, such as `["color"]` of a shadow.
+     *
+     * Every other part stays as written. A part the value doesn't write yet is added. A new
+     * override copies the context's current value, with the part changed.
+     *
+     * @default the whole value
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#composite-types | Format 9, Composite types}
      */
     part?: JsonPath;
 };
 
-/** An edit at one place the token or group is written, rather than for a context. */
+/** Options for an edit at one definition of a token or group. */
 export interface DefinitionOptions {
     /**
-     * A place the token or group is written, as `tokens.getDefinitions(path)` gives it: what is written
-     * there changes, in every permutation that reads it. No file is chosen and nothing is asked.
+     * The definition's span, from `tokens.getDefinitions(path)`.
+     *
+     * The change shows in every permutation that reads it. No file is chosen, and nothing is asked.
      */
     at: Pick<Span, "file" | "offset" | "length">;
     input?: undefined;
 }
 
 /**
- * Changes several values in one step, checked with one read, so a change that spans many tokens,
- * such as switching a palette, is accepted or refused as a whole. Each value follows the rules of
- * {@link setValue}.
+ * Changes several values in one step.
  *
- * @example
- * setValues(tokens, [
- *   { path: "color.button.background", value: "{color.violet.500}" },
- *   { path: "color.button.background", value: "{color.violet.300}", input: { mode: "dark" } },
- * ])
+ * The changes are made, or refused, together. Each one works as {@link setValue} does.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param values - Each token's path and new value, with {@link ValueOptions}.
  */
 export function setValues(
     tokens: DesignTokens,
@@ -259,7 +308,13 @@ export function setValues(
 
 export { create } from "./create.js";
 
-/** Moves a token or group among its siblings. */
+/**
+ * Moves a token or group among its siblings.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param path - The token or group, such as `"color.blue.300"`.
+ * @param options - The sibling to go after or before, such as `{ before: "color.blue.500" }`.
+ */
 export function reorder(
     tokens: DesignTokens,
     path: string,
@@ -269,17 +324,25 @@ export function reorder(
 }
 
 /**
- * Moves a token or group to another group, another file, or both, and gives it a new name if
- * `name` is set. Refused when the new file is read by different contexts than the old one, since
- * the token would disappear from some of them.
+ * Moves a token or group to another group or file.
  *
- * @example
- * move(tokens, "color.brand.500", { group: "color.primary", name: "600" })
+ * Refused when the new file is read by different contexts than the old one.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param path - The token or group, such as `"color.blue.300"`.
+ * @param to - Where it goes, such as `{ group: "color.brand" }`.
  */
 export function move(
     tokens: DesignTokens,
     path: string,
-    to: { group?: string; file?: string; name?: string },
+    to: {
+        /** The group to move it into. */
+        group?: string;
+        /** The file to move it into. */
+        file?: string;
+        /** Its new name. */
+        name?: string;
+    },
 ): OperationResult {
     throw new Error("not implemented yet");
 }
@@ -291,33 +354,52 @@ export { deprecate } from "./deprecate.js";
 export { setExtension } from "./set-extension.js";
 
 /**
- * Turns fixes offered for these design tokens' diagnostics into ordinary edits, so they can be
- * undone, saved and replayed like any other. Pass several to make them one step. Every fix must
- * come from {@link getFixes} for these design tokens.
+ * Turns fixes into edits.
  *
- * @example
- * const safeFixes = tokens.diagnostics.flatMap((d) => getFixes(tokens, d).filter((f) => f.isSafe));
- * commit(tokens, fix(tokens, safeFixes));
+ * The edits can be undone, saved and replayed like any other. Several fixes make one step.
+ *
+ * @param tokens - The design tokens the fixes are for.
+ * @param fixes - Fixes from {@link getFixes} for these design tokens.
  */
 export function fix(tokens: DesignTokens, fixes: readonly Fix[]): OperationResult {
     throw new Error("not implemented yet");
 }
 
-/** Changes a token's type. Refused if tokens that refer to it would break. */
+/**
+ * Changes a token's type.
+ *
+ * Refused if tokens that refer to it would break.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param path - The token, such as `"color.primary"`.
+ * @param type - The new `$type`, such as `"color"`.
+ */
 export function setType(tokens: DesignTokens, path: string, type: TokenType): OperationResult {
     throw new Error("not implemented yet");
 }
 
-/** Turns a token made by a generator into an ordinary token written in the file. */
+/**
+ * Turns a generated token into one written in a file.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param path - The token a generator makes, such as `"color.blue.500"`.
+ */
 export function detach(tokens: DesignTokens, path: string): OperationResult {
     throw new Error("not implemented yet");
 }
 
-/** Adds a file to a set or to a modifier's context in the resolver. */
+/**
+ * Adds a file to a set or a context in the resolver.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param file - The file, such as `"brand.json"`.
+ * @param options - Where it goes.
+ */
 export function addFile(
     tokens: DesignTokens,
     file: string,
     options: {
+        /** The set or context to add it to, such as `{ modifier: "mode", context: "dark" }`. */
         to: { set: string } | { modifier: string; context: string };
         /**
          * The source to place it after.
@@ -330,34 +412,57 @@ export function addFile(
 }
 
 /**
- * Adds a context to a modifier, with a new file of its own.
+ * Adds a context to a modifier.
  *
- * @example
- * addContext(tokens, "theme", "dim", { file: "dim.json", basedOn: "dark" })
+ * The context gets a new file of its own.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param modifier - The modifier, such as `"mode"`.
+ * @param context - The new context's name, such as `"dim"`.
+ * @param options - Its file, and a context to build on.
  */
 export function addContext(
     tokens: DesignTokens,
     modifier: string,
     context: string,
     options: {
+        /** The new file, such as `"dim.json"`. */
         file: string;
-        /** An existing context to build on: its files come first. */
+        /** A context whose files come first, such as `"dark"`. */
         basedOn?: string;
     },
 ): OperationResult {
     throw new Error("not implemented yet");
 }
 
-/** Adds a modifier to the resolver. */
+/**
+ * Adds a modifier to the resolver.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param modifier - The new modifier's name, such as `"contrast"`.
+ * @param options - Its contexts and default.
+ */
 export function addModifier(
     tokens: DesignTokens,
     modifier: string,
-    options: { contexts: readonly string[]; default?: string },
+    options: {
+        /** Its contexts, such as `["normal", "high"]`. */
+        contexts: readonly string[];
+        /** Its default context, such as `"normal"`. */
+        default?: string;
+    },
 ): OperationResult {
     throw new Error("not implemented yet");
 }
 
-/** Renames a modifier's context. */
+/**
+ * Renames a modifier's context.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param modifier - The modifier, such as `"mode"`.
+ * @param from - The context's name now, such as `"dark"`.
+ * @param to - Its new name, such as `"night"`.
+ */
 export function renameContext(
     tokens: DesignTokens,
     modifier: string,
@@ -368,23 +473,38 @@ export function renameContext(
 }
 
 /**
- * Removes a modifier's context. Its files are left on disk unless `deleteFiles` is set, because
- * deleting a file should be the person's choice. Only files no other context or set reads are
- * deleted.
+ * Removes a modifier's context.
+ *
+ * Its files stay on disk unless `deleteFiles` is set. A file another context or set reads is
+ * never deleted.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param modifier - The modifier, such as `"mode"`.
+ * @param context - The context, such as `"dark"`.
+ * @param options - Whether to delete its files.
  */
 export function removeContext(
     tokens: DesignTokens,
     modifier: string,
     context: string,
     options?: {
-        /** @default false */
+        /**
+         * Whether to delete the context's files.
+         * @default false
+         */
         deleteFiles?: boolean;
     },
 ): OperationResult {
     throw new Error("not implemented yet");
 }
 
-/** Sets a modifier's default context. */
+/**
+ * Sets a modifier's default context.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param modifier - The modifier, such as `"mode"`.
+ * @param context - The new default, such as `"dark"`.
+ */
 export function setDefaultContext(
     tokens: DesignTokens,
     modifier: string,
@@ -394,52 +514,65 @@ export function setDefaultContext(
 }
 
 /**
- * An edit that could no longer be made, such as a change to a token someone has since deleted,
- * with a `reason` worded from its `kind` and the edit.
+ * An edit that can no longer be made.
  *
- * - `not-read`: the design tokens aren't read from the edit's file: an edit to a file never read,
- *   such as `package.json`, or a new file nothing would read, which would be lost.
- * - `gone`: the place the edit changes is no longer there.
- * - `changed`: what is there is no longer what the edit expected (`was`).
- * - `taken`: something different is already where the edit would write, or a sibling already
- *   has the new name.
- * - `not-a-group`: the `jsonPath` runs through something that isn't a group, or past the end of a
- *   list.
+ * `reason` is a sentence to show, made from `kind` and the edit.
+ *
+ * - `not-read` - the edit's file isn't read, such as `package.json`, or a new file nothing reads.
+ * - `gone` - the place the edit changes is gone.
+ * - `changed` - the value there isn't what the edit expected, its `was`.
+ * - `taken` - something else is already where the edit writes, or a sibling has the new name.
+ * - `not-a-group` - `jsonPath` goes through something that isn't a group, or past the end of an
+ *   array.
  */
 export interface Conflict {
+    /** The edit. */
     op: FileOp;
+    /** What stops it, such as `"changed"`. */
     kind: "not-read" | "gone" | "changed" | "taken" | "not-a-group";
+    /**
+     * A sentence to show, such as "`color.primary.$value` in `color.json` has changed since the
+     * edit was made".
+     */
     reason: string;
 }
 
 /**
- * The outcome of {@link getChangedFiles}. Test it by its field: `changes.textByFile`, or
- * `changes.conflicts`.
+ * What {@link getChangedFiles} returns.
+ *
+ * It has `textByFile` when the edits apply, or `conflicts` when they don't.
  */
 export type ChangedFiles =
     | {
           /** The design tokens as read from the new text. */
           tokens: DesignTokens;
-          /** The new text of each file the edits change or create, by file. */
+          /** The new text of each file the edits change or create. */
           textByFile: Record<string, string>;
           /** The files the edits delete. */
           deleted: string[];
           conflicts?: undefined;
       }
-    | { conflicts: Conflict[]; tokens?: undefined };
+    | {
+          /** The edits that can no longer be made. */
+          conflicts: Conflict[];
+          tokens?: undefined;
+      };
 
 export { apply, getChangedFiles, commit } from "./apply.js";
 
 export { combine } from "./combine.js";
 
 /**
- * An operation for {@link combine}: given the design tokens the operations before it leave, it
- * makes its edit from them, as `(current) => remove(current, path)` does.
+ * An operation for {@link combine}, such as `(current) => remove(current, path)`.
+ *
+ * It's passed the design tokens the operations before it leave.
  */
 export type Operation = (tokens: DesignTokens) => OperationResult;
 
 /**
- * The outcome of {@link apply}. Test it by its field: `next.tokens`, or `next.conflicts`.
+ * What {@link apply} returns.
+ *
+ * It has `tokens` when the edits apply, or `conflicts` when they don't.
  */
 export type ApplyResult =
     | {
@@ -447,194 +580,283 @@ export type ApplyResult =
           tokens: DesignTokens;
           conflicts?: undefined;
       }
-    | { conflicts: Conflict[]; tokens?: undefined };
+    | {
+          /** The edits that can no longer be made. */
+          conflicts: Conflict[];
+          tokens?: undefined;
+      };
 
 /**
- * The outcome of {@link commit}. Test it by its field: `done.tokens`, `done.question`,
- * `done.refusal` or `done.conflicts`.
+ * What {@link commit} and {@link Session.do} return.
+ *
+ * It has `tokens` when it worked. Otherwise it has `question`, `refusal` or `conflicts`.
  */
 export type CommitResult =
     | {
           /** The design tokens with the edits applied. */
           tokens: DesignTokens;
-          /** The edits that were applied, for undo, saving, and sharing. */
+          /** The edits applied. */
           ops: readonly FileOp[];
-          /** Tokens and groups whose path changed, for keeping a selection or a URL on them. */
+          /** Tokens and groups whose path changed. */
           moves: readonly Move[];
           question?: undefined;
           refusal?: undefined;
           conflicts?: undefined;
       }
-    | { question: Question; tokens?: undefined; refusal?: undefined; conflicts?: undefined }
-    | { refusal: Refusal; tokens?: undefined; question?: undefined; conflicts?: undefined }
-    | { conflicts: Conflict[]; tokens?: undefined; question?: undefined; refusal?: undefined };
+    | {
+          /** The choice to ask a person to make. */
+          question: Question;
+          tokens?: undefined;
+          refusal?: undefined;
+          conflicts?: undefined;
+      }
+    | {
+          /** Why it can't be done. */
+          refusal: Refusal;
+          tokens?: undefined;
+          question?: undefined;
+          conflicts?: undefined;
+      }
+    | {
+          /** The edits that can no longer be made. */
+          conflicts: Conflict[];
+          tokens?: undefined;
+          question?: undefined;
+          refusal?: undefined;
+      };
 
 /**
- * One thing done in a session: the edits of one operation, with the moves it made, kept or dropped
- * together. A rename that changes several files is one step, so it is never half kept.
+ * One operation's edits in a session.
+ *
+ * They're kept or dropped together. A rename that changes several files is one step.
  */
 export interface EditStep {
+    /** The edits. */
     readonly ops: readonly FileOp[];
+    /** Tokens and groups whose path changed. */
     readonly moves: readonly Move[];
 }
 
 /**
- * Edits as a session keeps them: one {@link EditStep} for each operation done, in order. What a
- * save writes, all or nothing, and what a reload puts back, each step whole or not at all.
+ * The edits a session keeps, one {@link EditStep} per operation.
+ *
+ * A save writes them all or none. A reload puts back each step whole, or not at all.
  */
 export interface Edits {
+    /** The steps in the order they were done. */
     readonly steps: readonly EditStep[];
 }
 
 export { isEdits } from "./is-edits.js";
 
 /**
- * An unsaved {@link EditStep} that no longer fits the files, left out whole: someone else changed
- * or removed what it changes, or its file is gone. One per step, however many files it changes.
+ * An unsaved step that no longer fits the files.
+ *
+ * Someone else changed or removed what it changes, or deleted its file. The step is left out
+ * whole.
+ *
+ * @example
+ * // You set color.primary to {color.blue.300}. A pull changed it in color.json.
+ * session.rebase(fresh)[0].parts
+ * // => [{ file: "color.json", jsonPath: ["color", "primary"], path: "color.primary",
+ * //       yours: { $type: "color", $value: "{color.blue.300}" },
+ * //       theirs: { $type: "color", $value: { colorSpace: "srgb", components: [0.2, 0.4, 1] } } }]
  */
 export interface Clash {
-    /** The step left out, as it was done: its edits, and the moves it made. */
+    /** The step left out. */
     readonly step: EditStep;
-    /** Each part of a file the step changes, such as a token, a group or the resolver's list of sources. */
+    /** Each part of a file the step changes, such as a token or a group. */
     readonly parts: readonly ClashPart[];
     /**
-     * Whether {@link keepYours} can write yours over theirs: every part the step changes is still
-     * there in the files. Not when one was removed or renamed since, or its file is gone.
+     * Whether {@link keepYours} can settle it.
+     *
+     * It's `false` when a part was removed or renamed since, or its file is gone.
      */
     readonly canKeepYours: boolean;
 }
 
-/** One part of a file an unsaved step changes, with your side and theirs. */
+/** One part of a file that a clashing step changes. */
 export interface ClashPart {
-    /** The file the edits change. */
+    /** The file, such as `"color.json"`. */
     readonly file: string;
-    /** Where in the file: its route through the file's JSON; `[]` for the whole file. */
+    /** Where in the file, such as `["color", "primary"]`. It's `[]` for the whole file. */
     readonly jsonPath: JsonPath;
-    /** The token or group at `jsonPath`, when one is there. */
+    /** The token or group there, such as `"color.primary"`. */
     readonly path?: string;
-    /** What the edits write for it there, put on top of the file as it is now; absent when they remove it. */
+    /** What your step writes there. It's absent when your step removes it. */
     readonly yours?: JsonValue;
-    /** What the file has for it now; absent when it isn't there, or the file is gone. */
+    /** What the file has there now. It's absent when nothing is there. */
     readonly theirs?: JsonValue;
 }
 
-/** How {@link Session.do} keeps an edit among the steps undo takes back. */
+/** Options for how {@link Session.do} groups edits into steps. */
 export interface StepOptions {
     /**
-     * The field the edit comes from, such as `"value color.brand"`: edits given the same `mergeKey`
-     * one after another are one step.
+     * A key for merging edits into one step, such as `"value color.primary"`.
+     *
+     * Edits in a row with the same key are one step.
      */
     readonly mergeKey?: string;
 }
 
 /**
- * An editing session: design tokens as a person edits them, with undo, the unsaved edits, and
- * what changed since they were opened. It changes as it is used, like a store; the design tokens in
- * it never do. Writing is left to the tool: send {@link Session.unsavedEdits} wherever saves go, then
- * call {@link Session.markSaved}.
+ * An editing session that keeps unsaved edits and undo.
+ *
+ * The session changes as it's used. The design tokens in it never do. To save, send
+ * {@link Session.unsavedEdits}, then call {@link Session.markSaved}.
  *
  * @example
+ * // Undo a rename
  * const session = createSession(tokens);
- * session.do(rename(session.tokens, "color.brand", "primary"));
+ * session.do(rename(session.tokens, "color.primary", "brand"));
  * session.undo();
+ * session.canUndo
+ * // => false
  */
 export interface Session {
-    /** The current version. */
+    /** The design tokens as they are now. */
     readonly tokens: DesignTokens;
     /**
-     * The version the unsaved edits are measured from: as opened, as last saved, or as last
-     * rebased onto.
+     * The design tokens the unsaved edits start from.
+     *
+     * They're the tokens as opened, last saved, or last rebased.
      */
     readonly savedTokens: DesignTokens;
-    /** The edits since {@link Session.savedTokens}, with the moves they made: what a save sends, and what to keep for a reload. */
+    /**
+     * The edits since {@link Session.savedTokens}.
+     *
+     * Send them to save, or keep them for a reload.
+     */
     readonly unsavedEdits: Edits;
-    /** Whether there is an unsaved step to undo. */
+    /** Whether there's an unsaved step to undo. */
     readonly canUndo: boolean;
-    /** Whether there is an undone step to do again. */
+    /** Whether there's an undone step to redo. */
     readonly canRedo: boolean;
     /**
-     * Commits an operation's result. On success the design tokens move on, the change is a new
-     * unsaved step, and nothing undone can be done again; otherwise nothing changes, and the
-     * answer says why.
+     * Commits an operation's result as a new step.
      *
-     * Edits given the same `mergeKey` one after another are one step, undone as one, such as every
-     * move of a slider for one value. Several edits to one place in a file are kept as one, and a
-     * step whose edits come back to where it started is dropped, the design tokens going back to
-     * those before it. Anything else ends the step: an edit with another `mergeKey` or none, undo,
-     * redo, a save, a discard, a reload, a change on disk, or {@link Session.endStep}.
+     * A question or a refusal changes nothing and is returned as it is. Nothing undone can be redone
+     * after it. A step that ends where it started is dropped.
+     *
+     * @param result - An operation's result, such as from {@link setValue}.
+     * @param options - How to group it into steps.
      *
      * @example
-     * session.do(setValue(session.tokens, "color.brand", next), { mergeKey: "value color.brand" });
+     * // Two changes from one field are one step
+     * session.do(setValue(session.tokens, "color.blue.500", first), { mergeKey: "value color.blue.500" });
+     * session.do(setValue(session.tokens, "color.blue.500", second), { mergeKey: "value color.blue.500" });
+     * session.unsavedEdits.steps.length
+     * // => 1
      */
     do(result: OperationResult, options?: StepOptions): CommitResult;
     /**
-     * Ends the step edits are being merged into, so the next edit is a step of its own even with
-     * the same `mergeKey`. Call it when a save starts, since the session can't see that, so the step
-     * being sent doesn't change under it.
+     * Ends the step edits are merging into.
+     *
+     * Call it when a save starts, so the step being sent doesn't change.
      */
     endStep(): void;
-    /** Commits an operation's result without keeping it, for previewing, such as while a slider moves. */
+    /**
+     * Commits an operation's result without keeping it.
+     *
+     * @param result - An operation's result, such as from {@link setValue}.
+     */
     preview(result: OperationResult): CommitResult;
     /**
-     * Takes back the last unsaved step, whole, going back to the design tokens before it and the
-     * IDs they had. Undo stops at a save: with nothing unsaved, nothing happens.
+     * Undoes the last unsaved step.
+     *
+     * The design tokens and IDs go back to what they were before it. Undo stops at the last save.
      */
     undo(): void;
-    /** Does again the last step undone, as the same step. Nothing happens when there is none. */
+    /** Redoes the last undone step. Nothing happens when there is none. */
     redo(): void;
-    /** What changed since {@link Session.savedTokens}, renames included. */
-    getChanges(): readonly Change[];
     /**
-     * Records that the unsaved edits were saved: the current version becomes
-     * {@link Session.savedTokens}. Undo stops here: what was saved can't be undone, and what was undone
-     * before the save can't be done again.
-     *
-     * Given the edits a save sent, as {@link Session.unsavedEdits} was when it began, only those count
-     * as saved: anything done while the save was on its way stays unsaved, measured from them.
-     * Nothing counts as saved when the session no longer holds them, such as after a discard.
+     * Lists what changed since {@link Session.savedTokens}, renames included.
      *
      * @example
+     * // After renaming color.primary to color.brand, in light and in dark
+     * session.getChanges().map((change) => change.kind)
+     * // => ["renamed", "renamed"]
+     */
+    getChanges(): readonly Change[];
+    /**
+     * Records that the unsaved edits were saved.
+     *
+     * The current design tokens become {@link Session.savedTokens}. Undo stops here.
+     *
+     * @param sent - {@link Session.unsavedEdits} as it was when the save began, so later edits
+     *   stay unsaved. Left out, every unsaved edit counts as saved.
+     *
+     * @example
+     * // Save, then mark what was sent as saved
      * const sent = session.unsavedEdits;
      * await save(sent);
      * session.markSaved(sent);
+     * session.canUndo
+     * // => false
      */
     markSaved(sent?: Edits): void;
-    /** Goes back to {@link Session.savedTokens} and drops the unsaved edits, so there is nothing to undo or redo. */
+    /**
+     * Drops the unsaved edits, going back to {@link Session.savedTokens}.
+     *
+     * Nothing is left to undo or redo.
+     */
     discard(): void;
     /**
-     * Puts back unsaved edits kept from before a reload, such as in session storage, on top
-     * of the current version, where they are unsaved again; {@link Session.discard} still goes
-     * back to {@link Session.savedTokens}. Each {@link EditStep} whose edits all still fit is put back
-     * whole; a step with one that doesn't is left out whole, so a rename is never half kept, and
-     * comes back as one {@link Clash}, holding each part of a file it changes. The steps put back
-     * can be undone one at a time; nothing undone before can be done again.
+     * Puts back unsaved edits kept from before a reload.
+     *
+     * A step that no longer fits is left out whole, and returned as a {@link Clash}.
+     *
+     * @param edits - Edits kept from {@link Session.unsavedEdits}, such as in session storage.
+     *
+     * @example
+     * // Edits kept from before a reload, which all still fit
+     * session.restore(kept)
+     * // => []
      */
     restore(edits: Edits): Clash[];
     /**
-     * Takes in files that changed underneath the session, such as after a `git pull`: `fresh`
-     * becomes {@link Session.savedTokens}, and each unsaved {@link EditStep} whose edits all still fit is
-     * put back on top of it, whole; a step with one that doesn't is left out whole, and comes back as
-     * one {@link Clash}, holding each part of a file it changes, the files showing theirs. A
-     * token still there keeps its ID, one gone loses it, and a new one gets a new ID. The steps
-     * put back can still be undone; nothing undone before can be done again.
-     */
-    rebase(fresh: DesignTokens): Clash[];
-    /** Calls `listener` whenever the session changes. Returns a function that stops listening. */
-    subscribe(listener: () => void): () => void;
-    /**
-     * The ID of the token or group at `path`, for a screen to hold in place of the path, so a
-     * selection or a URL stays on it through renames. A token or group has its path when opened as
-     * its ID, and one made in the session an ID starting `new:`, so it never takes the ID of one
-     * renamed away from its path. A removed one's ID is forgotten. `undefined` when nothing is at
-     * `path`.
+     * Takes in files that changed underneath the session.
+     *
+     * `fresh` becomes {@link Session.savedTokens}, with the unsaved steps on top. A step that no
+     * longer fits is left out whole, and returned as a {@link Clash}.
+     *
+     * @param fresh - The design tokens read again, such as after a `git pull`.
      *
      * @example
-     * const id = session.getID("color.brand");
-     * session.do(rename(session.tokens, "color.brand", "primary"));
-     * session.getPath(id); // "color.primary"
+     * // You set color.primary to {color.blue.300}. A pull changed it in color.json.
+     * session.rebase(fresh).map((clash) => clash.canKeepYours)
+     * // => [true]
+     */
+    rebase(fresh: DesignTokens): Clash[];
+    /**
+     * Calls `listener` whenever the session changes.
+     *
+     * @param listener - The function to call.
+     * @returns A function that stops listening.
+     */
+    subscribe(listener: () => void): () => void;
+    /**
+     * Returns the ID of the token or group at `path`.
+     *
+     * The ID stays the same through renames and rebases.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
+     *
+     * @example
+     * // Follow color.primary through a rename
+     * const id = session.getID("color.primary");
+     * session.do(rename(session.tokens, "color.primary", "brand"));
+     * session.getPath(id)
+     * // => "color.brand"
      */
     getID(path: string): string | undefined;
-    /** Where the token or group with this ID is now, or `undefined` once it is removed. */
+    /**
+     * Returns the path of the token or group with this ID.
+     *
+     * It's `undefined` once the token or group is removed.
+     *
+     * @param id - An ID from {@link Session.getID}, such as `"color.primary"`.
+     */
     getPath(id: string): string | undefined;
 }
 

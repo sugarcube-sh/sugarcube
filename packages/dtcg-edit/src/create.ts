@@ -4,22 +4,22 @@ import type { FileOp, NewToken, OperationResult, ContextOptions } from "./index.
 import { createQuestion, findNewPlacement } from "./placement.js";
 
 /**
- * Creates a token or a group at `path`, at the end of the group it goes in; a path with no dot is
- * made at the top level.
+ * Creates a token or a group.
  *
- * The new key goes in a file that context may write: without an `input`, a whole file every
- * permutation reads; with one, a whole file only that context reads. Of those, a file that already
- * writes the parent group is taken, so the new key sits beside its siblings; when no such file
- * settles it, the answer is a placement {@link Question}. A new group is written as `{}`.
+ * It goes at the end of its group in a file that already writes that group. Otherwise a {@link Question} asks which file.
  *
- * Written as given: a token whose type can't be worked out is still written, and the read
- * reports it. Refused, with the reason: a name the spec forbids, or an empty one; a path already
- * taken; a shared token made again for one context, which is an override ({@link setValue});
- * a group to go in that doesn't exist or is a token; or a context with no whole file of its own.
+ * @param tokens - The design tokens to edit.
+ * @param path - The new token or group, such as `"color.secondary"`.
+ * @param token - The token, or `{ group: true }` for a group.
+ * @param options - The context it's for, and `after`, the sibling to place it after.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
  *
  * @example
- * create(tokens, "color.brand.950", { $value: "{color.brand.900}" })
- * create(tokens, "color.raw", { group: true }, { input: { mode: "dark" } })
+ * // A new token beside color.primary
+ * create(tokens, "color.secondary", { $type: "color", $value: "{color.blue.300}" }).ops
+ * // => [{ kind: "add", file: "color.json", jsonPath: ["color", "secondary"],
+ * //       value: { $type: "color", $value: "{color.blue.300}" } }]
  */
 export function create(
     tokens: DesignTokens,

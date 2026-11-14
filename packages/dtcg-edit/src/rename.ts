@@ -6,21 +6,24 @@ import type { Member } from "./file-text.js";
 import { getJsonAt } from "@sugarcube-sh/dtcg/editor";
 
 /**
- * Renames a token or group where each is written, and rewrites every reference to it or to
- * anything inside it, in whichever file it is written, the resolver too: `{…}` references,
- * `$ref` pointers (keeping their steps into the value), and `$extends`. Text that only looks like
- * a reference, such as a `$description` mentioning `{color.brand}`, is left alone. References are
- * found in the permutations the read built, so a read limited by `inputs` can miss one written in
- * a file only another permutation reads. `moved` gives the path that changed, which a session's
- * IDs and `tokens.getChangesSince` follow. A reference a generator makes is written in no file, so it is left
- * as it is, and its token is listed in `broken`.
+ * Renames a token or group and every reference to it.
  *
- * Refused, with the reason: a path that is neither a token nor a group, a name already taken or
- * one the spec forbids, a token a generator makes, or a token or group inherited through
- * `$extends`.
+ * It rewrites references in every file, including `$ref` pointers and `$extends`. A reference a generator makes is
+ * left as it is, and its token is in `pathsWithBrokenReferences`.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param path - The token or group, such as `"color.primary"`.
+ * @param newName - Its new name, without its group, such as `"brand"`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#curly-brace-syntax-token-references | Format 7.1.1, Curly brace syntax}
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | Format 7.1.2, JSON Pointer syntax}
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#extending-groups | Format 6.4, Extending Groups}
  *
  * @example
- * session.do(rename(session.tokens, "color.brand", "primary"));
+ * // button.background's reference follows the rename
+ * rename(tokens, "color.primary", "brand").ops?.at(-1)
+ * // => { kind: "set", file: "color.json", jsonPath: ["button", "background", "$value"],
+ * //      value: "{color.brand}", was: "{color.primary}" }
  */
 export function rename(tokens: DesignTokens, path: string, newName: string): OperationResult {
     const parent = tokenPath.getParent(path);

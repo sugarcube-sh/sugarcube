@@ -37,18 +37,24 @@ interface FileTexts {
 }
 
 /**
- * Applies edits to the design tokens' text in order and reads the result as they were read,
- * returning the new design tokens. Every other line of each file is left as written.
+ * Applies edits to the design tokens' text and reads them again.
  *
- * All or nothing: if any edit no longer applies, none is made, and every such edit comes back
- * with its reason. An edit no longer applies when its place has gone, when what it expects to
- * find (`was`) has changed since it was made, or when its file is one the design tokens aren't read
- * from, a new file included. An edit whose result is already there does nothing.
+ * Other lines stay as written. If any edit no longer applies, none are made, and the conflicts
+ * are returned.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param ops - The edits, such as an operation's `ops`.
  *
  * @example
- * const next = apply(tokens, saved.ops);
- * if (next.conflicts) showConflicts(next.conflicts);
- * else tokens = next.tokens;
+ * // Set the shared color.primary to {color.blue.300}
+ * const { ops } = setValue(tokens, "color.primary", "{color.blue.300}");
+ * apply(tokens, ops!).tokens?.getDefinitions("color.primary")[0].json
+ * // => { $type: "color", $value: "{color.blue.300}" }
+ *
+ * @example
+ * // color.primary changed in color.json after the edit was made
+ * apply(latest, ops!).conflicts?.map((conflict) => conflict.kind)
+ * // => ["changed"]
  */
 export function apply(tokens: DesignTokens, ops: readonly FileOp[]): ApplyResult {
     const changes = applyToTexts(tokens, ops);
@@ -56,16 +62,17 @@ export function apply(tokens: DesignTokens, ops: readonly FileOp[]): ApplyResult
 }
 
 /**
- * What saving edits would do to the files, without saving them: the new text of each file the edits
- * change, and the files they delete, with the design tokens as read from the result. Only a
- * `delete-file` edit deletes a file, so one the resolver stops naming is kept. For saving somewhere
- * that takes whole files, such as a pull request. All or nothing, as {@link apply}: if any edit no
- * longer applies, the answer is the conflicts.
+ * Returns each file's new text after edits.
+ *
+ * Nothing is saved. Only a `delete-file` edit deletes a file, even when the resolver stops naming it.
+ *
+ * @param tokens - The design tokens the edits are for.
+ * @param edits - The edits, such as {@link Session.unsavedEdits}.
  *
  * @example
- * const changes = getChangedFiles(tokens, session.unsavedEdits);
- * if (changes.conflicts) showConflicts(changes.conflicts);
- * else await openPullRequest(changes);
+ * // After setting the shared color.primary to {color.blue.300}
+ * Object.keys(getChangedFiles(tokens, session.unsavedEdits).textByFile ?? {})
+ * // => ["color.json"]
  */
 export function getChangedFiles(tokens: DesignTokens, edits: Edits): ChangedFiles {
     return applyToTexts(
@@ -161,12 +168,17 @@ function findUnreadCreates(next: DesignTokens, ops: readonly FileOp[]): FileOp[]
 }
 
 /**
- * Applies an operation's result in one step, as {@link apply} does. A question or a refusal is
- * handed back untouched.
+ * Applies an operation's result, as {@link apply} does.
+ *
+ * A question or a refusal is returned as it is.
+ *
+ * @param tokens - The design tokens the operation was made from.
+ * @param result - The operation's result, such as from {@link rename}.
  *
  * @example
- * const done = commit(tokens, rename(tokens, "color.brand", "primary"));
- * if (done.tokens) tokens = done.tokens;
+ * // Rename color.primary to color.brand
+ * commit(tokens, rename(tokens, "color.primary", "brand")).moves
+ * // => [{ from: "color.primary", to: "color.brand" }]
  */
 export function commit(tokens: DesignTokens, result: OperationResult): CommitResult {
     if (!result.ops) return result;

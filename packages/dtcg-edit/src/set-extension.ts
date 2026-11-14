@@ -10,36 +10,26 @@ import {
 } from "./placement.js";
 
 /**
- * Changes one setting inside a token's or group's `$extensions`, leaving the rest as written, so
- * other tools' settings are kept: "Tools that process design token files MUST preserve any
- * extension data they do not themselves understand" (Format 5.2.3). `jsonPath` starts with the
- * extension's key; give only the key to replace the whole extension. `null` removes the setting.
+ * Changes one setting in a token's or group's `$extensions`.
  *
- * A token's extensions are written per place, as its value is: without options the shared place
- * changes, with `input` that context's own (a new override is the token's own properties with the
- * setting changed, as {@link setValue} makes one), with `at` the place given. A group's setting is
- * written where its extension is used, since a later file's extension replaces an earlier one's
- * whole; with `input`, a context is given the extension it uses, whole, with the setting changed.
+ * A token's goes where {@link setValue} writes its value. A group's goes where its extension is
+ * written. One inherited through `$extends` becomes the group's own copy.
  *
- * The value is written exactly as given. Whether the setting is right is for the read to say, as
- * with any edit. Removing a setting that isn't there changes nothing.
+ * @param tokens - The design tokens to edit.
+ * @param path - The token or group, such as `"color.primary"`.
+ * @param jsonPath - The setting, starting with the extension's key, such as
+ *   `["com.example", "contrast"]`. The key alone replaces the whole extension.
+ * @param value - The new value, written as passed, such as `"AA"`, or `null` to remove it.
+ * @param options - Where the change goes.
  *
- * A group that takes the extension from the group it extends is given its own copy, whole, with the
- * setting changed, so its other settings are kept: "Replace any inherited tokens/properties where
- * local ones exist" (Format 6.4.2) replaces a key whole, so writing the one setting alone would
- * lose the rest.
- *
- * Refused, with the reason: a path that is neither a token nor a group, a token a generator makes,
- * a token or group there only because of `$extends`, and the refusals {@link setValue} gives for
- * where a value goes.
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#extensions | Format 5.2.3, Extensions}
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#extending-groups | Format 6.4, Extending Groups}
  *
  * @example
- * setExtension(tokens, "space", ["com.example", "scale", "ratio"], 1.333)
- * const [place] = tokens.getDefinitions("space.gutter");
- * if (place) {
- *   const min = { value: 1.5, unit: "rem" };
- *   setExtension(tokens, "space.gutter", ["com.example", "fluid", "min"], min, { at: place.span });
- * }
+ * // A setting of your own on color.primary
+ * setExtension(tokens, "color.primary", ["com.example", "contrast"], "AA").ops
+ * // => [{ kind: "add", file: "color.json",
+ * //       jsonPath: ["color", "primary", "$extensions", "com.example", "contrast"], value: "AA" }]
  */
 export function setExtension(
     tokens: DesignTokens,

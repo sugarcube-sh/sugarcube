@@ -9,39 +9,21 @@ import { setProperty } from "./property.js";
 /**
  * Changes a token's value.
  *
- * Without an `input`, the shared value changes: one edit where a file every permutation reads
- * writes the token, seen by every context that doesn't override it. With an `input`, such as
- * `{ mode: "dark" }`, that context's own value changes: its override is edited, or one is added
- * to a file that context reads and the others don't; when there are several such files, and not
- * exactly one of them declares the token's group, the answer is a placement {@link Question}. A
- * context at its default counts as none. A later file replaces a token whole (Resolver 3.3), so a
- * new override also writes what the token says itself: its own `$type`, `$description`,
- * `$deprecated` and `$extensions`, not those it takes from a group.
+ * With `input`, it adds an override when the context has none. When several files could take the
+ * override, a {@link Question} asks which.
  *
- * With `at`, a place from `tokens.getDefinitions(path)`, the value written at that place changes
- * instead, whichever contexts read it.
+ * @param tokens - The design tokens to edit.
+ * @param path - The token, such as `"button.background"`.
+ * @param value - The new `$value`, written as passed, such as `"{color.blue.300}"`.
+ * @param options - Where the change goes, and which part of the value.
  *
- * With `part`, only that part of the value changes, such as a shadow's `["color"]`, and every
- * other part stays as the file writes it. A part takes a value or a reference, as the spec allows:
- * "Sub-values may be explicit values (e.g. `color` values) or references to other design tokens
- * that have the sub-value's type" (Format 9).
- *
- * The value is written exactly as given, as JSON, keeping the file's own spelling. A value the
- * read finds wrong, such as a reference to a token not made yet, is still written, and the read
- * reports it.
- *
- * Refused, with the reason: a token that doesn't exist, one a generator makes, one a group
- * inherits through `$extends`, an override for two contexts at once, a context with no whole
- * file of its own, an override a file read later would hide, a shared value when every
- * context writes its own, a place `at` where the token isn't written, a `part` with a reference
- * to another token on the way to it, or a `part` the value has nowhere to put.
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#ordering | Resolver 6.2, Ordering}
  *
  * @example
- * setValue(tokens, "color.danger", "{color.red.600}")
- * setValue(tokens, "color.danger", "{color.red.400}", { input: { mode: "dark" } })
- * const dark = tokens.getDefinitions("color.danger").find(({ span }) => span.file === "dark.json");
- * if (dark) setValue(tokens, "color.danger", "{color.red.400}", { at: dark.span });
- * setValue(tokens, "shadow.raised", "{color.neutral.900}", { part: [1, "color"] })
+ * // button.background in dark only, where it has no override yet
+ * setValue(tokens, "button.background", "{color.blue.300}", { input: { mode: "dark" } }).ops
+ * // => [{ kind: "add", file: "dark.json", jsonPath: ["button", "background"],
+ * //       value: { $type: "color", $value: "{color.blue.300}" } }]
  */
 export function setValue(
     tokens: DesignTokens,
@@ -122,17 +104,21 @@ function replacePart(
 }
 
 /**
- * Changes a token's description in every file that writes the token, so every context keeps the
- * same one, or a group's in the file that writes it. `null` removes it; removing one that isn't
- * there changes nothing. A group that takes its description from the group it extends is given
- * its own, as the spec allows: "Replace any inherited tokens/properties where local ones exist"
- * (Format 6.4.2).
+ * Changes a token's or group's description.
  *
- * Refused, with the reason: a path that is neither a token nor a group, a token a generator
- * makes, or a token or group there only because of `$extends`.
+ * A token's is written in every file that writes the token. A group inheriting one through
+ * `$extends` gets its own.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param path - The token or group, such as `"color.primary"`.
+ * @param description - The new `$description`, or `null` to remove it.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#extending-groups | Format 6.4, Extending Groups}
  *
  * @example
- * setDescription(tokens, "color.brand", "The house colour.")
+ * // color.json and dark.json both write color.primary
+ * setDescription(tokens, "color.primary", "The main brand color.").ops?.map((op) => op.file)
+ * // => ["color.json", "dark.json"]
  */
 export function setDescription(
     tokens: DesignTokens,

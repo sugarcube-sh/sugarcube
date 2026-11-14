@@ -3,16 +3,17 @@ import type { OverridableContext } from "./index.js";
 import { getInputContext, findContextPlacement } from "./placement.js";
 
 /**
- * Each context the token at `path` can be given its own value for: one that doesn't write the
- * token already, with a file of its own to hold the override where no later file would hide it.
- * Each gives the `input` that {@link setValue} writes the override with, so a tool offers only
- * overrides that will be written. A modifier's default is never listed: a value for it is the
- * shared one.
+ * Lists the contexts a token can have its own value in.
+ *
+ * They're the contexts with no override yet and a file one can go in. A modifier's default isn't included.
+ *
+ * @param tokens - The design tokens.
+ * @param path - The token, such as `"button.background"`.
  *
  * @example
- * for (const { input, label } of getOverridableContexts(tokens, "color.brand")) {
- *     offer(`Override for ${label}`, (value) => setValue(tokens, "color.brand", value, { input }));
- * }
+ * // dark.json doesn't write button.background yet
+ * getOverridableContexts(tokens, "button.background")
+ * // => [{ input: { mode: "dark" }, label: "mode: dark" }]
  */
 export function getOverridableContexts(
     tokens: DesignTokens,

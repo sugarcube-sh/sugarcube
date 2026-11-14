@@ -5,19 +5,20 @@ import { isGone } from "./clashes.js";
 import { findAffectedPermutations } from "./placement.js";
 
 /**
- * Settles a {@link Clash} by keeping your side: what your step wrote is written over theirs at
- * every part it changes, expecting theirs, as an edit like any other to commit with
- * {@link Session.do}; a part you removed is removed. Refused (`removed-since`) when the clash
- * isn't {@link Clash.canKeepYours}: a part was removed or renamed since, and in a file a rename looks
- * the same as a removal, so yours isn't written over something else. Keeping theirs needs no edit:
- * the files already show it.
+ * Settles a {@link Clash} by keeping your side.
+ *
+ * It returns edits that write yours over theirs, for {@link Session.do}. Keeping theirs needs no
+ * edit.
+ *
+ * @param tokens - The session's design tokens, such as `session.tokens`.
+ * @param clash - A clash from {@link Session.rebase} or {@link Session.restore}.
  *
  * @example
- * for (const clash of session.rebase(fresh)) {
- *     if (clash.canKeepYours && (await askKeepYours(clash))) {
- *         session.do(keepYours(session.tokens, clash));
- *     }
- * }
+ * // You set color.primary to {color.blue.300}. A pull changed it in color.json.
+ * keepYours(session.tokens, clash).ops
+ * // => [{ kind: "set", file: "color.json", jsonPath: ["color", "primary"],
+ * //       value: { $type: "color", $value: "{color.blue.300}" },
+ * //       was: { $type: "color", $value: { colorSpace: "srgb", components: [0.2, 0.4, 1] } } }]
  */
 export function keepYours(tokens: DesignTokens, clash: Clash): OperationResult {
     const gonePart = clash.parts.find(isGone);

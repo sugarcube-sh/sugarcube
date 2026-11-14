@@ -6,29 +6,23 @@ import { getChangedFiles } from "./apply.js";
 import type { ChangedFiles, Edits } from "./index.js";
 
 /**
- * Applies edits to the files of design tokens on disk, given by their resolver or token file and
- * the options they are read with, as `createLiveTokens` takes them. Each file is read as it is now, so
- * changes made there in the meantime are kept; an edit that no longer applies, as {@link apply}
- * decides, is returned as a conflict, and so is an edit to a file the design tokens aren't read
- * from, such as `package.json`, or a new file nothing reads.
+ * Applies edits to the token files on disk.
  *
- * Every edit is applied in memory before any file is written, so if one fails, nothing is
- * written. Each file is written to a temporary copy and then renamed into place, so no file is
- * left half-written. Gives back what {@link getChangedFiles} gives: the design tokens as read from
- * the files written, each file written with its new text, and the files deleted.
+ * Each file is read as it is now, so changes made since are kept. If any edit no longer applies,
+ * nothing is written.
+ *
+ * @param source - Where the tokens are, such as `{ entryFile: "tokens/tokens.resolver.json" }`.
+ * @param edits - The edits, such as {@link Session.unsavedEdits}.
+ * @returns What {@link getChangedFiles} returns, for the files written.
  *
  * @example
- * const onDisk = { entryFile: "tokens/tokens.resolver.json", options };
- * const saved = await applyToDisk(onDisk, session.unsavedEdits);
- * if (saved.tokens) {
- *     session.markSaved();
- *     session.rebase(saved.tokens);
- * }
+ * // Save the shared color.primary set to {color.blue.300}
+ * const saved = await applyToDisk({ entryFile: "tokens/tokens.resolver.json" }, session.unsavedEdits);
+ * Object.keys(saved.textByFile ?? {})
+ * // => ["color.json"]
  */
-export async function applyToDisk(
-    { entryFile, options }: TokensOnDisk,
-    edits: Edits,
-): Promise<ChangedFiles> {
+export async function applyToDisk(source: TokensOnDisk, edits: Edits): Promise<ChangedFiles> {
+    const { entryFile, options } = source;
     const changes = getChangedFiles(await read(entryFile, options), edits);
     if (changes.conflicts) return changes;
 

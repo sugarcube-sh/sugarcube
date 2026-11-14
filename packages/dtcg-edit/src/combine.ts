@@ -6,13 +6,21 @@ import type { FileOp, OperationResult, Operation } from "./index.js";
 type AcceptedResult = Extract<OperationResult, { ops: readonly FileOp[] }>;
 
 /**
- * Puts several edits together as one: each operation is given the design tokens the operations
- * before it leave, and the result holds every operation's edits, so they are committed, undone or
- * refused as a whole. An operation that asks a question makes the whole ask it, and answering
- * carries on with the operations after it; one that is refused refuses the whole, with its reason.
+ * Combines several operations into one.
+ *
+ * They're committed and undone together. Each is passed the design tokens the ones before it leave. Answering a question from one
+ * carries on with the rest.
+ *
+ * @param tokens - The design tokens to edit.
+ * @param operations - The operations, in order, such as `(current) => remove(current, path)`.
  *
  * @example
- * const edit = combine(tokens, unused.map((path) => (current) => remove(current, path)));
+ * // Change color.primary, then rename it
+ * combine(tokens, [
+ *     (current) => setValue(current, "color.primary", "{color.blue.300}"),
+ *     (current) => rename(current, "color.primary", "brand"),
+ * ]).ops?.map((op) => op.kind)
+ * // => ["set", "rename-key", "rename-key", "set"]
  */
 export function combine(tokens: DesignTokens, operations: readonly Operation[]): OperationResult {
     return runOperations(tokens, tokens, operations, []);

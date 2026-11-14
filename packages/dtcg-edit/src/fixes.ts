@@ -8,18 +8,17 @@ import { findNode, findEnclosingToken } from "./file-text.js";
 import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
 
 /**
- * The changes that would mend a diagnostic of these design tokens, made from the facts the
- * diagnostic carries and the text of the files. Empty when nothing is known that would mend it.
+ * Finds the fixes for a diagnostic.
  *
- * A safe fix, applied, leaves the place it mends reading clean and changes nothing else the
- * files mean. One that depends on other tokens, such as a pointer standing for part of a value,
- * is offered only when reading the design tokens again with it applied shows that place clean. A
- * fix that is not safe is a likely guess, such as a similar name, for a person to confirm.
+ * A fix that depends on other tokens is offered only if it mends the problem.
+ *
+ * @param tokens - The design tokens the diagnostic is from.
+ * @param diagnostic - One of `tokens.diagnostics`.
  *
  * @example
- * for (const diagnostic of tokens.diagnostics) {
- *   for (const fix of getFixes(tokens, diagnostic)) menu.add(fix.title, fix.edits);
- * }
+ * // button.background refers to {color.primry}
+ * getFixes(tokens, tokens.diagnostics[0]).map((fix) => fix.title)
+ * // => ["use `color.primary`, which has a similar name"]
  */
 export function getFixes(tokens: DesignTokens, diagnostic: Diagnostic): Fix[] {
     const fix = findFix(tokens, diagnostic);
