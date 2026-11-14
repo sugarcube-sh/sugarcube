@@ -4,7 +4,7 @@ export interface StudioSharedState<T extends object> {
     mutate(fn: (draft: T) => void): void;
 }
 
-export interface StudioSurface {
+export interface StudioDock {
     readonly id: string;
     readonly title: string;
     readonly route: string;
@@ -22,6 +22,6 @@ export interface StudioHostBridge {
     publishConfig?(config: StudioConnectionConfig): void;
 }
 
-export interface DefineStudioOptions {
+export interface SetupStudioOptions {
     gitSave?: GitSaveSettings | undefined;
 }

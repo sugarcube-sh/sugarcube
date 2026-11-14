@@ -1,28 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { followCSS } from "../../src/controllers/page-css";
-import { asSent, demoMessage, studioOn, sugarcubeSent } from "./demo-message";
+import { watchCSS } from "../../src/controllers/page-css";
+import {
+    toSentConfig,
+    demoMessage,
+    createDemoStudio,
+    createSugarcubeAdapterMessage,
+} from "./demo-message";
 
-const now = (run: () => void) => run();
+const runNow = (run: () => void) => run();
 
-describe("followCSS", () => {
+describe("watchCSS", () => {
     it("sends the page the token CSS at once", () => {
-        const studio = studioOn(demoMessage());
+        const studio = createDemoStudio(demoMessage());
         const sent: string[] = [];
 
-        followCSS(studio, (css) => sent.push(css), now);
+        watchCSS(studio, (css) => sent.push(css), runNow);
 
         expect(sent).toEqual([studio.state.css]);
     });
 
     it("sends it again when the CSS changes", () => {
-        const studio = studioOn(demoMessage());
+        const studio = createDemoStudio(demoMessage());
         const sent: string[] = [];
-        followCSS(studio, (css) => sent.push(css), now);
+        watchCSS(studio, (css) => sent.push(css), runNow);
 
         studio.receive(
             demoMessage({
-                adapter: sugarcubeSent({
-                    config: asSent({
+                adapter: createSugarcubeAdapterMessage({
+                    config: toSentConfig({
                         resolver: "tokens.resolver.json",
                         variables: { prefix: "ds" },
                     }),
@@ -35,9 +40,9 @@ describe("followCSS", () => {
     });
 
     it("sends nothing new when only the theme shown changes", () => {
-        const studio = studioOn(demoMessage());
+        const studio = createDemoStudio(demoMessage());
         const sent: string[] = [];
-        followCSS(studio, (css) => sent.push(css), now);
+        watchCSS(studio, (css) => sent.push(css), runNow);
 
         studio.show({ mode: "dark" });
 
@@ -45,10 +50,10 @@ describe("followCSS", () => {
     });
 
     it("sends once for changes that land before the next frame", () => {
-        const studio = studioOn(demoMessage());
+        const studio = createDemoStudio(demoMessage());
         const sent: string[] = [];
         const frames: (() => void)[] = [];
-        followCSS(
+        watchCSS(
             studio,
             (css) => sent.push(css),
             (run) => frames.push(run),
@@ -56,8 +61,8 @@ describe("followCSS", () => {
 
         studio.receive(
             demoMessage({
-                adapter: sugarcubeSent({
-                    config: asSent({
+                adapter: createSugarcubeAdapterMessage({
+                    config: toSentConfig({
                         resolver: "tokens.resolver.json",
                         variables: { prefix: "a" },
                     }),
@@ -66,8 +71,8 @@ describe("followCSS", () => {
         );
         studio.receive(
             demoMessage({
-                adapter: sugarcubeSent({
-                    config: asSent({
+                adapter: createSugarcubeAdapterMessage({
+                    config: toSentConfig({
                         resolver: "tokens.resolver.json",
                         variables: { prefix: "b" },
                     }),
@@ -81,15 +86,15 @@ describe("followCSS", () => {
     });
 
     it("stops when told to", () => {
-        const studio = studioOn(demoMessage());
+        const studio = createDemoStudio(demoMessage());
         const sent: string[] = [];
-        const stop = followCSS(studio, (css) => sent.push(css), now);
+        const stop = watchCSS(studio, (css) => sent.push(css), runNow);
 
         stop();
         studio.receive(
             demoMessage({
-                adapter: sugarcubeSent({
-                    config: asSent({
+                adapter: createSugarcubeAdapterMessage({
+                    config: toSentConfig({
                         resolver: "tokens.resolver.json",
                         variables: { prefix: "ds" },
                     }),

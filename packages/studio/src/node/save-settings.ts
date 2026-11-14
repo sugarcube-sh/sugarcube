@@ -7,7 +7,7 @@ import { STUDIO_SIGN_IN_BASE } from "../studio-names";
 
 export type Git = (args: readonly string[]) => string | undefined;
 
-export function gitSaveFor({
+export function getGitSaveSettings({
     studio = {},
     resolver,
     cwd,
@@ -23,12 +23,12 @@ export function gitSaveFor({
     if (!repository)
         throw new Error(
             ErrorMessages.NO_REPOSITORY(
-                repositoryFromRemote(git(["remote", "get-url", "origin"]) ?? ""),
+                parseGitHubRepository(git(["remote", "get-url", "origin"]) ?? ""),
             ),
         );
     const branch = studio.branch ?? git(["branch", "--show-current"]);
     if (!branch) throw new Error(ErrorMessages.NO_BRANCH);
-    const entry = entryInRepository(resolve(cwd, resolver), cwd, git);
+    const entry = getRepositoryPath(resolve(cwd, resolver), cwd, git);
     const gitSave = {
         host: "github",
         repository,
@@ -36,7 +36,7 @@ export function gitSaveFor({
         entry,
         signIn: studio.signInPath ?? STUDIO_SIGN_IN_BASE,
     } as const;
-    if (!studio.githubApp) return { gitSave, warnings: [ErrorMessages.NO_APP] };
+    if (!studio.githubApp) return { gitSave, warnings: [ErrorMessages.NO_GITHUB_APP] };
     return {
         gitSave: {
             ...gitSave,
@@ -46,28 +46,28 @@ export function gitSaveFor({
     };
 }
 
-export function repositoryFromRemote(remote: string): string | undefined {
-    const found = /github\.com[:/]([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(remote.trim());
-    return found ? `${found[1]}/${found[2]}` : undefined;
+export function parseGitHubRepository(remote: string): string | undefined {
+    const match = /github\.com[:/]([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(remote.trim());
+    return match ? `${match[1]}/${match[2]}` : undefined;
 }
 
-function entryInRepository(resolver: string, cwd: string, git: Git): string {
-    const top = git(["rev-parse", "--show-toplevel"]) ?? cwd;
-    const path = relative(top, resolver);
+function getRepositoryPath(resolver: string, cwd: string, git: Git): string {
+    const checkoutRoot = git(["rev-parse", "--show-toplevel"]) ?? cwd;
+    const path = relative(checkoutRoot, resolver);
     if (path.startsWith("..") || isAbsolute(path))
         throw new Error(ErrorMessages.RESOLVER_OUTSIDE_REPOSITORY(resolver));
     return path.split(sep).join("/");
 }
 
-export function gitIn(cwd: string): Git {
+export function createGit(cwd: string): Git {
     return (args) => {
         try {
-            const answer = execFileSync("git", args, {
+            const output = execFileSync("git", args, {
                 cwd,
                 encoding: "utf8",
                 stdio: ["ignore", "pipe", "ignore"],
             });
-            return answer.trim() || undefined;
+            return output.trim() || undefined;
         } catch {
             return undefined;
         }

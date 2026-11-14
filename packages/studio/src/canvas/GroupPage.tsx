@@ -1,34 +1,36 @@
 import { Fragment } from "react";
 import { NavLink } from "react-router";
-import { hrefFor } from "../app/token-path";
+import { toHref } from "../app/token-path";
 import type { Group } from "@sugarcube-sh/dtcg";
-import { groupPage } from "../controllers/views";
+import { getGroupPageView } from "../controllers/views";
 import { useStudioState } from "../providers/studio-context";
 import { ExtensionFields } from "./ExtensionFields";
 import { DeprecatedLine, DeprecationRow, DescriptionRow } from "./Properties";
 import { NewGroup } from "./NewGroup";
 import { NewToken } from "./NewToken";
 import { NodeActions } from "./NodeActions";
-import { Showing } from "./Showing";
-import { AsCSS, Written } from "./Value";
+import { PermutationSelect } from "./PermutationSelect";
+import { CSSValue, ValueText } from "./Value";
 
-export function GroupPage({ group, shown }: { group: Group; shown: boolean }) {
+export function GroupPage({ group, isShown }: { group: Group; isShown: boolean }) {
     const state = useStudioState((each) => each);
-    const view = groupPage(state, group);
+    const view = getGroupPageView(state, group);
 
     return (
         <article>
             <h1>{view.path}</h1>
-            {view.deprecation.line && <DeprecatedLine line={view.deprecation.line} />}
-            <Showing />
-            {!shown && <p>Not in {state.showing.label}</p>}
+            {view.deprecation.notice && <DeprecatedLine line={view.deprecation.notice} />}
+            <PermutationSelect />
+            {!isShown && <p>Not in {state.shownPermutation.label}</p>}
             <dl>
                 <DescriptionRow path={group.path} view={view.description} />
-                {view.deprecation.box && (
-                    <DeprecationRow path={group.path} box={view.deprecation.box} />
+                {view.deprecation.checkbox && (
+                    <DeprecationRow path={group.path} box={view.deprecation.checkbox} />
                 )}
             </dl>
-            {view.form && <ExtensionFields path={group.path} form={view.form} label={undefined} />}
+            {view.form && (
+                <ExtensionFields path={group.path} form={view.form} rowName={undefined} />
+            )}
 
             {view.groups.length > 0 && (
                 <table>
@@ -42,7 +44,7 @@ export function GroupPage({ group, shown }: { group: Group; shown: boolean }) {
                         {view.groups.map((row) => (
                             <tr key={row.path}>
                                 <th scope="row">
-                                    <NavLink to={hrefFor(row.path)} end>
+                                    <NavLink to={toHref(row.path)} end>
                                         {row.name}
                                     </NavLink>
                                 </th>
@@ -68,22 +70,22 @@ export function GroupPage({ group, shown }: { group: Group; shown: boolean }) {
                         {view.tokens.map((row) => (
                             <tr key={row.path}>
                                 <th scope="row">
-                                    <NavLink to={hrefFor(row.path)} end>
+                                    <NavLink to={toHref(row.path)} end>
                                         {row.name}
                                     </NavLink>
                                 </th>
                                 <td>
-                                    <Written value={row.written} />
+                                    <ValueText value={row.originalValue} />
                                 </td>
                                 <td>
-                                    <AsCSS type={row.type} css={row.css} />
+                                    <CSSValue type={row.type} css={row.css} />
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             )}
-            {view.actions && (
+            {view.editable && (
                 <Fragment key={group.path}>
                     <NewToken group={group} />
                     <NewGroup parent={group.path} />

@@ -1,10 +1,10 @@
-import { adapterFor } from "../adapters";
+import { createAdapter } from "../adapters";
 import type { SignIn } from "../controllers/sign-in";
 import { type Studio, createStudio } from "../controllers/studio";
-import { keepUnsaved } from "../controllers/unsaved";
+import { persistUnsavedEdits } from "../controllers/unsaved";
 import { ErrorMessages } from "../error-messages";
 import { STUDIO_STORAGE } from "../studio-names";
-import { sessionStorageOf } from "./browser-page";
+import { getSessionStorage } from "./browser-page";
 import type { StudioMessage, StudioSave } from "../protocol";
 
 const WAIT_MS = 10_000;
@@ -20,23 +20,24 @@ export interface StudioConnection {
     readonly signIn?: SignIn | undefined;
 }
 
-type Opening = Omit<StudioConnection, "signIn"> & {
+type OpenStudioConnection = Omit<StudioConnection, "signIn"> & {
     readonly signIn?: Pick<SignIn, "start"> | undefined;
 };
 
 export async function openStudio(
-    { message: shared, save, signIn }: Opening,
+    { message: sharedMessage, save, signIn }: OpenStudioConnection,
     signal: AbortSignal,
     { waitMs = WAIT_MS }: { waitMs?: number } = {},
 ): Promise<Studio> {
-    const first = shared.value() ?? (await arrived(shared, signal, waitMs));
-    const studio = createStudio(first, adapterFor, save);
-    const storage = sessionStorageOf();
+    const firstMessage =
+        sharedMessage.value() ?? (await waitForMessage(sharedMessage, signal, waitMs));
+    const studio = createStudio(firstMessage, createAdapter, save);
+    const storage = getSessionStorage();
     const restored = storage
-        ? keepUnsaved(studio, storage, `${STUDIO_STORAGE.unsaved}${first.entryFile}`)
+        ? persistUnsavedEdits(studio, storage, `${STUDIO_STORAGE.unsaved}${firstMessage.entryFile}`)
         : Promise.resolve();
     void restored.then(() => signIn?.start(studio));
-    const stop = shared.on("updated", (next) => studio.receive(next));
+    const stop = sharedMessage.on("updated", (next) => studio.receive(next));
     signal.addEventListener("abort", () => {
         stop();
         studio.destroy();
@@ -44,29 +45,29 @@ export async function openStudio(
     return studio;
 }
 
-function arrived(
-    shared: SharedMessage,
+function waitForMessage(
+    sharedMessage: SharedMessage,
     signal: AbortSignal,
     waitMs: number,
 ): Promise<StudioMessage> {
     return new Promise((resolve, reject) => {
-        const done = () => {
+        const cleanUp = () => {
             stop();
             clearTimeout(timer);
-            signal.removeEventListener("abort", aborted);
+            signal.removeEventListener("abort", handleAbort);
         };
-        const stop = shared.on("updated", (next) => {
-            done();
+        const stop = sharedMessage.on("updated", (next) => {
+            cleanUp();
             resolve(next);
         });
         const timer = setTimeout(() => {
-            done();
+            cleanUp();
             reject(new Error(ErrorMessages.NO_MESSAGE));
         }, waitMs);
-        const aborted = () => {
-            done();
+        const handleAbort = () => {
+            cleanUp();
             reject(new DOMException("Aborted", "AbortError"));
         };
-        signal.addEventListener("abort", aborted, { once: true });
+        signal.addEventListener("abort", handleAbort, { once: true });
     });
 }

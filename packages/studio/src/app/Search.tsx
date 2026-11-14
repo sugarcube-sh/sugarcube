@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router";
 import { createSearch } from "../controllers/search";
 import { useStudio } from "../providers/studio-context";
-import { hrefFor } from "./token-path";
+import { toHref } from "./token-path";
 
 /** The matched run, marked, so it is obvious why a row is here. */
 function Highlight({ path, query }: { path: string; query: string }) {
@@ -35,12 +35,12 @@ export function Search({ onClose }: { onClose: () => void }) {
     const { query, hits, capped } = useSyncExternalStore(search.subscribe, () => search.state);
     const navigate = useNavigate();
 
-    const input = useRef<HTMLInputElement>(null);
-    useEffect(() => input.current?.focus(), []);
+    const inputRef = useRef<HTMLInputElement>(null);
+    useEffect(() => inputRef.current?.focus(), []);
 
     function open(path: string) {
         onClose();
-        navigate(hrefFor(path));
+        navigate(toHref(path));
     }
 
     return (
@@ -63,7 +63,7 @@ export function Search({ onClose }: { onClose: () => void }) {
                             placeholder="Find a token…"
                             aria-label="Find a token"
                             value={query}
-                            ref={input}
+                            ref={inputRef}
                             onValueChange={search.setQuery}
                         />
                         <span className="search-kbd">esc</span>

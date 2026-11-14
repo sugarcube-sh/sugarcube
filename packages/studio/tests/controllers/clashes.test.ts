@@ -1,9 +1,9 @@
 import { remove, rename, setValue } from "@sugarcube-sh/dtcg-edit";
 import { describe, expect, it } from "vitest";
-import { clashRows } from "../../src/controllers/token-page";
-import { demoMessage, studioOn, withFile } from "./demo-message";
+import { toClashRows } from "../../src/controllers/token-page";
+import { demoMessage, createDemoStudio, withFile } from "./demo-message";
 
-const darkText = { input: { mode: "dark" } } as const;
+const darkOptions = { input: { mode: "dark" } } as const;
 
 function changedOnDisk() {
     const dark = demoMessage().files["dark.json"] ?? "";
@@ -12,9 +12,9 @@ function changedOnDisk() {
 
 describe("clashes", () => {
     it("come from a change on disk to a value you edited", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
 
         studio.receive(changedOnDisk());
@@ -33,7 +33,7 @@ describe("clashes", () => {
     });
 
     it("are none from a change on disk to a value you didn't edit", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(setValue(studio.state.tokens, "radius.md", { value: 0.5, unit: "rem" }));
 
         studio.receive(changedOnDisk());
@@ -43,9 +43,9 @@ describe("clashes", () => {
     });
 
     it("go once the edits are discarded", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         studio.receive(changedOnDisk());
 
@@ -55,14 +55,14 @@ describe("clashes", () => {
     });
 
     it("keep yours: writes yours over theirs as an edit, and the clash goes", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         studio.receive(changedOnDisk());
         const [clash] = studio.state.clashes;
 
-        studio.keep(clash!, "yours");
+        studio.resolveClash(clash!, "yours");
 
         expect(studio.state.clashes).toEqual([]);
         expect(
@@ -73,14 +73,14 @@ describe("clashes", () => {
     });
 
     it("keep theirs: changes nothing, and the clash goes", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         studio.receive(changedOnDisk());
         const [clash] = studio.state.clashes;
 
-        studio.keep(clash!, "theirs");
+        studio.resolveClash(clash!, "theirs");
 
         expect(studio.state.clashes).toEqual([]);
         expect(
@@ -91,15 +91,15 @@ describe("clashes", () => {
     });
 });
 
-describe("clashRows", () => {
+describe("toClashRows", () => {
     it("a value you both changed: the token, its theme, and both values", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         studio.receive(changedOnDisk());
 
-        expect(clashRows(studio.state.tokens, studio.state.clashes)).toEqual([
+        expect(toClashRows(studio.state.tokens, studio.state.clashes)).toEqual([
             {
                 clash: studio.state.clashes[0],
                 kind: "changed",
@@ -113,13 +113,13 @@ describe("clashRows", () => {
     });
 
     it("a rename that no longer fits: one row, what you renamed it to, and not keepable", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(rename(studio.state.tokens, "color.text.default", "defaultttttt"));
         const color = demoMessage().files["color.json"] ?? "";
         studio.receive(withFile("color.json", color.replace('"default": {', '"body": {')));
 
         expect(studio.state.tokens.has("color.text.defaultttttt")).toBe(false);
-        expect(clashRows(studio.state.tokens, studio.state.clashes)).toEqual([
+        expect(toClashRows(studio.state.tokens, studio.state.clashes)).toEqual([
             {
                 clash: studio.state.clashes[0],
                 kind: "renamed",
@@ -131,9 +131,9 @@ describe("clashRows", () => {
     });
 
     it("a value you changed that was removed or renamed elsewhere: yours, and not keepable", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         const dark = demoMessage().files["dark.json"] ?? "";
         studio.receive(
@@ -143,7 +143,7 @@ describe("clashRows", () => {
             ),
         );
 
-        expect(clashRows(studio.state.tokens, studio.state.clashes)).toMatchObject([
+        expect(toClashRows(studio.state.tokens, studio.state.clashes)).toMatchObject([
             {
                 kind: "gone",
                 path: "color.text.default",
@@ -154,7 +154,7 @@ describe("clashRows", () => {
     });
 
     it("a token you removed that was changed elsewhere: theirs, and keepable", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(remove(studio.state.tokens, "radius.full"));
         const radius = demoMessage().files["radius.json"] ?? "";
         studio.receive(
@@ -164,7 +164,7 @@ describe("clashRows", () => {
             ),
         );
 
-        expect(clashRows(studio.state.tokens, studio.state.clashes)).toMatchObject([
+        expect(toClashRows(studio.state.tokens, studio.state.clashes)).toMatchObject([
             {
                 kind: "removed",
                 path: "radius.full",
@@ -177,7 +177,7 @@ describe("clashRows", () => {
 
 describe("a step with several parts", () => {
     it("reads as removed or renamed elsewhere when any part is gone, not just the first", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(remove(studio.state.tokens, "color.text.default"));
         const color = demoMessage().files["color.json"] ?? "";
         const dark = demoMessage().files["dark.json"] ?? "";
@@ -195,7 +195,7 @@ describe("a step with several parts", () => {
             ),
         );
 
-        const [row] = clashRows(studio.state.tokens, studio.state.clashes);
+        const [row] = toClashRows(studio.state.tokens, studio.state.clashes);
 
         expect(row?.canKeepYours).toBe(false);
         expect(row?.kind).toBe("gone");
@@ -204,13 +204,13 @@ describe("a step with several parts", () => {
 
 describe("keeping yours where it can't be kept", () => {
     it("is refused, and the clash stays", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.do(rename(studio.state.tokens, "color.text.default", "defaultttttt"));
         const color = demoMessage().files["color.json"] ?? "";
         studio.receive(withFile("color.json", color.replace('"default": {', '"body": {')));
         const [clash] = studio.state.clashes;
 
-        const done = studio.keep(clash!, "yours");
+        const done = studio.resolveClash(clash!, "yours");
 
         expect(done?.refusal?.kind).toBe("removed-since");
         expect(studio.state.clashes).toHaveLength(1);

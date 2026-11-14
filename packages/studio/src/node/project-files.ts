@@ -1,18 +1,20 @@
 import { loadInternalConfig, formatProblems } from "@sugarcube-sh/core";
 import { ErrorMessages } from "../error-messages";
 import type { StudioFiles } from "../server/files";
-import { nodeFiles } from "../server/node-files";
+import { createNodeFiles } from "../server/node-files";
 
-export async function projectFiles(): ReturnType<typeof nodeFiles> {
+export async function loadProjectFiles(): ReturnType<typeof createNodeFiles> {
     const { config } = await loadInternalConfig();
-    return nodeFiles(config, {
+    return createNodeFiles(config, {
         onError: (error) => console.error(ErrorMessages.READ_FAILED, error),
     });
 }
 
-export function refuseEmpty(files: StudioFiles, cwd: string): void {
-    const { config, tokens } = files.now();
+export function assertHasTokens(files: StudioFiles, cwd: string): void {
+    const { config, tokens } = files.getSnapshot();
     if (tokens.getTokenPaths().length > 0) return;
-    const where = { cwd, entryFile: config.resolver, tokens };
-    throw new Error(ErrorMessages.NOTHING_TO_BUILD(formatProblems(tokens.diagnostics, where)));
+    const problemContext = { cwd, entryFile: config.resolver, tokens };
+    throw new Error(
+        ErrorMessages.NOTHING_TO_BUILD(formatProblems(tokens.diagnostics, problemContext)),
+    );
 }

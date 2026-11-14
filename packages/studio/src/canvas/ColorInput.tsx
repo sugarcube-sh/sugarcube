@@ -1,45 +1,45 @@
-import { useHeld } from "./use-held";
+import { useKeyedState } from "./use-keyed-state";
 import {
     type ColorDraft,
     type ColorField,
-    channelsOf,
-    colorCss,
-    gamutOf,
-    inSpace,
+    getChannels,
+    toColorCSS,
+    findGamut,
+    convertToSpace,
     spaceNames,
-    trackOf,
+    getChannelTrack,
     withComponent,
 } from "../controllers/color";
-import { numberIn } from "../controllers/typed-text";
-import { Choice } from "./Choice";
+import { parseNumber } from "../controllers/typed-text";
+import { Select } from "./Select";
 
 export function ColorInput({
     draft,
-    shown,
+    color,
     label,
     onDraft,
 }: {
     draft: ColorDraft;
-    shown: ColorField | undefined;
+    color: ColorField | undefined;
     label: string;
     onDraft(draft: ColorDraft, control: string): void;
 }) {
-    const [fitted, holdFitted] = useHeld<string>(draft);
+    const [fittedGamut, setFittedGamut] = useKeyedState<string>(draft);
     const change = (next: ColorDraft, control: string) => onDraft(next, control);
-    const gamut = shown && gamutOf(shown);
-    const swatch = shown && (
+    const gamut = color && findGamut(color);
+    const swatch = color && (
         <span
             aria-hidden="true"
             style={{
                 display: "inline-block",
                 inlineSize: "1.5em",
                 blockSize: "1.5em",
-                background: colorCss(shown),
+                background: toColorCSS(color),
             }}
         />
     );
 
-    const where = shown && <span>{gamut ? `In ${gamut}` : "Outside Rec. 2020"}</span>;
+    const gamutNote = color && <span>{gamut ? `In ${gamut}` : "Outside Rec. 2020"}</span>;
 
     if (draft.kind === "hexColor") {
         return (
@@ -50,30 +50,30 @@ export function ColorInput({
                     value={draft.hex}
                     onChange={(event) => change({ ...draft, hex: event.target.value }, "hex")}
                 />{" "}
-                {where}
+                {gamutNote}
             </>
         );
     }
 
-    const component = (index: number, text: string) =>
+    const setComponent = (index: number, text: string) =>
         change(withComponent(draft, index, text), `channel ${index}`);
 
     return (
         <fieldset aria-label={label}>
             {swatch}{" "}
-            <Choice
+            <Select
                 label={`${label}, colour space`}
-                chosen={draft.colorSpace}
-                choices={spaceNames}
-                onChoose={(space) => {
-                    const converted = inSpace(draft, space, shown);
+                value={draft.colorSpace}
+                options={spaceNames}
+                onChange={(space) => {
+                    const converted = convertToSpace(draft, space, color);
                     onDraft(converted.draft, "space");
-                    holdFitted(converted.fitted, converted.draft);
+                    setFittedGamut(converted.mappedGamut, converted.draft);
                 }}
             />{" "}
-            {where}
-            {fitted && <p>Chroma reduced to fit {fitted}.</p>}
-            {channelsOf(draft.colorSpace).map((channel, index) => (
+            {gamutNote}
+            {fittedGamut && <p>Chroma reduced to fit {fittedGamut}.</p>}
+            {getChannels(draft.colorSpace).map((channel, index) => (
                 <div key={channel.name}>
                     {channel.name}{" "}
                     <input
@@ -82,15 +82,15 @@ export function ColorInput({
                         min={channel.min}
                         max={channel.max}
                         step={channel.step}
-                        value={sliderValue(draft.components[index], channel.min)}
-                        style={shown ? { background: trackOf(shown, index) } : undefined}
-                        onChange={(event) => component(index, event.target.value)}
+                        value={toSliderValue(draft.components[index], channel.min)}
+                        style={color ? { background: getChannelTrack(color, index) } : undefined}
+                        onChange={(event) => setComponent(index, event.target.value)}
                     />{" "}
                     <input
                         aria-label={`${label}, ${channel.name}`}
                         inputMode="decimal"
                         value={draft.components[index] ?? ""}
-                        onChange={(event) => component(index, event.target.value)}
+                        onChange={(event) => setComponent(index, event.target.value)}
                     />
                 </div>
             ))}
@@ -103,7 +103,7 @@ export function ColorInput({
                         min={0}
                         max={1}
                         step={0.001}
-                        value={sliderValue(draft.alpha, 1)}
+                        value={toSliderValue(draft.alpha, 1)}
                         onChange={(event) =>
                             change({ ...draft, alpha: event.target.value }, "alpha")
                         }
@@ -122,6 +122,6 @@ export function ColorInput({
     );
 }
 
-function sliderValue(text: string | undefined, otherwise: number): number {
-    return numberIn(text ?? "") ?? otherwise;
+function toSliderValue(text: string | undefined, fallback: number): number {
+    return parseNumber(text ?? "") ?? fallback;
 }

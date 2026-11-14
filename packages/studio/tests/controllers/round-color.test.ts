@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { toCSSValue } from "@sugarcube-sh/dtcg/css";
-import { writtenColor } from "../../src/controllers/written-color";
+import { roundColor } from "../../src/controllers/round-color";
 
-describe("writtenColor", () => {
+describe("roundColor", () => {
     it("rounds every number to four decimal places", () => {
         expect(
-            writtenColor({
+            roundColor({
                 colorSpace: "oklch",
                 components: [0.97, 0.09200000000000001, 258.123456],
                 alpha: 0.10200000000000001,
@@ -15,32 +15,32 @@ describe("writtenColor", () => {
 
     it("rounds a number to the decimal it means, not its nearest binary value", () => {
         expect(
-            writtenColor({ colorSpace: "oklch", components: [0.5, 0.00015, 258] }).components,
+            roundColor({ colorSpace: "oklch", components: [0.5, 0.00015, 258] }).components,
         ).toEqual([0.5, 0.0002, 258]);
     });
 
     it("writes a missing component as none", () => {
         expect(
-            writtenColor({ colorSpace: "oklch", components: [0.5, Number.NaN, undefined] })
+            roundColor({ colorSpace: "oklch", components: [0.5, Number.NaN, undefined] })
                 .components,
         ).toEqual([0.5, "none", "none"]);
         expect(
-            writtenColor({ colorSpace: "oklch", components: [0.5, 0, "none"] }).components,
+            roundColor({ colorSpace: "oklch", components: [0.5, 0, "none"] }).components,
         ).toEqual([0.5, 0, "none"]);
     });
 
     it("writes alpha and hex only when given", () => {
-        expect(writtenColor({ colorSpace: "srgb", components: [1, 0, 0] })).toEqual({
+        expect(roundColor({ colorSpace: "srgb", components: [1, 0, 0] })).toEqual({
             colorSpace: "srgb",
             components: [1, 0, 0],
         });
         expect(
-            writtenColor({ colorSpace: "srgb", components: [1, 0, 0], alpha: 1, hex: "#ff0000" }),
+            roundColor({ colorSpace: "srgb", components: [1, 0, 0], alpha: 1, hex: "#ff0000" }),
         ).toEqual({ colorSpace: "srgb", components: [1, 0, 0], alpha: 1, hex: "#ff0000" });
     });
 
     it("keeps every digit the CSS keeps", () => {
-        const written = writtenColor({
+        const written = roundColor({
             colorSpace: "oklch",
             components: [0.97123456, 0.0123456, 258],
         });

@@ -1,13 +1,13 @@
 import { resolve } from "node:path";
 import { buildHub } from "@devframes/hub/build";
 import { BUILT_APP } from "../built-files";
-import { studioHub } from "../hub/studio-hub";
+import { createStudioHub } from "../hub/studio-hub";
 import type { GitSaveSettings } from "../protocol";
-import { studioDevframe } from "../server/definition";
+import { createStudioDevframe } from "../server/definition";
 import type { StudioFiles } from "../server/files";
 import { STUDIO_DOCK_SCRIPT, STUDIO_ROUTE } from "../studio-names";
-import { projectFiles, refuseEmpty } from "./project-files";
-import { gitIn, gitSaveFor } from "./save-settings";
+import { loadProjectFiles, assertHasTokens } from "./project-files";
+import { createGit, getGitSaveSettings } from "./save-settings";
 
 export type BuildStudioOptions = {
     outDir: string;
@@ -22,24 +22,24 @@ export type StudioBuild = {
 };
 
 export async function buildStudio(options: BuildStudioOptions): Promise<StudioBuild> {
-    return buildFiles(await projectFiles(), options);
+    return buildFromFiles(await loadProjectFiles(), options);
 }
 
-export async function buildFiles(
+export async function buildFromFiles(
     files: StudioFiles,
     { outDir }: BuildStudioOptions,
 ): Promise<StudioBuild> {
     const cwd = process.cwd();
-    refuseEmpty(files, cwd);
-    const { config } = files.now();
-    const { gitSave, warnings } = gitSaveFor({
+    assertHasTokens(files, cwd);
+    const { config } = files.getSnapshot();
+    const { gitSave, warnings } = getGitSaveSettings({
         ...(config.studio && { studio: config.studio }),
         resolver: config.resolver,
         cwd,
-        git: gitIn(cwd),
+        git: createGit(cwd),
     });
 
-    const hub = studioHub(studioDevframe({ files, clientAssets: BUILT_APP, gitSave }));
+    const hub = createStudioHub(createStudioDevframe({ files, clientAssets: BUILT_APP, gitSave }));
     const rootDir = resolve(outDir);
     const hubDir = resolve(rootDir, hub.base.replace(/^\/|\/$/g, ""));
 

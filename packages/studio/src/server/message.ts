@@ -1,7 +1,7 @@
 import type { StudioMessage } from "../protocol";
-import type { FilesNow } from "./files";
+import type { FilesSnapshot } from "./files";
 
-export function studioMessage({ config, tokens, configProblems }: FilesNow): StudioMessage {
+export function toStudioMessage({ config, tokens, configProblems }: FilesSnapshot): StudioMessage {
     const { entryFile, files } = tokens.toMemory();
     return JSON.parse(
         JSON.stringify({

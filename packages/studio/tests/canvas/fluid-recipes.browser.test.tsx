@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
 import size from "../../demo/size.json?raw";
-import { adapterFor } from "../../src/adapters";
+import { createAdapter } from "../../src/adapters";
 import { GroupPage } from "../../src/canvas/GroupPage";
 import { TokenPage } from "../../src/canvas/TokenPage";
 import { createStudio } from "../../src/controllers/studio";
@@ -12,7 +12,7 @@ import { StudioContext } from "../../src/providers/studio-context";
 
 const entryFile = "tokens.resolver.json";
 
-function sizeStudio() {
+function createSizeStudio() {
     const settings = fillDefaultsWithDirs(
         { resolver: entryFile },
         { stylesDir: "src/styles", componentsDir: "src/components" },
@@ -31,15 +31,15 @@ function sizeStudio() {
                 "size.json": size,
             },
         },
-        adapterFor,
+        createAdapter,
     );
 }
 
-function sizeJson(studio: ReturnType<typeof sizeStudio>) {
+function readSizeJSON(studio: ReturnType<typeof createSizeStudio>) {
     return JSON.parse(studio.state.tokens.getText("size.json") ?? "null").size;
 }
 
-function onPage(studio: ReturnType<typeof sizeStudio>, page: React.ReactNode) {
+function renderPage(studio: ReturnType<typeof createSizeStudio>, page: React.ReactNode) {
     return render(
         <MemoryRouter>
             <StudioContext.Provider value={studio}>{page}</StudioContext.Provider>
@@ -49,15 +49,15 @@ function onPage(studio: ReturnType<typeof sizeStudio>, page: React.ReactNode) {
 
 describe("a fluid token's page", () => {
     it("edits the range with dimension fields, and From reaches the file", async () => {
-        const studio = sizeStudio();
-        const gutter = studio.state.showing.getToken("size.fluid.gutter") as Token;
-        const screen = await onPage(studio, <TokenPage token={gutter} shown />);
+        const studio = createSizeStudio();
+        const gutter = studio.state.shownPermutation.getToken("size.fluid.gutter") as Token;
+        const screen = await renderPage(studio, <TokenPage token={gutter} isShown />);
 
         const from = screen.getByRole("spinbutton", { name: "base, Fluid, From, amount" });
         await expect.element(from).toHaveValue(1);
         await from.fill("1.5");
 
-        expect(sizeJson(studio).fluid.gutter.$extensions["sh.sugarcube"].fluid.min).toEqual({
+        expect(readSizeJSON(studio).fluid.gutter.$extensions["sh.sugarcube"].fluid.min).toEqual({
             value: 1.5,
             unit: "rem",
         });
@@ -69,25 +69,25 @@ describe("a fluid token's page", () => {
 
 describe("a token's Token side", () => {
     it("lists the tokens of its type, leaving out the token being edited", async () => {
-        const studio = sizeStudio();
-        const gutter = studio.state.showing.getToken("size.fluid.gutter") as Token;
-        const screen = await onPage(studio, <TokenPage token={gutter} shown />);
+        const studio = createSizeStudio();
+        const gutter = studio.state.shownPermutation.getToken("size.fluid.gutter") as Token;
+        const screen = await renderPage(studio, <TokenPage token={gutter} isShown />);
 
         await screen.getByRole("radio", { name: "Token" }).click();
-        const listed = [...screen.container.querySelectorAll("datalist option")].map(
+        const optionValues = [...screen.container.querySelectorAll("datalist option")].map(
             (option) => (option as HTMLOptionElement).value,
         );
 
-        expect(listed).toContain("size.fluid.measure");
-        expect(listed).not.toContain("size.fluid.gutter");
+        expect(optionValues).toContain("size.fluid.measure");
+        expect(optionValues).not.toContain("size.fluid.gutter");
     });
 });
 
 describe("a recipe's step page", () => {
     it("says which recipe makes it, links there, and shows its range without editing", async () => {
-        const studio = sizeStudio();
-        const step = studio.state.showing.getToken("size.step.-1") as Token;
-        const screen = await onPage(studio, <TokenPage token={step} shown />);
+        const studio = createSizeStudio();
+        const step = studio.state.shownPermutation.getToken("size.step.-1") as Token;
+        const screen = await renderPage(studio, <TokenPage token={step} isShown />);
 
         await expect.element(screen.getByText("Made by the scale on")).toBeInTheDocument();
         await expect.element(screen.getByRole("link", { name: "size.step" })).toBeInTheDocument();
@@ -100,15 +100,15 @@ describe("a recipe's step page", () => {
 
 describe("a recipe's group page", () => {
     it("edits the recipe, and the change reaches the file", async () => {
-        const studio = sizeStudio();
-        const group = studio.state.showing.getGroup("size.step") as Group;
-        const screen = await onPage(studio, <GroupPage group={group} shown />);
+        const studio = createSizeStudio();
+        const group = studio.state.shownPermutation.getGroup("size.step") as Group;
+        const screen = await renderPage(studio, <GroupPage group={group} isShown />);
 
         const ratio = screen.getByRole("spinbutton", { name: "Scale, Ratio to" });
         await expect.element(ratio).toHaveValue(1.25);
         await ratio.fill("1.333");
 
-        expect(sizeJson(studio).step.$extensions["sh.sugarcube"].scale.ratio.max).toBe(1.333);
+        expect(readSizeJSON(studio).step.$extensions["sh.sugarcube"].scale.ratio.max).toBe(1.333);
         await expect.element(ratio).toHaveValue(1.333);
         await expect.element(ratio).toHaveFocus();
     });

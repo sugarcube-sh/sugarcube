@@ -1,6 +1,6 @@
 import type { TokenType } from "@sugarcube-sh/dtcg";
 import type { ExtensionForm } from "../controllers/adapter";
-import { type PageRow, valueEdit } from "../controllers/token-page";
+import { type TokenPageRow, createValueEdit } from "../controllers/token-page";
 import { useStudio } from "../providers/studio-context";
 import { EditedTokenContext } from "../providers/edited-token-context";
 import { ExtensionFields } from "./ExtensionFields";
@@ -13,7 +13,7 @@ export function EditRow({
     path,
     form,
 }: {
-    row: PageRow;
+    row: TokenPageRow;
     type: TokenType | undefined;
     path: string;
     form: ExtensionForm | undefined;
@@ -28,10 +28,10 @@ export function EditRow({
                 <EditedTokenContext.Provider value={path}>
                     <TypedField
                         type={type}
-                        written={row.value}
+                        value={row.value}
                         label={row.fieldLabel}
                         onWrite={(next, part, control) => {
-                            const { result, options } = valueEdit(
+                            const { result, options } = createValueEdit(
                                 studio.state.tokens,
                                 path,
                                 row,
@@ -43,7 +43,7 @@ export function EditRow({
                         }}
                     />
                     {edit.view}
-                    {form && <ExtensionFields path={path} form={form} label={row.name} />}
+                    {form && <ExtensionFields path={path} form={form} rowName={row.name} />}
                 </EditedTokenContext.Provider>
             </dd>
         </>

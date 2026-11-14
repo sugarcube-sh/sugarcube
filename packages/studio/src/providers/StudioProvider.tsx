@@ -11,7 +11,7 @@ type Props = {
     children: ReactNode;
 };
 
-type Opening =
+type LoadState =
     | { kind: "loading" }
     | { kind: "error"; message: string }
     | { kind: "ready"; studio: Studio; signIn: SignIn | undefined };
@@ -21,7 +21,7 @@ type Opening =
  * or a static dump is the transport's business, not a mode of the app.
  */
 export function StudioProvider({ children }: Props) {
-    const [state, setState] = useState<Opening>({ kind: "loading" });
+    const [state, setState] = useState<LoadState>({ kind: "loading" });
 
     useEffect(() => {
         const controller = new AbortController();
@@ -32,11 +32,11 @@ export function StudioProvider({ children }: Props) {
                 const studio = await openStudio(connection, controller.signal);
                 if (!controller.signal.aborted)
                     setState({ kind: "ready", studio, signIn: connection.signIn });
-            } catch (err) {
+            } catch (error) {
                 if (controller.signal.aborted) return;
                 setState({
                     kind: "error",
-                    message: err instanceof Error ? err.message : "Failed to connect",
+                    message: error instanceof Error ? error.message : "Failed to connect",
                 });
             }
         }

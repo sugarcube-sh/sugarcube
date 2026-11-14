@@ -1,9 +1,14 @@
 import { useMemo, useState } from "react";
 import { Icon } from "../components/ui/icon/Icons";
-import { barMessages, pressSaveWith, saveFor } from "../controllers/sign-in";
-import type { SaveShown } from "../controllers/studio";
-import { changeBarActions } from "../controllers/undo";
-import { type ChangeLine, changeLines, clashText, doneWord } from "../controllers/views";
+import { getBarMessages, startSave, getSaveOffer } from "../controllers/sign-in";
+import type { SaveStatus } from "../controllers/studio";
+import { getChangeBarActions } from "../controllers/undo";
+import {
+    type ChangeLine,
+    toChangeLines,
+    formatClashMessage,
+    verbByChangeKind,
+} from "../controllers/views";
 import { Clashes } from "./Clashes";
 import { useSignIn } from "../providers/sign-in-context";
 import { useStudio, useStudioState } from "../providers/studio-context";
@@ -12,13 +17,13 @@ export function ChangeBar() {
     const studio = useStudio();
     const state = useStudioState((each) => each);
     const { changes, saving } = state;
-    const lines = useMemo(() => changeLines(changes), [changes]);
+    const lines = useMemo(() => toChangeLines(changes), [changes]);
     const [open, setOpen] = useState(false);
     const signIn = useSignIn();
     const count = lines.length;
-    const offer = saveFor(signIn);
-    const offered = changeBarActions(studio, offer);
-    const says = barMessages(state.saved, offer);
+    const saveOffer = getSaveOffer(signIn);
+    const enabledActions = getChangeBarActions(studio, saveOffer);
+    const messages = getBarMessages(state.saved, saveOffer);
 
     return (
         <div className="change-bar">
@@ -26,20 +31,20 @@ export function ChangeBar() {
             {open && count > 0 && (
                 <ul>
                     {lines.map((line) => (
-                        <li key={`${line.kind} ${line.from} ${line.path} ${line.inPermutations}`}>
+                        <li key={`${line.kind} ${line.from} ${line.path} ${line.permutationLabel}`}>
                             <Line line={line} />
                         </li>
                     ))}
                 </ul>
             )}
-            {says.outcome && <Outcome outcome={says.outcome} />}
-            {says.reason && (
+            {messages.outcome && <Outcome outcome={messages.outcome} />}
+            {messages.reason && (
                 <p>
-                    {says.reason}
-                    {says.install && (
+                    {messages.reason}
+                    {messages.installURL && (
                         <>
                             {" "}
-                            <a href={says.install}>Install on GitHub</a>
+                            <a href={messages.installURL}>Install on GitHub</a>
                         </>
                     )}
                 </p>
@@ -54,7 +59,7 @@ export function ChangeBar() {
                         type="button"
                         className="button"
                         data-role="tertiary"
-                        disabled={!offered.undo}
+                        disabled={!enabledActions.undo}
                         onClick={() => studio.undo()}
                     >
                         Undo
@@ -63,7 +68,7 @@ export function ChangeBar() {
                         type="button"
                         className="button"
                         data-role="tertiary"
-                        disabled={!offered.redo}
+                        disabled={!enabledActions.redo}
                         onClick={() => studio.redo()}
                     >
                         Redo
@@ -85,7 +90,7 @@ export function ChangeBar() {
                         type="button"
                         className="button"
                         data-role="tertiary"
-                        disabled={!offered.discard}
+                        disabled={!enabledActions.discard}
                         onClick={() => studio.discard()}
                     >
                         Discard
@@ -94,8 +99,8 @@ export function ChangeBar() {
                         type="button"
                         className="button"
                         data-role="primary"
-                        disabled={!offered.save}
-                        onClick={() => void pressSaveWith(studio, signIn)}
+                        disabled={!enabledActions.save}
+                        onClick={() => void startSave(studio, signIn)}
                     >
                         {saving ? "Saving" : "Save"}
                     </button>
@@ -105,7 +110,7 @@ export function ChangeBar() {
     );
 }
 
-function Outcome({ outcome }: { outcome: SaveShown }) {
+function Outcome({ outcome }: { outcome: SaveStatus }) {
     if ("failed" in outcome) return <p>{outcome.failed}</p>;
     if (outcome.pullRequest) {
         return (
@@ -117,8 +122,8 @@ function Outcome({ outcome }: { outcome: SaveShown }) {
             </p>
         );
     }
-    if (outcome.conflicts) return <p>{clashText(outcome)}</p>;
-    const files = [...outcome.written, ...outcome.deleted];
+    if (outcome.conflicts) return <p>{formatClashMessage(outcome)}</p>;
+    const files = [...outcome.savedFiles, ...outcome.deleted];
     return (
         <p>
             Saved:{" "}
@@ -133,19 +138,19 @@ function Outcome({ outcome }: { outcome: SaveShown }) {
 }
 
 function Line({ line }: { line: ChangeLine }) {
-    const theme = line.inPermutations && ` (${line.inPermutations})`;
+    const permutationSuffix = line.permutationLabel && ` (${line.permutationLabel})`;
     if (line.kind === "renamed" || line.kind === "group-renamed") {
         return (
             <>
                 <code>{line.from}</code> renamed to <code>{line.path}</code>
-                {theme}
+                {permutationSuffix}
             </>
         );
     }
     return (
         <>
-            {line.topLevel ? "Top level" : <code>{line.path}</code>} {doneWord[line.kind]}
-            {theme}
+            {line.topLevel ? "Top level" : <code>{line.path}</code>} {verbByChangeKind[line.kind]}
+            {permutationSuffix}
         </>
     );
 }

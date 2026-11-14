@@ -1,17 +1,17 @@
 import type { ExtensionForm } from "../controllers/adapter";
-import { fieldName, settingEdit } from "../controllers/forms";
-import { fieldText } from "../controllers/value-field";
+import { getFieldLabel, createSettingEdit } from "../controllers/forms";
+import { formatValue } from "../controllers/value-field";
 import { TypedField } from "./TypedField";
 import { useEdit } from "./use-edit";
 
 export function ExtensionFields({
     path,
     form,
-    label,
+    rowName,
 }: {
     path: string;
     form: ExtensionForm;
-    label: string | undefined;
+    rowName: string | undefined;
 }) {
     const edit = useEdit();
     const { write } = form;
@@ -27,12 +27,17 @@ export function ExtensionFields({
                             {write ? (
                                 <TypedField
                                     type={field.type}
-                                    written={field.value}
-                                    label={fieldName(label, form.label, field.label)}
+                                    value={field.value}
+                                    label={getFieldLabel(rowName, form.label, field.label)}
                                     references={false}
                                     onWrite={(value) => {
-                                        const { result, options } = settingEdit(
-                                            { path, form: form.label, key: field.key, row: label },
+                                        const { result, options } = createSettingEdit(
+                                            {
+                                                path,
+                                                form: form.label,
+                                                key: field.key,
+                                                row: rowName,
+                                            },
                                             write,
                                             value,
                                         );
@@ -40,7 +45,7 @@ export function ExtensionFields({
                                     }}
                                 />
                             ) : (
-                                <code>{fieldText(field.type, field.value)}</code>
+                                <code>{formatValue(field.type, field.value)}</code>
                             )}
                         </dd>
                     </div>

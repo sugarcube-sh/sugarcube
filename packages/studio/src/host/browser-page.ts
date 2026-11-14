@@ -1,17 +1,17 @@
 import type { Page } from "../controllers/sign-in";
-import { cookieIn } from "../sign-in/cookies";
+import { getCookie } from "../sign-in/cookies";
 
-export function browserPage(): Page {
+export function createBrowserPage(): Page {
     return {
-        cookie: (name) => cookieIn(document.cookie, name),
-        here: () => `${location.pathname}${location.search}${location.hash}`,
-        go: (url) => location.assign(url),
-        storage: sessionStorageOf(),
+        getCookie: (name) => getCookie(document.cookie, name),
+        getReturnPath: () => `${location.pathname}${location.search}${location.hash}`,
+        redirect: (url) => location.assign(url),
+        storage: getSessionStorage(),
         fetch: (url, init) => fetch(url, init),
     };
 }
 
-export function sessionStorageOf(): Storage | undefined {
+export function getSessionStorage(): Storage | undefined {
     try {
         return globalThis.sessionStorage;
     } catch {

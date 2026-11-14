@@ -2,12 +2,12 @@ import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { type Edits, createSession, rename, setValue } from "@sugarcube-sh/dtcg-edit";
 import { ForgeNetworkError } from "forges";
 import { describe, expect, it } from "vitest";
-import { adapterFor } from "../../src/adapters";
-import { gitSave } from "../../src/controllers/git-save";
+import { createAdapter } from "../../src/adapters";
+import { createGitSave } from "../../src/controllers/git-save";
 import { createStudio } from "../../src/controllers/studio";
-import { clashText } from "../../src/controllers/views";
+import { formatClashMessage } from "../../src/controllers/views";
 import type { StudioMessage } from "../../src/protocol";
-import { BUILT, fakeGitHub } from "../git-hosts/fake-github";
+import { BUILT_COMMIT, fakeGitHub } from "../git-hosts/fake-github";
 import { demoMessage } from "./demo-message";
 
 const ENTRY = "tokens/tokens.resolver.json";
@@ -45,9 +45,9 @@ const DARK = `{
 `;
 const FILES = { "tokens.resolver.json": RESOLVER, "color.json": COLOR, "dark.json": DARK };
 
-const darkText = { input: { mode: "dark" } } as const;
+const darkOptions = { input: { mode: "dark" } } as const;
 
-function onGitHub(files: Readonly<Record<string, string>>) {
+function fakeGitHubWithTokens(files: Readonly<Record<string, string>>) {
     const github = fakeGitHub(
         Object.fromEntries(Object.entries(files).map(([file, text]) => [`tokens/${file}`, text])),
     );
@@ -58,67 +58,70 @@ function onGitHub(files: Readonly<Record<string, string>>) {
     };
 }
 
-function edited(...values: [path: string, value: string][]) {
+function createEdits(...values: [path: string, value: string][]) {
     const session = createSession(
         readFromMemory({ files: FILES, entryFile: "tokens.resolver.json" }),
     );
-    for (const [path, value] of values) session.do(setValue(session.tokens, path, value, darkText));
+    for (const [path, value] of values)
+        session.do(setValue(session.tokens, path, value, darkOptions));
     return { edits: session.unsavedEdits, changes: session.getChanges() };
 }
 
-function saving(github: ReturnType<typeof onGitHub>) {
-    const save = gitSave({ host: github.host, entry: ENTRY });
-    return ({ edits, changes }: ReturnType<typeof edited>) => save(edits, changes);
+function createSave(github: ReturnType<typeof fakeGitHubWithTokens>) {
+    const save = createGitSave({ host: github.host, entry: ENTRY });
+    return ({ edits, changes }: ReturnType<typeof createEdits>) => save(edits, changes);
 }
 
 describe("a save to GitHub", () => {
     it("reads every file at the branch's latest commit", async () => {
-        const github = onGitHub(FILES);
+        const github = fakeGitHubWithTokens(FILES);
         const moved = await github.changeOnGitHub("color.json", COLOR);
         const asked: string[] = [];
-        const save = gitSave({
+        const save = createGitSave({
             host: {
                 ...github.host,
-                file: (commit, path) => {
+                getFile: (commit, path) => {
                     asked.push(commit);
-                    return github.host.file(commit, path);
+                    return github.host.getFile(commit, path);
                 },
             },
             entry: ENTRY,
         });
-        const { edits, changes } = edited(["color.text.default", "{color.neutral.100}"]);
+        const { edits, changes } = createEdits(["color.text.default", "{color.neutral.100}"]);
         await save(edits, changes);
         expect(new Set(asked)).toStrictEqual(new Set([moved.sha]));
     });
 
     it("commits only the file the edit changes, at its path in the repository, on the commit it read", async () => {
-        const github = onGitHub(FILES);
-        await saving(github)(edited(["color.text.default", "{color.neutral.100}"]));
-        expect(await github.onBranch("tokens/dark.json")).toBe(
+        const github = fakeGitHubWithTokens(FILES);
+        await createSave(github)(createEdits(["color.text.default", "{color.neutral.100}"]));
+        expect(await github.readOnBranch("tokens/dark.json")).toBe(
             DARK.replace("{color.neutral.50}", "{color.neutral.100}"),
         );
-        expect(await github.onBranch("dark.json")).toBeUndefined();
-        expect(github.lastCommit()?.parents).toStrictEqual([BUILT]);
+        expect(await github.readOnBranch("dark.json")).toBeUndefined();
+        expect(github.lastCommit()?.parents).toStrictEqual([BUILT_COMMIT]);
     });
 
     it("keeps a change made on GitHub elsewhere in the same file", async () => {
-        const github = onGitHub(FILES);
+        const github = fakeGitHubWithTokens(FILES);
         const elsewhere = DARK.replace(
             '{\n  "color"',
             '{\n  "space": { "$type": "number", "s": { "$value": 4 } },\n  "color"',
         );
         await github.changeOnGitHub("dark.json", elsewhere);
-        await saving(github)(edited(["color.text.default", "{color.neutral.100}"]));
-        expect(await github.onBranch("tokens/dark.json")).toBe(
+        await createSave(github)(createEdits(["color.text.default", "{color.neutral.100}"]));
+        expect(await github.readOnBranch("tokens/dark.json")).toBe(
             elsewhere.replace("{color.neutral.50}", "{color.neutral.100}"),
         );
     });
 
     it("answers with the pull request and the files as it read them on GitHub", async () => {
-        const github = onGitHub(FILES);
+        const github = fakeGitHubWithTokens(FILES);
         const now = COLOR.replace("#f5f5f5", "#eeeeee");
         await github.changeOnGitHub("color.json", now);
-        const saved = await saving(github)(edited(["color.text.default", "{color.neutral.100}"]));
+        const saved = await createSave(github)(
+            createEdits(["color.text.default", "{color.neutral.100}"]),
+        );
         expect(saved).toStrictEqual({
             pullRequest: { number: 1, url: "https://fake.test/acme/site/pull/1" },
             files: { ...FILES, "color.json": now },
@@ -126,8 +129,8 @@ describe("a save to GitHub", () => {
     });
 
     it("titles the pull request by the one change, and lists each change in its description", async () => {
-        const github = onGitHub(FILES);
-        await saving(github)(edited(["color.text.default", "{color.neutral.100}"]));
+        const github = fakeGitHubWithTokens(FILES);
+        await createSave(github)(createEdits(["color.text.default", "{color.neutral.100}"]));
         expect(github.pulls()[0]?.thread).toMatchObject({
             title: "`color.text.default` changed (mode: dark)",
             body: "- `color.text.default` changed (mode: dark)",
@@ -135,9 +138,12 @@ describe("a save to GitHub", () => {
     });
 
     it("counts several changes in the title", async () => {
-        const github = onGitHub(FILES);
-        await saving(github)(
-            edited(["color.text.default", "{color.neutral.100}"], ["color.neutral.50", "#ffffff"]),
+        const github = fakeGitHubWithTokens(FILES);
+        await createSave(github)(
+            createEdits(
+                ["color.text.default", "{color.neutral.100}"],
+                ["color.neutral.50", "#ffffff"],
+            ),
         );
         const [pull] = github.pulls();
         expect(pull?.thread.title).toBe("2 changes from studio");
@@ -145,7 +151,7 @@ describe("a save to GitHub", () => {
     });
 
     it("deletes a file an edit deletes", async () => {
-        const github = onGitHub(FILES);
+        const github = fakeGitHubWithTokens(FILES);
         const edits: Edits = {
             steps: [
                 {
@@ -163,18 +169,18 @@ describe("a save to GitHub", () => {
                 },
             ],
         };
-        await gitSave({ host: github.host, entry: ENTRY })(edits, []);
+        await createGitSave({ host: github.host, entry: ENTRY })(edits, []);
         expect(github.pulls()).toHaveLength(1);
-        expect(await github.onBranch("tokens/dark.json")).toBeUndefined();
-        expect(await github.onBranch("tokens/color.json")).toBe(COLOR);
+        expect(await github.readOnBranch("tokens/dark.json")).toBeUndefined();
+        expect(await github.readOnBranch("tokens/color.json")).toBe(COLOR);
     });
 });
 
 describe("an entry the repository doesn't have", () => {
     it("is refused, naming it, and opens nothing", async () => {
-        const github = onGitHub({ "color.json": COLOR, "dark.json": DARK });
+        const github = fakeGitHubWithTokens({ "color.json": COLOR, "dark.json": DARK });
         await expect(
-            saving(github)(edited(["color.text.default", "{color.neutral.100}"])),
+            createSave(github)(createEdits(["color.text.default", "{color.neutral.100}"])),
         ).rejects.toThrow("tokens/tokens.resolver.json is not in acme/site on main.");
         expect(github.pulls()).toStrictEqual([]);
     });
@@ -182,57 +188,62 @@ describe("an entry the repository doesn't have", () => {
 
 describe("a change on GitHub since the build", () => {
     it("is a clash, with the files as they are now and where they changed, and opens nothing", async () => {
-        const github = onGitHub(FILES);
+        const github = fakeGitHubWithTokens(FILES);
         const now = DARK.replace("{color.neutral.50}", "{color.neutral.900}");
         await github.changeOnGitHub("dark.json", now);
-        const saved = await saving(github)(edited(["color.text.default", "{color.neutral.100}"]));
+        const saved = await createSave(github)(
+            createEdits(["color.text.default", "{color.neutral.100}"]),
+        );
         expect(saved.conflicts).toHaveLength(1);
         expect(saved.files).toStrictEqual({ ...FILES, "dark.json": now });
-        expect(saved.changedOn).toBe("GitHub");
+        expect(saved.changedHost).toBe("GitHub");
         expect(github.pulls()).toStrictEqual([]);
     });
 });
 
 describe("a save GitHub can't take", () => {
     it("says GitHub couldn't be reached, when it can't be", async () => {
-        const github = onGitHub(FILES);
+        const github = fakeGitHubWithTokens(FILES);
         github.forge.offline();
         await expect(
-            saving(github)(edited(["color.text.default", "{color.neutral.100}"])),
+            createSave(github)(createEdits(["color.text.default", "{color.neutral.100}"])),
         ).rejects.toThrow("Couldn't reach GitHub. Try again.");
     });
 
     it("says so when a file can't be fetched for want of a connection", async () => {
-        const github = onGitHub(FILES);
+        const github = fakeGitHubWithTokens(FILES);
         github.forge.failNext(
             "contents.getFile",
             () => new ForgeNetworkError("offline", { forge: "fake", instance: "fake.test" }),
         );
         await expect(
-            saving(github)(edited(["color.text.default", "{color.neutral.100}"])),
+            createSave(github)(createEdits(["color.text.default", "{color.neutral.100}"])),
         ).rejects.toThrow("Couldn't reach GitHub. Try again.");
     });
 });
 
 describe("saving from studio to GitHub", () => {
-    function studioSavingTo(message: StudioMessage, github: ReturnType<typeof onGitHub>) {
+    function studioSavingTo(
+        message: StudioMessage,
+        github: ReturnType<typeof fakeGitHubWithTokens>,
+    ) {
         return createStudio(
             message,
-            adapterFor,
-            gitSave({ host: github.host, entry: `tokens/${message.entryFile}` }),
+            createAdapter,
+            createGitSave({ host: github.host, entry: `tokens/${message.entryFile}` }),
         );
     }
 
     it("saves a second time without the first save's changes showing as clashes", async () => {
         const message = demoMessage();
-        const github = onGitHub(message.files);
+        const github = fakeGitHubWithTokens(message.files);
         const studio = studioSavingTo(message, github);
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         await studio.save?.();
         studio.do(
-            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkText),
+            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkOptions),
         );
         const second = await studio.save?.();
         expect(second?.conflicts).toBeUndefined();
@@ -241,31 +252,33 @@ describe("saving from studio to GitHub", () => {
 
     it("sends only the new change in a second save after a group rename, never the first save's rename again", async () => {
         const message = demoMessage();
-        const github = onGitHub(message.files);
+        const github = fakeGitHubWithTokens(message.files);
         const studio = studioSavingTo(message, github);
         studio.do(rename(studio.state.tokens, "radius", "corner"));
         await studio.save?.();
         expect(studio.state.changes).toStrictEqual([]);
         studio.do(
-            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkText),
+            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkOptions),
         );
         await studio.save?.();
         const [, second] = github.pulls();
         const head = second?.thread.branches?.head.ref;
-        expect(await github.onBranch("tokens/radius.json", head)).toBe(
+        expect(await github.readOnBranch("tokens/radius.json", head)).toBe(
             message.files["radius.json"],
         );
-        expect(await github.onBranch("tokens/dark.json", head)).toContain("{color.neutral.300}");
+        expect(await github.readOnBranch("tokens/dark.json", head)).toContain(
+            "{color.neutral.300}",
+        );
         expect(second?.thread.title).toBe("`color.text.muted` changed (mode: dark)");
     });
 });
 
 describe("the line for a clash", () => {
     it("says where the files changed when the save knows", () => {
-        expect(clashText({ changedOn: "GitHub" })).toBe("Not saved: changed on GitHub.");
+        expect(formatClashMessage({ changedHost: "GitHub" })).toBe("Not saved: changed on GitHub.");
     });
 
     it("says elsewhere when it doesn't", () => {
-        expect(clashText({})).toBe("Not saved: changed elsewhere.");
+        expect(formatClashMessage({})).toBe("Not saved: changed elsewhere.");
     });
 });

@@ -38,14 +38,14 @@ describe("the names studio puts where it shares space with others", () => {
                 state: "sugarcube-studio-state",
             },
             STUDIO_SETTINGS: {
-                clientId: "SUGARCUBE_STUDIO_GITHUB_CLIENT_ID",
+                clientID: "SUGARCUBE_STUDIO_GITHUB_CLIENT_ID",
                 clientSecret: "SUGARCUBE_STUDIO_GITHUB_CLIENT_SECRET",
                 secret: "SUGARCUBE_STUDIO_SECRET",
             },
             STUDIO_BRANCH_PREFIX: "sugarcube-studio",
             STUDIO_STORAGE: {
                 unsaved: "sugarcube:studio:unsaved:",
-                saveWaiting: "sugarcube:studio:save-waiting:",
+                pendingSave: "sugarcube:studio:save-waiting:",
             },
             STUDIO_PAGE_CHANNEL: "sugarcube:studio:page",
             STUDIO_RPC: {

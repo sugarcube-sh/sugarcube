@@ -4,14 +4,14 @@ import { join } from "node:path";
 import { SUGARCUBE_API_PLUGIN_NAME } from "@sugarcube-sh/vite";
 import { type Plugin, type ViteDevServer, createServer } from "vite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { serveFiles } from "../src/node/serve";
+import { serveFromFiles } from "../src/node/serve";
 import { STUDIO_ICON } from "../src/server/icon";
 import sugarcubeStudio from "../src/vite/plugin";
-import { filesAt } from "./node/demo";
+import { createDemoFiles } from "./node/demo";
 
 type Branding = { productName?: string; logo?: string };
 
-async function brandingAt(origin: string): Promise<Branding | undefined> {
+async function getBranding(origin: string): Promise<Branding | undefined> {
     const response = await fetch(`${origin}/__sugarcube/__connection.json`);
     const meta = (await response.json()) as { configs?: { ui?: { branding?: Branding } } };
     return meta.configs?.ui?.branding;
@@ -21,10 +21,10 @@ const sugarcube = { productName: "sugarcube", logo: STUDIO_ICON };
 
 describe("the dock studio sits in", () => {
     describe("served on a port of its own", () => {
-        let hub: Awaited<ReturnType<typeof serveFiles>>;
+        let hub: Awaited<ReturnType<typeof serveFromFiles>>;
 
         beforeAll(async () => {
-            hub = await serveFiles(await filesAt(), { port: 0 });
+            hub = await serveFromFiles(await createDemoFiles(), { port: 0 });
         }, 30_000);
 
         afterAll(async () => {
@@ -32,7 +32,7 @@ describe("the dock studio sits in", () => {
         });
 
         it("wears sugarcube's name and logo", async () => {
-            expect(await brandingAt(hub.origin)).toStrictEqual(sugarcube);
+            expect(await getBranding(hub.origin)).toStrictEqual(sugarcube);
         });
     });
 
@@ -42,8 +42,8 @@ describe("the dock studio sits in", () => {
 
         beforeAll(async () => {
             root = mkdtempSync(join(tmpdir(), "studio-under-vite-"));
-            const files = await filesAt();
-            const context = { ...files.now(), onReload: files.onChange };
+            const files = await createDemoFiles();
+            const context = { ...files.getSnapshot(), onReload: files.onChange };
             const sugarcubePlugin: Plugin = {
                 name: SUGARCUBE_API_PLUGIN_NAME,
                 api: { getContext: () => context },
@@ -66,7 +66,7 @@ describe("the dock studio sits in", () => {
         it("wears sugarcube's name and logo", async () => {
             const origin = server.resolvedUrls?.local[0]?.replace(/\/$/, "") ?? "";
 
-            expect(await brandingAt(origin)).toStrictEqual(sugarcube);
+            expect(await getBranding(origin)).toStrictEqual(sugarcube);
         });
     });
 });

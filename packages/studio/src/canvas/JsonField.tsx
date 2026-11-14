@@ -1,27 +1,27 @@
 import type { JsonValue } from "@sugarcube-sh/dtcg";
-import { parsedJson } from "../controllers/typed-text";
-import { changes } from "../controllers/value-field";
+import { parseJSON } from "../controllers/typed-text";
+import { isChanged } from "../controllers/value-field";
 import { JsonInput } from "./JsonInput";
 import { useDraft } from "./use-draft";
 
 export function JsonField({
-    written,
+    value,
     label,
     onWrite,
 }: {
-    written: JsonValue | undefined;
+    value: JsonValue | undefined;
     label: string;
     onWrite(value: JsonValue): void;
 }) {
-    const shown = written === undefined ? "" : JSON.stringify(written);
-    const [text, setText] = useDraft(shown, shown, (kept) => {
-        const parsed = parsedJson(kept);
-        return parsed !== undefined && !changes({ kind: "json", value: parsed.value }, written);
+    const valueText = value === undefined ? "" : JSON.stringify(value);
+    const [text, setText] = useDraft(valueText, valueText, (draftText) => {
+        const parsed = parseJSON(draftText);
+        return parsed !== undefined && !isChanged({ kind: "json", value: parsed.value }, value);
     });
 
     const write = () => {
-        const parsed = parsedJson(text);
-        if (parsed && changes({ kind: "json", value: parsed.value }, written))
+        const parsed = parseJSON(text);
+        if (parsed && isChanged({ kind: "json", value: parsed.value }, value))
             onWrite(parsed.value);
     };
 

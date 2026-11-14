@@ -1,17 +1,17 @@
 import { create, remove, rename, setValue } from "@sugarcube-sh/dtcg-edit";
 import { describe, expect, it, vi } from "vitest";
-import { plainMessage, studioOn } from "./demo-message";
+import { plainMessage, createDemoStudio } from "./demo-message";
 
-const darkText = { input: { mode: "dark" } } as const;
+const darkOptions = { input: { mode: "dark" } } as const;
 
 describe("editing in studio", () => {
     it("commits an operation's result, so the tokens, the page's CSS and the changes move on", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         const listener = vi.fn();
         studio.subscribe(listener);
 
         const done = studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
 
         expect(done.tokens).toBe(studio.state.tokens);
@@ -27,16 +27,16 @@ describe("editing in studio", () => {
     });
 
     it("keeps the theme shown through an edit", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         studio.show({ mode: "dark" });
 
         studio.do(setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}"));
 
-        expect(studio.state.showing.label).toBe("mode: dark");
+        expect(studio.state.shownPermutation.label).toBe("mode: dark");
     });
 
     it("changes nothing for a refused operation, and says why", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         const before = studio.state;
         const listener = vi.fn();
         studio.subscribe(listener);
@@ -49,7 +49,7 @@ describe("editing in studio", () => {
     });
 
     it("lists a rename as dtcg's diff gives it, once for each value the token has", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
 
         studio.do(rename(studio.state.tokens, "color.text.default", "body"));
 
@@ -66,7 +66,7 @@ describe("editing in studio", () => {
     });
 
     it("goes back to the files as opened when the edits are discarded", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         const opened = studio.state.tokens;
         studio.do(remove(studio.state.tokens, "color.text.muted"));
 
@@ -77,17 +77,17 @@ describe("editing in studio", () => {
     });
 
     it("edits a plain DTCG project with the plain adapter", () => {
-        const studio = studioOn(plainMessage());
+        const studio = createDemoStudio(plainMessage());
 
         studio.do(setValue(studio.state.tokens, "size.fluid.gutter", { value: 3, unit: "rem" }));
 
-        const gutter = studio.state.showing.getToken("size.fluid.gutter");
-        expect(gutter && studio.state.value(gutter)).toBe("3rem");
+        const gutter = studio.state.shownPermutation.getToken("size.fluid.gutter");
+        expect(gutter && studio.state.getValue(gutter)).toBe("3rem");
         expect(studio.state.changes).toHaveLength(1);
     });
 
     it("follows a token through a rename by its id", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         const id = studio.getID("color.text.default");
 
         studio.do(rename(studio.state.tokens, "color.text.default", "body"));
@@ -96,7 +96,7 @@ describe("editing in studio", () => {
     });
 
     it("forgets a removed token's id", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
         const id = studio.getID("color.text.muted");
 
         studio.do(remove(studio.state.tokens, "color.text.muted"));
@@ -105,7 +105,7 @@ describe("editing in studio", () => {
     });
 
     it("creates a token, listed as added", () => {
-        const studio = studioOn();
+        const studio = createDemoStudio();
 
         studio.do(create(studio.state.tokens, "color.text.link", { $value: "{color.brand.500}" }));
 

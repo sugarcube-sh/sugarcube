@@ -2,8 +2,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { FileWatcher } from "@sugarcube-sh/dtcg/node";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { nodeFiles } from "../../src/server/node-files";
-import { demoCopy } from "./demo-copy";
+import { createNodeFiles } from "../../src/server/node-files";
+import { copyDemo } from "./copy-demo";
 
 let remove = () => {};
 afterEach(() => remove());
@@ -19,9 +19,9 @@ function watcher() {
 }
 
 async function demo() {
-    const copy = demoCopy();
+    const copy = copyDemo();
     remove = copy.remove;
-    const files = await nodeFiles(copy.config, {
+    const files = await createNodeFiles(copy.config, {
         onError: (error) => {
             throw error;
         },
@@ -29,11 +29,11 @@ async function demo() {
     return { ...copy, files };
 }
 
-describe("nodeFiles", () => {
+describe("createNodeFiles", () => {
     it("sends every file the tokens are read from", async () => {
         const { dir, files } = await demo();
 
-        const sent = files.now().tokens.toMemory().files;
+        const sent = files.getSnapshot().tokens.toMemory().files;
 
         expect(sent["dark.json"]).toBe(readFileSync(join(dir, "dark.json"), "utf8"));
         expect(sent["tokens.resolver.json"]).toBeDefined();
@@ -64,7 +64,7 @@ describe("nodeFiles", () => {
         change(path);
         await changed;
 
-        expect(files.now().tokens.getText("dark.json")).toBe(edited);
+        expect(files.getSnapshot().tokens.getText("dark.json")).toBe(edited);
     });
 
     it("stops telling a listener once it stops listening", async () => {

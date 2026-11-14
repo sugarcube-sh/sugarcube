@@ -18,24 +18,24 @@ import type { ExtensionForm } from "./adapter";
 import {
     type DeprecationView,
     type DescriptionView,
-    deprecationView,
-    descriptionView,
+    getDeprecationView,
+    getDescriptionView,
 } from "./properties";
 import type { StudioState } from "./studio";
-import { type Edit, fieldKey } from "./undo";
-import { type ProblemRow, type TokenRow, problemRows, tokenRow } from "./views";
+import { type Edit, createMergeKey } from "./undo";
+import { type ProblemRow, type TokenRow, toProblemRows, toTokenRow } from "./views";
 
-export interface PlaceRow {
+export interface DefinitionRow {
     readonly label: string | undefined;
     readonly value: JsonValue | undefined;
-    readonly at: Span;
+    readonly span: Span;
 }
 
-export function placeRows(tokens: DesignTokens, path: string): PlaceRow[] {
-    return tokens.getDefinitions(path).map((place) => ({
-        label: labelOf(place),
-        value: isJsonObject(place.json) ? place.json.$value : undefined,
-        at: place.span,
+export function getDefinitionRows(tokens: DesignTokens, path: string): DefinitionRow[] {
+    return tokens.getDefinitions(path).map((definition) => ({
+        label: getDefinitionLabel(definition),
+        value: isJsonObject(definition.json) ? definition.json.$value : undefined,
+        span: definition.span,
     }));
 }
 
@@ -43,11 +43,11 @@ export interface ValueRow {
     readonly key: string;
     readonly label: string | undefined;
     readonly value: JsonValue | undefined;
-    readonly unwritten: boolean;
-    readonly where: ValueOptions;
+    readonly isNew: boolean;
+    readonly valueOptions: ValueOptions;
 }
 
-export function valueEdit(
+export function createValueEdit(
     tokens: DesignTokens,
     path: string,
     row: ValueRow,
@@ -56,123 +56,145 @@ export function valueEdit(
     control?: string,
 ): Edit {
     return {
-        result: setValue(tokens, path, value, { ...row.where, part }),
+        result: setValue(tokens, path, value, { ...row.valueOptions, part }),
         options: {
-            mergeKey: fieldKey({ path, writes: "value", place: row.label, part, control }),
+            mergeKey: createMergeKey({ path, property: "value", row: row.label, part, control }),
         },
     };
 }
 
 export interface ValueView {
     readonly rows: readonly ValueRow[];
-    readonly offers: readonly string[];
-    readonly actions: boolean;
+    readonly overridableContexts: readonly string[];
+    readonly editable: boolean;
 }
 
-export function valueView(
+export function getValueView(
     tokens: DesignTokens,
     path: string,
     adding: readonly string[],
 ): ValueView {
     if (tokens.permutations.some((perm) => perm.getToken(path)?.generated)) {
-        return { rows: [], offers: [], actions: false };
+        return { rows: [], overridableContexts: [], editable: false };
     }
-    const places = placeRows(tokens, path);
-    const offered = getOverridableContexts(tokens, path);
-    const written = places
-        .filter((place) => place.label === undefined || !adding.includes(place.label))
-        .map((place) => ({
-            key: `${place.at.file}:${place.at.offset}`,
-            label: place.label,
-            value: place.value,
-            unwritten: false,
-            where: { at: place.at },
+    const places = getDefinitionRows(tokens, path);
+    const overridable = getOverridableContexts(tokens, path);
+    const definitionRows = places
+        .filter(
+            (definition) => definition.label === undefined || !adding.includes(definition.label),
+        )
+        .map((definition) => ({
+            key: `${definition.span.file}:${definition.span.offset}`,
+            label: definition.label,
+            value: definition.value,
+            isNew: false,
+            valueOptions: { at: definition.span },
         }));
     const overrides = adding.flatMap((label): ValueRow[] => {
         const key = `adding ${label}`;
-        const place = places.find((each) => each.label === label);
-        if (place) {
-            return [{ key, label, value: place.value, unwritten: false, where: { at: place.at } }];
+        const definition = places.find((each) => each.label === label);
+        if (definition) {
+            return [
+                {
+                    key,
+                    label,
+                    value: definition.value,
+                    isNew: false,
+                    valueOptions: { at: definition.span },
+                },
+            ];
         }
-        const offer = offered.find((each) => each.label === label);
-        if (!offer) return [];
-        const inForce = tokens.getPermutation(offer.input).getToken(path)?.winningDefinition.json;
+        const context = overridable.find((each) => each.label === label);
+        if (!context) return [];
+        const winningJson = tokens.getPermutation(context.input).getToken(path)
+            ?.winningDefinition.json;
         return [
             {
                 key,
                 label,
-                value: isJsonObject(inForce) ? inForce.$value : undefined,
-                unwritten: true,
-                where: { input: offer.input },
+                value: isJsonObject(winningJson) ? winningJson.$value : undefined,
+                isNew: true,
+                valueOptions: { input: context.input },
             },
         ];
     });
     return {
-        rows: [...written, ...overrides],
-        offers: offered.map(({ label }) => label).filter((label) => !adding.includes(label)),
-        actions: true,
+        rows: [...definitionRows, ...overrides],
+        overridableContexts: overridable
+            .map(({ label }) => label)
+            .filter((label) => !adding.includes(label)),
+        editable: true,
     };
 }
 
-export type MadeBy =
+export type GenerationSource =
     | { readonly kind: "recipe"; readonly from: string; readonly by: string }
     | { readonly kind: "group"; readonly from: string }
     | { readonly kind: "top-level" };
 
-export function madeBy(
+export function getGenerationSource(
     token: Token,
     showing: Permutation,
-    formFor: StudioState["formFor"],
-): MadeBy | undefined {
+    getForm: StudioState["getForm"],
+): GenerationSource | undefined {
     if (!token.generated) return undefined;
     const { from } = token.generated;
     if (from === "") return { kind: "top-level" };
     const group = showing.getGroup(from);
-    const by = group && formFor(group)?.label.toLowerCase();
+    const by = group && getForm(group)?.label.toLowerCase();
     return by === undefined ? { kind: "group", from } : { kind: "recipe", from, by };
 }
 
-export interface PageRow extends ValueRow {
+export interface TokenPageRow extends ValueRow {
     readonly form: ExtensionForm | undefined;
     readonly name: string | undefined;
     readonly fieldLabel: string;
 }
 
-function pageRow(row: ValueRow, token: Token, formFor: StudioState["formFor"]): PageRow {
-    const name = row.unwritten ? `Override for ${row.label}` : row.label;
-    return { ...row, form: formFor(token, row.where.at), name, fieldLabel: name ?? token.path };
+function toTokenPageRow(
+    row: ValueRow,
+    token: Token,
+    getForm: StudioState["getForm"],
+): TokenPageRow {
+    const name = row.isNew ? `Override for ${row.label}` : row.label;
+    return {
+        ...row,
+        form: getForm(token, row.valueOptions.at),
+        name,
+        fieldLabel: name ?? token.path,
+    };
 }
 
 export interface TokenPageView {
     readonly row: TokenRow;
-    readonly rows: readonly PageRow[];
-    readonly offers: readonly string[];
-    readonly actions: boolean;
+    readonly rows: readonly TokenPageRow[];
+    readonly overridableContexts: readonly string[];
+    readonly editable: boolean;
     readonly problems: readonly ProblemRow[];
-    readonly made: MadeBy | undefined;
+    readonly generatedBy: GenerationSource | undefined;
     readonly form: ExtensionForm | undefined;
     readonly description: DescriptionView;
     readonly deprecation: DeprecationView;
 }
 
-export function tokenPage(
+export function getTokenPageView(
     state: StudioState,
     token: Token,
     adding: readonly string[],
 ): TokenPageView {
-    const { tokens, showing, value, formFor } = state;
-    const view = valueView(tokens, token.path, adding);
-    const editable = view.actions && token.inherited === undefined;
+    const { tokens, shownPermutation, getValue, getForm } = state;
+    const view = getValueView(tokens, token.path, adding);
+    const editable = view.editable && token.inherited === undefined;
     return {
-        row: tokenRow(token, token.path, value),
-        rows: view.rows.map((row) => pageRow(row, token, formFor)),
-        offers: view.offers,
-        actions: editable,
-        problems: problemRows(tokens.getDiagnostics(token.path)),
-        made: madeBy(token, showing, formFor),
-        form: formFor(token),
-        description: descriptionView(token, editable),
-        deprecation: deprecationView(token, editable),
+        row: toTokenRow(token, token.path, getValue),
+        rows: view.rows.map((row) => toTokenPageRow(row, token, getForm)),
+        overridableContexts: view.overridableContexts,
+        editable,
+        problems: toProblemRows(tokens.getDiagnostics(token.path)),
+        generatedBy: getGenerationSource(token, shownPermutation, getForm),
+        form: getForm(token),
+        description: getDescriptionView(token, editable),
+        deprecation: getDeprecationView(token, editable),
     };
 }
 
@@ -187,7 +209,7 @@ export type ClashRow = { readonly clash: Clash; readonly canKeepYours: boolean }
       }
 );
 
-export function clashRows(tokens: DesignTokens, clashes: readonly Clash[]): ClashRow[] {
+export function toClashRows(tokens: DesignTokens, clashes: readonly Clash[]): ClashRow[] {
     return clashes.map((clash) => {
         const { canKeepYours } = clash;
         const [move] = clash.step.moves;
@@ -199,18 +221,22 @@ export function clashRows(tokens: DesignTokens, clashes: readonly Clash[]): Clas
             canKeepYours,
             kind: !canKeepYours ? "gone" : part?.yours === undefined ? "removed" : "changed",
             path,
-            label: placeRows(tokens, path).find(({ at }) => at.file === part?.file)?.label,
-            yours: valueOf(part?.yours),
-            theirs: valueOf(part?.theirs),
+            label: getDefinitionRows(tokens, path).find(({ span: at }) => at.file === part?.file)
+                ?.label,
+            yours: getTokenValue(part?.yours),
+            theirs: getTokenValue(part?.theirs),
         };
     });
 }
 
-function labelOf({ sources, permutations }: DefinitionInPermutations): string | undefined {
+function getDefinitionLabel({
+    sources,
+    permutations,
+}: DefinitionInPermutations): string | undefined {
     if (sources.some((source) => source.modifier)) return permutations.label;
     return sources[0]?.sets[0]?.name;
 }
 
-function valueOf(member: JsonValue | undefined): unknown {
+function getTokenValue(member: JsonValue | undefined): unknown {
     return isJsonObject(member) ? member.$value : member;
 }

@@ -1,10 +1,10 @@
 import { type DesignTokens, readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import {
-    deprecationEdit,
-    deprecationView,
-    descriptionEdit,
-    descriptionView,
+    createDeprecationEdit,
+    getDeprecationView,
+    createDescriptionEdit,
+    getDescriptionView,
 } from "../../src/controllers/properties";
 
 function oneFile(json: unknown): DesignTokens {
@@ -26,29 +26,32 @@ const group = (path: string) => tokens.getPermutation().getGroup(path)!;
 
 describe("a description", () => {
     it("is a token's own, editable", () => {
-        expect(descriptionView(token("own.n"), true)).toEqual({ text: "", editable: true });
-        expect(descriptionView(group("plain"), true)).toEqual({ text: "Plain.", editable: true });
+        expect(getDescriptionView(token("own.n"), true)).toEqual({ text: "", editable: true });
+        expect(getDescriptionView(group("plain"), true)).toEqual({
+            text: "Plain.",
+            editable: true,
+        });
     });
 
     it("says which group it comes from when a group takes it through $extends", () => {
-        expect(descriptionView(group("primary"), true)).toEqual({
+        expect(getDescriptionView(group("primary"), true)).toEqual({
             text: "The base.",
             editable: true,
             from: "button",
         });
-        expect(descriptionView(group("secondary"), true)).toEqual({
+        expect(getDescriptionView(group("secondary"), true)).toEqual({
             text: "Its own.",
             editable: true,
         });
     });
 
     it("can't be edited where the page can't edit", () => {
-        expect(descriptionView(group("plain"), false).editable).toBe(false);
+        expect(getDescriptionView(group("plain"), false).editable).toBe(false);
     });
 
     it("is written as typed, and removed when the box is emptied, as one field", () => {
-        const typed = descriptionEdit(tokens, "plain", "Words.");
-        const emptied = descriptionEdit(tokens, "plain", "");
+        const typed = createDescriptionEdit(tokens, "plain", "Words.");
+        const emptied = createDescriptionEdit(tokens, "plain", "");
 
         expect(typed.result.ops).toEqual([
             expect.objectContaining({ kind: "set", value: "Words.", was: "Plain." }),
@@ -56,58 +59,58 @@ describe("a description", () => {
         expect(emptied.result.ops).toEqual([expect.objectContaining({ kind: "remove" })]);
         expect(typed.options.mergeKey).toBe(emptied.options.mergeKey);
         expect(typed.options.mergeKey).not.toBe(
-            descriptionEdit(tokens, "own", "x").options.mergeKey,
+            createDescriptionEdit(tokens, "own", "x").options.mergeKey,
         );
     });
 });
 
 describe("a deprecation", () => {
     it("is its own: a ticked box, and unticking removes it", () => {
-        expect(deprecationView(token("own.n"), true)).toEqual({
-            line: {},
-            box: { checked: true, untick: null, message: "" },
+        expect(getDeprecationView(token("own.n"), true)).toEqual({
+            notice: {},
+            checkbox: { checked: true, uncheckedValue: null, message: "" },
         });
-        expect(deprecationView(group("own"), true)).toEqual({
-            line: { message: "Use gap" },
-            box: { checked: true, untick: null, message: "Use gap" },
+        expect(getDeprecationView(group("own"), true)).toEqual({
+            notice: { message: "Use gap" },
+            checkbox: { checked: true, uncheckedValue: null, message: "Use gap" },
         });
     });
 
     it("is none: an empty box and no line", () => {
-        expect(deprecationView(token("plain.n"), true)).toEqual({
-            box: { checked: false, untick: null, message: "" },
+        expect(getDeprecationView(token("plain.n"), true)).toEqual({
+            checkbox: { checked: false, uncheckedValue: null, message: "" },
         });
-        expect(deprecationView(token("kept.n"), true)).toEqual({
-            box: { checked: false, untick: null, message: "" },
+        expect(getDeprecationView(token("kept.n"), true)).toEqual({
+            checkbox: { checked: false, uncheckedValue: null, message: "" },
         });
     });
 
     it("comes from a group above: the line names it, and there is no box", () => {
-        expect(deprecationView(token("old.n"), true)).toEqual({
-            line: { by: "old", message: "Use new" },
+        expect(getDeprecationView(token("old.n"), true)).toEqual({
+            notice: { group: "old", message: "Use new" },
         });
-        expect(deprecationView(group("old.inner"), true)).toEqual({
-            line: { by: "old", message: "Use new" },
+        expect(getDeprecationView(group("old.inner"), true)).toEqual({
+            notice: { group: "old", message: "Use new" },
         });
     });
 
     it("comes through $extends: the line names it, and unticking says not deprecated", () => {
-        expect(deprecationView(group("primary"), true)).toEqual({
-            line: { by: "button", message: "Use action" },
-            box: { checked: true, untick: false, message: "Use action" },
+        expect(getDeprecationView(group("primary"), true)).toEqual({
+            notice: { group: "button", message: "Use action" },
+            checkbox: { checked: true, uncheckedValue: false, message: "Use action" },
         });
     });
 
     it("has no box where the page can't edit", () => {
-        expect(deprecationView(token("own.n"), false)).toEqual({ line: {} });
+        expect(getDeprecationView(token("own.n"), false)).toEqual({ notice: {} });
     });
 
     it("writes the reason, or true with none, and what unticking writes, as one field", () => {
-        const none = deprecationView(token("plain.n"), true).box!;
-        const own = deprecationView(token("own.n"), true).box!;
-        const extended = deprecationView(group("primary"), true).box!;
-        const ticked = deprecationEdit(tokens, "plain.n", none, true, "");
-        const reasoned = deprecationEdit(tokens, "plain.n", none, true, "Use gap");
+        const none = getDeprecationView(token("plain.n"), true).checkbox!;
+        const own = getDeprecationView(token("own.n"), true).checkbox!;
+        const extended = getDeprecationView(group("primary"), true).checkbox!;
+        const ticked = createDeprecationEdit(tokens, "plain.n", none, true, "");
+        const reasoned = createDeprecationEdit(tokens, "plain.n", none, true, "Use gap");
 
         expect(ticked.result.ops).toEqual([expect.objectContaining({ kind: "add", value: true })]);
         expect(reasoned.result.ops).toEqual([
@@ -115,12 +118,12 @@ describe("a deprecation", () => {
         ]);
         expect(ticked.options.mergeKey).toBe(reasoned.options.mergeKey);
         expect(ticked.options.mergeKey).not.toBe(
-            descriptionEdit(tokens, "plain.n", "x").options.mergeKey,
+            createDescriptionEdit(tokens, "plain.n", "x").options.mergeKey,
         );
-        expect(deprecationEdit(tokens, "own.n", own, false, "").result.ops).toEqual([
+        expect(createDeprecationEdit(tokens, "own.n", own, false, "").result.ops).toEqual([
             expect.objectContaining({ kind: "remove" }),
         ]);
-        expect(deprecationEdit(tokens, "primary", extended, false, "").result.ops).toEqual([
+        expect(createDeprecationEdit(tokens, "primary", extended, false, "").result.ops).toEqual([
             expect.objectContaining({ kind: "add", value: false }),
         ]);
     });

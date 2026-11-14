@@ -1,8 +1,8 @@
 import { createServer, request } from "node:http";
-import { studioDevframe } from "../../src/server/definition";
+import { createStudioDevframe } from "../../src/server/definition";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { STUDIO_PORT, serveFiles } from "../../src/node/serve";
-import { filesAt } from "./demo";
+import { STUDIO_PORT, serveFromFiles } from "../../src/node/serve";
+import { createDemoFiles } from "./demo";
 
 vi.mock("devframe/utils/open", () => ({
     open: async () => {
@@ -10,9 +10,9 @@ vi.mock("devframe/utils/open", () => ({
     },
 }));
 
-describe("studioDevframe", () => {
+describe("createStudioDevframe", () => {
     it("declares the studio route and dock without any host running", () => {
-        const def = studioDevframe({ files: filesAt() });
+        const def = createStudioDevframe({ files: createDemoFiles() });
 
         expect(def.id).toBe("studio");
         expect(def.basePath).toBe("/__sugarcube/studio/");
@@ -21,10 +21,10 @@ describe("studioDevframe", () => {
 });
 
 describe("serveStudio", () => {
-    let hub: Awaited<ReturnType<typeof serveFiles>>;
+    let hub: Awaited<ReturnType<typeof serveFromFiles>>;
 
     beforeAll(async () => {
-        hub = await serveFiles(await filesAt(), { port: 0 });
+        hub = await serveFromFiles(await createDemoFiles(), { port: 0 });
     }, 30_000);
 
     afterAll(async () => {
@@ -92,9 +92,9 @@ describe("serveStudio", () => {
     });
 });
 
-function upgradeFrom(origin: string, url: string): Promise<number | undefined> {
+function requestUpgrade(origin: string, url: string): Promise<number | undefined> {
     return new Promise((resolve, reject) => {
-        const asking = request(url, {
+        const upgradeRequest = request(url, {
             headers: {
                 "Origin": origin,
                 "Connection": "Upgrade",
@@ -103,24 +103,24 @@ function upgradeFrom(origin: string, url: string): Promise<number | undefined> {
                 "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
             },
         });
-        asking.on("upgrade", (response, socket) => {
+        upgradeRequest.on("upgrade", (response, socket) => {
             socket.destroy();
             resolve(response.statusCode);
         });
-        asking.on("response", (response) => {
+        upgradeRequest.on("response", (response) => {
             response.resume();
             resolve(response.statusCode);
         });
-        asking.on("error", reject);
-        asking.end();
+        upgradeRequest.on("error", reject);
+        upgradeRequest.end();
     });
 }
 
 describe("serveStudio's live connection", () => {
-    let hub: Awaited<ReturnType<typeof serveFiles>>;
+    let hub: Awaited<ReturnType<typeof serveFromFiles>>;
 
     beforeAll(async () => {
-        hub = await serveFiles(await filesAt(), { port: 0 });
+        hub = await serveFromFiles(await createDemoFiles(), { port: 0 });
     }, 30_000);
 
     afterAll(async () => {
@@ -128,14 +128,14 @@ describe("serveStudio's live connection", () => {
     });
 
     it("opens for a page on this machine", async () => {
-        expect(await upgradeFrom("http://localhost:8080", `${hub.origin}/__sugarcube/__ws`)).toBe(
-            101,
-        );
+        expect(
+            await requestUpgrade("http://localhost:8080", `${hub.origin}/__sugarcube/__ws`),
+        ).toBe(101);
     });
 
     it("stays shut to a site on the internet, which could otherwise save to the token files", async () => {
         expect(
-            await upgradeFrom("https://evil.example", `${hub.origin}/__sugarcube/__ws`),
+            await requestUpgrade("https://evil.example", `${hub.origin}/__sugarcube/__ws`),
         ).not.toBe(101);
     });
 });
@@ -151,7 +151,7 @@ describe("serveStudio, when things go wrong", () => {
         const address = taken.address();
         const port = typeof address === "object" && address ? address.port : 0;
 
-        await expect(serveFiles(await filesAt(), { port })).rejects.toMatchObject({
+        await expect(serveFromFiles(await createDemoFiles(), { port })).rejects.toMatchObject({
             code: "EADDRINUSE",
         });
 
@@ -160,7 +160,7 @@ describe("serveStudio, when things go wrong", () => {
 
     it("still serves when the browser cannot be opened", async () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const hub = await serveFiles(await filesAt(), { port: 0, open: true });
+        const hub = await serveFromFiles(await createDemoFiles(), { port: 0, open: true });
 
         expect((await fetch(hub.studioUrl)).status).toBe(200);
         expect(warn).toHaveBeenCalledWith(expect.stringContaining(hub.studioUrl));

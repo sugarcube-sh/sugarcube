@@ -1,13 +1,13 @@
 import { fileURLToPath } from "node:url";
 import { type SugarcubeConfig, fillDefaults } from "@sugarcube-sh/core";
-import { nodeFiles } from "../../src/server/node-files";
+import { createNodeFiles } from "../../src/server/node-files";
 
 export const demoResolver = fileURLToPath(
     new URL("../../demo/tokens.resolver.json", import.meta.url),
 );
 
-export function filesAt(resolver = demoResolver, studio?: SugarcubeConfig["studio"]) {
-    return nodeFiles(
+export function createDemoFiles(resolver = demoResolver, studio?: SugarcubeConfig["studio"]) {
+    return createNodeFiles(
         { ...fillDefaults({ resolver, ...(studio && { studio }) }), resolver },
         {
             onError: (error) => {

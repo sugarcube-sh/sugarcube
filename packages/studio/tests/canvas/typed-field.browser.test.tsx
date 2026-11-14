@@ -6,11 +6,11 @@ import { render } from "vitest-browser-react";
 import { TypedField } from "../../src/canvas/TypedField";
 
 function Row({ type, start }: { type: TokenType | undefined; start: JsonValue }) {
-    const [written, setWritten] = useState(start);
+    const [value, setValue] = useState(start);
     return (
         <>
-            <TypedField type={type} written={written} label="base" onWrite={setWritten} />
-            <output aria-label="written">{JSON.stringify(written)}</output>
+            <TypedField type={type} value={value} label="base" onWrite={setValue} />
+            <output aria-label="value">{JSON.stringify(value)}</output>
         </>
     );
 }
@@ -21,9 +21,7 @@ describe("a number field", () => {
 
         await screen.getByRole("spinbutton", { name: "base" }).fill("3");
 
-        await expect
-            .element(screen.getByRole("status", { name: "written" }))
-            .toHaveTextContent("3");
+        await expect.element(screen.getByRole("status", { name: "value" })).toHaveTextContent("3");
     });
 });
 
@@ -35,7 +33,7 @@ describe("typing", () => {
         await box.fill("1e2");
 
         await expect
-            .element(screen.getByRole("status", { name: "written" }))
+            .element(screen.getByRole("status", { name: "value" }))
             .toHaveTextContent("100");
         await expect.element(box).toHaveDisplayValue("1e2");
     });
@@ -53,7 +51,7 @@ describe("the JSON box", () => {
         await userEvent.keyboard("{Enter}");
 
         await expect
-            .element(screen.getByRole("status", { name: "written" }))
+            .element(screen.getByRole("status", { name: "value" }))
             .toHaveTextContent('"components":[1,0,0]');
         await expect.element(box).toHaveDisplayValue(typed);
     });
@@ -61,8 +59,8 @@ describe("the JSON box", () => {
 
 describe("a colour", () => {
     const brand = { colorSpace: "oklch", components: [0.624, 0.181, 258], hex: "#3884f2" };
-    const writtenOf = (screen: Awaited<ReturnType<typeof render>>) =>
-        JSON.parse(screen.getByRole("status", { name: "written" }).element().textContent ?? "null");
+    const readOutput = (screen: Awaited<ReturnType<typeof render>>) =>
+        JSON.parse(screen.getByRole("status", { name: "value" }).element().textContent ?? "null");
 
     it("writes a component exactly as typed, and the hex the file has", async () => {
         const screen = await render(<Row type="color" start={brand} />);
@@ -70,9 +68,9 @@ describe("a colour", () => {
         await screen.getByRole("textbox", { name: "base, Chroma" }).fill("0.0134567");
 
         await expect
-            .element(screen.getByRole("status", { name: "written" }))
+            .element(screen.getByRole("status", { name: "value" }))
             .toHaveTextContent("0.0134567");
-        expect(writtenOf(screen)).toMatchObject({
+        expect(readOutput(screen)).toMatchObject({
             colorSpace: "oklch",
             components: [0.624, 0.0134567, 258],
             hex: expect.stringMatching(/^#[0-9a-f]{6}$/),
@@ -85,7 +83,7 @@ describe("a colour", () => {
         await screen.getByRole("slider", { name: "base, Lightness" }).fill("0.9");
 
         await expect
-            .element(screen.getByRole("status", { name: "written" }))
+            .element(screen.getByRole("status", { name: "value" }))
             .toHaveTextContent("[0.9,0.181,258]");
     });
 
@@ -97,9 +95,9 @@ describe("a colour", () => {
             .selectOptions("display-p3");
 
         await expect
-            .element(screen.getByRole("status", { name: "written" }))
+            .element(screen.getByRole("status", { name: "value" }))
             .toHaveTextContent('"colorSpace":"display-p3"');
-        for (const component of writtenOf(screen).components) {
+        for (const component of readOutput(screen).components) {
             expect(String(component)).toMatch(/^-?\d+(\.\d{1,4})?$/);
         }
     });
@@ -111,9 +109,9 @@ describe("a colour", () => {
         await screen.getByRole("combobox", { name: "base, colour space" }).selectOptions("oklab");
 
         await expect
-            .element(screen.getByRole("status", { name: "written" }))
+            .element(screen.getByRole("status", { name: "value" }))
             .toHaveTextContent('"colorSpace":"oklab"');
-        const [lightness] = writtenOf(screen).components;
+        const [lightness] = readOutput(screen).components;
         expect(lightness).toBeCloseTo(0.624, 3);
     });
 
@@ -123,7 +121,7 @@ describe("a colour", () => {
         await screen.getByRole("textbox", { name: "base, Hue" }).fill("none");
 
         await expect
-            .element(screen.getByRole("status", { name: "written" }))
+            .element(screen.getByRole("status", { name: "value" }))
             .toHaveTextContent('[0.624,0.181,"none"]');
     });
 
@@ -136,7 +134,7 @@ describe("a colour", () => {
 
         await expect.element(screen.getByText("Chroma reduced to fit sRGB.")).toBeVisible();
         await expect.element(screen.getByText("In sRGB")).toBeVisible();
-        for (const component of writtenOf(screen).components) {
+        for (const component of readOutput(screen).components) {
             expect(component).toBeGreaterThanOrEqual(0);
             expect(component).toBeLessThanOrEqual(1);
         }
@@ -148,7 +146,7 @@ describe("a colour", () => {
         await screen.getByRole("textbox", { name: "base" }).fill("#2a2a33cc");
 
         await expect
-            .element(screen.getByRole("status", { name: "written" }))
+            .element(screen.getByRole("status", { name: "value" }))
             .toHaveTextContent('"#2a2a33cc"');
     });
 });

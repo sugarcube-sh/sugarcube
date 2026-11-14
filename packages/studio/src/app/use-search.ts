@@ -6,7 +6,7 @@ export function useSearch() {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
-        function onKey(event: KeyboardEvent) {
+        function handleKeyDown(event: KeyboardEvent) {
             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
                 event.preventDefault();
                 setOpen((current) => !current);
@@ -15,8 +15,8 @@ export function useSearch() {
             if (event.key === "Escape") setOpen(false);
         }
 
-        document.addEventListener("keydown", onKey);
-        return () => document.removeEventListener("keydown", onKey);
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
     }, []);
 
     const close = useCallback(() => setOpen(false), []);

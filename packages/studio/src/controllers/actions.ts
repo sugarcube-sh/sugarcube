@@ -8,26 +8,28 @@ import {
 import { type NewToken, create, remove, rename } from "@sugarcube-sh/dtcg-edit";
 import type { Edit } from "./undo";
 
-export function nameOf(path: string): string {
-    return path.slice(path.lastIndexOf(".") + 1);
-}
-
-export function renameEdit(tokens: DesignTokens, path: string, name: string): Edit {
+export function createRenameEdit(tokens: DesignTokens, path: string, name: string): Edit {
     return { result: rename(tokens, path, name), options: {} };
 }
 
 export type Removal =
-    | { readonly kind: "now"; readonly edit: Edit }
-    | { readonly kind: "asks"; readonly edit: Edit; readonly breaks: readonly string[] };
+    | { readonly kind: "immediate"; readonly edit: Edit }
+    | {
+          readonly kind: "confirm";
+          readonly edit: Edit;
+          readonly pathsWithBrokenReferences: readonly string[];
+      };
 
-export function removal(tokens: DesignTokens, path: string): Removal {
+export function createRemoval(tokens: DesignTokens, path: string): Removal {
     const result = remove(tokens, path);
-    const breaks = (result.ops && result.pathsWithBrokenReferences) || [];
+    const brokenPaths = (result.ops && result.pathsWithBrokenReferences) || [];
     const edit = { result, options: {} };
-    return breaks.length > 0 ? { kind: "asks", edit, breaks } : { kind: "now", edit };
+    return brokenPaths.length > 0
+        ? { kind: "confirm", edit, pathsWithBrokenReferences: brokenPaths }
+        : { kind: "immediate", edit };
 }
 
-export function newGroupEdit(
+export function createGroupEdit(
     tokens: DesignTokens,
     parent: string,
     name: string,
@@ -36,14 +38,14 @@ export function newGroupEdit(
     return { result: create(tokens, path, { group: true }), options: {}, path };
 }
 
-export function newTokenEdit(
+export function createTokenEdit(
     tokens: DesignTokens,
     group: Group,
     name: string,
-    made: { type: TokenType; value: JsonValue },
+    typedValue: { type: TokenType; value: JsonValue },
 ): Edit {
     const path = tokenPath.join(group.path, name);
-    return { result: create(tokens, path, newToken(made, group)), options: {} };
+    return { result: create(tokens, path, toNewToken(typedValue, group)), options: {} };
 }
 
 export function canAddGroup(name: string): boolean {
@@ -54,7 +56,7 @@ export function canAddToken(name: string, value: JsonValue | undefined): boolean
     return name !== "" && value !== undefined;
 }
 
-export function newToken(
+export function toNewToken(
     { type, value }: { type: TokenType; value: JsonValue },
     group: Group | undefined,
 ): NewToken {

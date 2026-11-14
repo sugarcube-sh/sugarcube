@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 import { BUILT_APP } from "./src/built-files";
-import { demoStudio } from "./src/dev/demo";
+import { createDemoPlugins } from "./src/dev/demo";
 import { STUDIO_ROUTE } from "./src/studio-names";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
@@ -20,7 +20,7 @@ export default defineConfig(({ command, mode }) => ({
     plugins: [
         react(),
         sugarcube({ unoOptions: { presets: [presetWind3({ preflight: false })] } }),
-        demoStudio(),
+        createDemoPlugins(),
     ],
     build: {
         outDir: BUILT_APP,

@@ -1,14 +1,14 @@
 import { setValue } from "@sugarcube-sh/dtcg-edit";
 import { describe, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
-import { plain } from "../../src/adapters/plain";
+import { createPlainAdapter } from "../../src/adapters/plain";
 import { createStudio } from "../../src/controllers/studio";
 import { Clashes } from "../../src/inspector/Clashes";
 import { StudioContext } from "../../src/providers/studio-context";
 
-const file = (s: number, m: number) =>
+const tokensJSON = (s: number, m: number) =>
     JSON.stringify({ space: { $type: "number", s: { $value: s }, m: { $value: m } } });
-const message = (text: string) => ({
+const studioMessage = (text: string) => ({
     adapter: { name: "plain" as const, settings: {}, problems: [] },
     entryFile: "tokens.json",
     files: { "tokens.json": text },
@@ -16,8 +16,8 @@ const message = (text: string) => ({
 
 describe("a clash's reason for refusing Keep yours", () => {
     it("goes once the clashes it was about are settled, and doesn't come back with the next", async () => {
-        const studio = createStudio(message(file(1, 1)), (sent) =>
-            plain(sent.name === "plain" ? sent.settings : {}),
+        const studio = createStudio(studioMessage(tokensJSON(1, 1)), (sent) =>
+            createPlainAdapter(sent.name === "plain" ? sent.settings : {}),
         );
         const screen = await render(
             <StudioContext.Provider value={studio}>
@@ -26,7 +26,7 @@ describe("a clash's reason for refusing Keep yours", () => {
         );
 
         studio.do(setValue(studio.state.tokens, "space.s", 2));
-        studio.receive(message(file(3, 1)));
+        studio.receive(studioMessage(tokensJSON(3, 1)));
         studio.do(setValue(studio.state.tokens, "space.s", 4));
         await screen.getByRole("button", { name: "Keep yours" }).click();
         const items = () => screen.getByRole("list", { name: "Clashes" }).getByRole("listitem");
@@ -34,7 +34,7 @@ describe("a clash's reason for refusing Keep yours", () => {
 
         await screen.getByRole("button", { name: "Keep theirs" }).click();
         studio.do(setValue(studio.state.tokens, "space.m", 2));
-        studio.receive(message(file(4, 3)));
+        studio.receive(studioMessage(tokensJSON(4, 3)));
 
         await expect.element(screen.getByRole("button", { name: "Keep theirs" })).toBeVisible();
         expect(items().elements()).toHaveLength(1);

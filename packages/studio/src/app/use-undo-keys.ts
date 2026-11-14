@@ -1,23 +1,27 @@
 import { useEffect } from "react";
-import { type Focused, changeBarActions, undoFor } from "../controllers/undo";
+import { type FocusedElement, getChangeBarActions, getUndoAction } from "../controllers/undo";
 import { useStudio } from "../providers/studio-context";
 
 export function useUndoKeys(): void {
     const studio = useStudio();
 
     useEffect(() => {
-        const onKey = (event: KeyboardEvent) => {
-            const action = undoFor(event, focusedOf(event.target), changeBarActions(studio));
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const action = getUndoAction(
+                event,
+                toFocused(event.target),
+                getChangeBarActions(studio),
+            );
             if (!action) return;
             event.preventDefault();
             studio[action]();
         };
-        document.addEventListener("keydown", onKey);
-        return () => document.removeEventListener("keydown", onKey);
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
     }, [studio]);
 }
 
-function focusedOf(target: EventTarget | null): Focused {
+function toFocused(target: EventTarget | null): FocusedElement {
     if (!(target instanceof HTMLElement))
         return { tagName: "", type: "", isContentEditable: false };
     return {

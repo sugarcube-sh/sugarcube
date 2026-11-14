@@ -1,15 +1,15 @@
 import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
-import { plain } from "../../src/adapters/plain";
+import { createPlainAdapter } from "../../src/adapters/plain";
 import {
-    groupPage,
-    groupView,
-    referable,
-    sidebarTree,
-    tokenRow,
-    trail,
+    getGroupPageView,
+    getGroupView,
+    getReferenceTargets,
+    getSidebarTree,
+    toTokenRow,
+    getBreadcrumbs,
 } from "../../src/controllers/views";
-import { demoFiles, demoMessage, studioOn } from "./demo-message";
+import { readDemoFiles, demoMessage, createDemoStudio } from "./demo-message";
 
 const blue = { colorSpace: "srgb", components: [0, 0, 1] };
 const navy = { colorSpace: "srgb", components: [0, 0, 0.3] };
@@ -41,14 +41,17 @@ const files = {
     }),
 };
 
-const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" }, plain().read);
-const { value } = plain().write(tokens);
+const tokens = readFromMemory(
+    { files, entryFile: "tokens.resolver.json" },
+    createPlainAdapter().readOptions,
+);
+const { getValue } = createPlainAdapter().write(tokens);
 const light = tokens.getPermutation();
 const dark = tokens.getPermutation({ mode: "dark" });
 
-describe("sidebarTree", () => {
+describe("getSidebarTree", () => {
     it("nests every group and token, in the order the files write them", () => {
-        const [color] = sidebarTree(tokens);
+        const [color] = getSidebarTree(tokens);
 
         expect(color?.path).toBe("color");
         expect(color?.children.map((node) => node.name)).toEqual(["bg", "text", "accent", "glow"]);
@@ -58,13 +61,13 @@ describe("sidebarTree", () => {
     });
 
     it("includes a group only another permutation declares", () => {
-        const glow = sidebarTree(tokens)[0]?.children.find((node) => node.name === "glow");
+        const glow = getSidebarTree(tokens)[0]?.children.find((node) => node.name === "glow");
 
         expect(glow?.children.map((node) => node.path)).toEqual(["color.glow.soft"]);
     });
 
     it("gives a group with a $root token its own value, under the group's path", () => {
-        const accent = sidebarTree(tokens)[0]?.children.find((node) => node.name === "accent");
+        const accent = getSidebarTree(tokens)[0]?.children.find((node) => node.name === "accent");
 
         expect(accent?.path).toBe("color.accent");
         expect(accent?.hasValue).toBe(true);
@@ -72,16 +75,16 @@ describe("sidebarTree", () => {
     });
 
     it("counts the tokens at or beneath each node", () => {
-        const [color] = sidebarTree(tokens);
+        const [color] = getSidebarTree(tokens);
 
         expect(color?.count).toBe(5);
         expect(color?.children.find((node) => node.name === "accent")?.count).toBe(2);
     });
 });
 
-describe("trail", () => {
+describe("getBreadcrumbs", () => {
     it("lists every group above a path, then the path", () => {
-        expect(trail("color.text.default")).toEqual([
+        expect(getBreadcrumbs("color.text.default")).toEqual([
             { path: "color", name: "color" },
             { path: "color.text", name: "text" },
             { path: "color.text.default", name: "default" },
@@ -89,27 +92,27 @@ describe("trail", () => {
     });
 });
 
-describe("groupView", () => {
+describe("getGroupView", () => {
     it("lists a group's groups and tokens", () => {
-        const view = groupView(light.getGroup("color.text")!, value);
+        const view = getGroupView(light.getGroup("color.text")!, getValue);
 
         expect(view?.groups).toEqual([]);
         expect(view?.tokens.map((row) => row.name)).toEqual(["default"]);
     });
 
     it("shows what the file wrote and the value the adapter writes in the permutation shown", () => {
-        const inLight = groupView(light.getGroup("color.text")!, value)?.tokens[0];
-        const inDark = groupView(dark.getGroup("color.text")!, value)?.tokens[0];
+        const inLight = getGroupView(light.getGroup("color.text")!, getValue)?.tokens[0];
+        const inDark = getGroupView(dark.getGroup("color.text")!, getValue)?.tokens[0];
 
-        expect(inLight?.written).toBe("{color.bg}");
-        expect(inLight?.css).toBe(value(light.getToken("color.bg")!));
-        expect(inDark?.css).toBe(value(dark.getToken("color.bg")!));
+        expect(inLight?.originalValue).toBe("{color.bg}");
+        expect(inLight?.css).toBe(getValue(light.getToken("color.bg")!));
+        expect(inDark?.css).toBe(getValue(dark.getToken("color.bg")!));
         expect(inDark?.css).not.toBe(inLight?.css);
         expect(inDark?.css).not.toContain("var(");
     });
 
     it("counts the tokens under each group it lists", () => {
-        const view = groupView(dark.getGroup("color")!, value);
+        const view = getGroupView(dark.getGroup("color")!, getValue);
 
         expect(view?.groups.map((row) => [row.name, row.count])).toEqual([
             ["text", 1],
@@ -120,18 +123,20 @@ describe("groupView", () => {
     });
 });
 
-describe("groupPage", () => {
+describe("getGroupPageView", () => {
     it("is the group's view with its recipe's form, when the adapter offers one", () => {
-        const { state } = studioOn();
-        const page = groupPage(state, state.showing.getGroup("size.step")!);
+        const { state } = createDemoStudio();
+        const page = getGroupPageView(state, state.shownPermutation.getGroup("size.step")!);
 
         expect(page.form?.label).toBe("Scale");
         expect(page.tokens.map((row) => row.name)).toContain("-1");
-        expect(groupPage(state, state.showing.getGroup("color")!).form).toBeUndefined();
+        expect(
+            getGroupPageView(state, state.shownPermutation.getGroup("color")!).form,
+        ).toBeUndefined();
     });
 
     it("offers a group's description and deprecation, except where it is only there through $extends", () => {
-        const { state } = studioOn(
+        const { state } = createDemoStudio(
             demoMessage({
                 entryFile: "tokens.json",
                 files: {
@@ -145,17 +150,19 @@ describe("groupPage", () => {
                 },
             }),
         );
-        const primary = groupPage(state, state.showing.getGroup("primary")!);
-        const icon = groupPage(state, state.showing.getGroup("primary.icon")!);
+        const primary = getGroupPageView(state, state.shownPermutation.getGroup("primary")!);
+        const icon = getGroupPageView(state, state.shownPermutation.getGroup("primary.icon")!);
 
         expect(primary.description).toEqual({ text: "The base.", editable: true, from: "button" });
-        expect(primary.deprecation).toEqual({ box: { checked: false, untick: null, message: "" } });
+        expect(primary.deprecation).toEqual({
+            checkbox: { checked: false, uncheckedValue: null, message: "" },
+        });
         expect(icon.description.editable).toBe(false);
-        expect(icon.deprecation.box).toBeUndefined();
+        expect(icon.deprecation.checkbox).toBeUndefined();
     });
 
     it("says why a group lists no tokens: none at all, or only in the groups inside it", () => {
-        const { state } = studioOn(
+        const { state } = createDemoStudio(
             demoMessage({
                 entryFile: "tokens.json",
                 files: {
@@ -167,52 +174,59 @@ describe("groupPage", () => {
             }),
         );
 
-        expect(groupPage(state, state.showing.getGroup("empty")!).noTokens).toBe("at-all");
-        expect(groupPage(state, state.showing.getGroup("outer")!).noTokens).toBe("directly");
-        expect(groupPage(state, state.showing.getGroup("outer.inner")!).noTokens).toBeUndefined();
+        expect(getGroupPageView(state, state.shownPermutation.getGroup("empty")!).noTokens).toBe(
+            "at-all",
+        );
+        expect(getGroupPageView(state, state.shownPermutation.getGroup("outer")!).noTokens).toBe(
+            "directly",
+        );
+        expect(
+            getGroupPageView(state, state.shownPermutation.getGroup("outer.inner")!).noTokens,
+        ).toBeUndefined();
     });
 
     it("writes each token's CSS from the theme shown, whichever theme the group came from", () => {
-        const studio = studioOn();
-        const lightGroup = studio.state.showing.getGroup("color.text")!;
+        const studio = createDemoStudio();
+        const lightGroup = studio.state.shownPermutation.getGroup("color.text")!;
         studio.show({ mode: "dark" });
         const { state } = studio;
-        const [row] = groupPage(state, lightGroup).tokens;
-        const darkToken = state.showing.getToken(row!.path)!;
+        const [row] = getGroupPageView(state, lightGroup).tokens;
+        const darkToken = state.shownPermutation.getToken(row!.path)!;
 
-        expect(row?.css).toBe(state.value(darkToken));
+        expect(row?.css).toBe(state.getValue(darkToken));
     });
 });
 
-describe("tokenRow", () => {
+describe("toTokenRow", () => {
     it("is the row a group lists for the token", () => {
         const token = dark.getToken("color.text.default")!;
 
-        expect(tokenRow(token, "default", value)).toEqual(
-            groupView(dark.getGroup("color.text")!, value).tokens[0],
+        expect(toTokenRow(token, "default", getValue)).toEqual(
+            getGroupView(dark.getGroup("color.text")!, getValue).tokens[0],
         );
     });
 });
 
-describe("referable", () => {
+describe("getReferenceTargets", () => {
     it("lists every other token of the type, for the Token side of a field", () => {
-        const { tokens: demo, showing } = studioOn().state;
+        const { tokens: demo, shownPermutation } = createDemoStudio().state;
 
-        expect(referable(demo, showing, "fontFamily", "typography.font.body")).toEqual([
-            "typography.font.mono",
-            "typography.font.system",
-        ]);
+        expect(
+            getReferenceTargets(demo, shownPermutation, "fontFamily", "typography.font.body"),
+        ).toEqual(["typography.font.mono", "typography.font.system"]);
     });
 
     it("lists a token only one theme has, since a row may be that theme's", () => {
-        const edited = demoFiles();
+        const edited = readDemoFiles();
         const darkJson = JSON.parse(edited["dark.json"]!);
         darkJson.color.glow = { $value: "{color.brand.500}" };
-        const { tokens: demo, showing } = studioOn(
+        const { tokens: demo, shownPermutation } = createDemoStudio(
             demoMessage({ files: { ...edited, "dark.json": JSON.stringify(darkJson) } }),
         ).state;
 
-        expect(showing.getToken("color.glow")).toBeUndefined();
-        expect(referable(demo, showing, "color", "color.text.default")).toContain("color.glow");
+        expect(shownPermutation.getToken("color.glow")).toBeUndefined();
+        expect(
+            getReferenceTargets(demo, shownPermutation, "color", "color.text.default"),
+        ).toContain("color.glow");
     });
 });

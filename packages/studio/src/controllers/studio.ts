@@ -18,18 +18,18 @@ import {
     createSession,
     keepYours,
 } from "@sugarcube-sh/dtcg-edit";
-import type { SaveOutcome, SentAdapter, StudioMessage, StudioSave } from "../protocol";
+import type { SaveResult, MessageAdapter, StudioMessage, StudioSave } from "../protocol";
 import type { BuildAdapter, BuildOutput, BuildProblem, ExtensionForm } from "./adapter";
-import { type Held, heldFor } from "./held";
-import { failedText } from "./views";
+import { type KeyedValue, getValueForKey } from "./keyed-value";
+import { formatSaveError } from "./views";
 
-export type SaveShown = SaveOutcome | { readonly failed: string };
+export type SaveStatus = SaveResult | { readonly failed: string };
 
 export interface StudioState {
     readonly tokens: DesignTokens;
-    readonly showing: Permutation;
-    readonly value: BuildOutput["value"];
-    formFor(node: Token | Group, at?: DefinitionOptions["at"]): ExtensionForm | undefined;
+    readonly shownPermutation: Permutation;
+    readonly getValue: BuildOutput["getValue"];
+    getForm(node: Token | Group, at?: DefinitionOptions["at"]): ExtensionForm | undefined;
     readonly css: string;
     readonly problems: readonly BuildProblem[];
     readonly changes: readonly Change[];
@@ -37,7 +37,7 @@ export interface StudioState {
     readonly canUndo: boolean;
     readonly canRedo: boolean;
     readonly saving: boolean;
-    readonly saved: SaveShown | undefined;
+    readonly saved: SaveStatus | undefined;
 }
 
 export interface Studio {
@@ -52,42 +52,43 @@ export interface Studio {
     redo(): void;
     discard(): void;
     restore(edits: Edits): void;
-    keep(clash: Clash, side: "yours" | "theirs"): CommitResult | undefined;
+    resolveClash(clash: Clash, side: "yours" | "theirs"): CommitResult | undefined;
     getID(path: string): string | undefined;
     getPath(id: string): string | undefined;
-    save?(): Promise<SaveOutcome | undefined>;
+    save?(): Promise<SaveResult | undefined>;
 }
 
 export function createStudio(
-    first: StudioMessage,
-    adapterFor: (sent: SentAdapter) => BuildAdapter,
+    firstMessage: StudioMessage,
+    createAdapter: (sent: MessageAdapter) => BuildAdapter,
     saveEdits?: StudioSave,
 ): Studio {
-    let message = first;
-    let adapter = adapterFor(first.adapter);
-    const session = createSession(read(first, adapter));
+    let message = firstMessage;
+    let adapter = createAdapter(firstMessage.adapter);
+    const session = createSession(readTokens(firstMessage, adapter));
     const listeners = new Set<() => void>();
     let clashes: readonly Clash[] = [];
     let saving = false;
-    let lastSave: Held<SaveShown> | undefined;
-    let state = built(session.tokens.getPermutation().input);
+    let lastSave: KeyedValue<SaveStatus> | undefined;
+    let state = buildState(session.tokens.getPermutation().input);
 
-    function built(showing: Input): StudioState {
+    function buildState(shownPermutation: Input): StudioState {
         const { tokens } = session;
-        const written = adapter.write(tokens);
+        const output = adapter.write(tokens);
         return {
             tokens,
-            showing: tokens.permutations.findByInput(showing) ?? tokens.getPermutation(),
-            value: written.value,
-            formFor: (node, at) => adapter.formFor?.(tokens, node, at),
-            css: written.css,
-            problems: [...message.adapter.problems, ...written.problems],
+            shownPermutation:
+                tokens.permutations.findByInput(shownPermutation) ?? tokens.getPermutation(),
+            getValue: output.getValue,
+            getForm: (node, at) => adapter.getForm?.(tokens, node, at),
+            css: output.css,
+            problems: [...message.adapter.problems, ...output.problems],
             changes: session.getChanges(),
             clashes,
             canUndo: session.canUndo,
             canRedo: session.canRedo,
             saving,
-            saved: heldFor(lastSave, session.unsavedEdits),
+            saved: getValueForKey(lastSave, session.unsavedEdits),
         };
     }
 
@@ -96,39 +97,39 @@ export function createStudio(
         for (const listener of listeners) listener();
     }
 
-    const stopSession = session.subscribe(() => publish(built(state.showing.input)));
+    const stopSession = session.subscribe(() => publish(buildState(state.shownPermutation.input)));
 
-    function settled(found: readonly Clash[]) {
-        clashes = found;
-        publish(built(state.showing.input));
+    function setClashes(nextClashes: readonly Clash[]) {
+        clashes = nextClashes;
+        publish(buildState(state.shownPermutation.input));
     }
 
-    function takeIn(files: StudioMessage["files"]): boolean {
-        const fresh = session.savedTokens.rereadAll(files);
-        if (fresh === session.savedTokens) return false;
-        settled(session.rebase(fresh));
+    function rereadFiles(files: StudioMessage["files"]): boolean {
+        const rereadTokens = session.savedTokens.rereadAll(files);
+        if (rereadTokens === session.savedTokens) return false;
+        setClashes(session.rebase(rereadTokens));
         return true;
     }
 
     const save = saveEdits
         ? async () => {
               session.endStep();
-              const sent = session.unsavedEdits;
+              const sentEdits = session.unsavedEdits;
               saving = true;
               publish({ ...state, saving });
-              let saved: SaveOutcome | undefined;
-              let shown: SaveShown;
+              let saved: SaveResult | undefined;
+              let result: SaveStatus;
               try {
-                  saved = await saveEdits(sent, session.getChanges());
-                  if (!saved.conflicts) session.markSaved(sent);
-                  if (saved.files) takeIn(saved.files);
-                  shown = saved;
+                  saved = await saveEdits(sentEdits, session.getChanges());
+                  if (!saved.conflicts) session.markSaved(sentEdits);
+                  if (saved.files) rereadFiles(saved.files);
+                  result = saved;
               } catch (error) {
-                  shown = { failed: failedText(error) };
+                  result = { failed: formatSaveError(error) };
               }
               saving = false;
-              lastSave = { value: shown, about: session.unsavedEdits };
-              publish(built(state.showing.input));
+              lastSave = { value: result, key: session.unsavedEdits };
+              publish(buildState(state.shownPermutation.input));
               return saved;
           }
         : undefined;
@@ -150,7 +151,7 @@ export function createStudio(
             listeners.clear();
         },
         show(input) {
-            publish({ ...state, showing: state.tokens.getPermutation(input) });
+            publish({ ...state, shownPermutation: state.tokens.getPermutation(input) });
         },
         do(result, options) {
             return session.do(result, options);
@@ -166,14 +167,14 @@ export function createStudio(
             session.discard();
         },
         restore(edits) {
-            settled(session.restore(edits));
+            setClashes(session.restore(edits));
         },
-        keep(clash, side) {
-            const done =
+        resolveClash(clash, side) {
+            const result =
                 side === "yours" ? session.do(keepYours(session.tokens, clash)) : undefined;
-            if (done && !done.tokens) return done;
-            settled(clashes.filter((each) => each !== clash));
-            return done;
+            if (result && !result.tokens) return result;
+            setClashes(clashes.filter((each) => each !== clash));
+            return result;
         },
         getID(path) {
             return session.getID(path);
@@ -189,19 +190,19 @@ export function createStudio(
                 next.adapter.name !== previous.adapter.name ||
                 !isEqualJson(next.adapter.settings, previous.adapter.settings)
             ) {
-                adapter = adapterFor(next.adapter);
-                settled(session.rebase(read(next, adapter)));
+                adapter = createAdapter(next.adapter);
+                setClashes(session.rebase(readTokens(next, adapter)));
                 return;
             }
             if (
-                !takeIn(next.files) &&
+                !rereadFiles(next.files) &&
                 !isEqualJson(next.adapter.problems, previous.adapter.problems)
             )
-                publish(built(state.showing.input));
+                publish(buildState(state.shownPermutation.input));
         },
     };
 }
 
-function read({ files, entryFile }: StudioMessage, adapter: BuildAdapter): DesignTokens {
-    return readFromMemory({ files, entryFile }, adapter.read);
+function readTokens({ files, entryFile }: StudioMessage, adapter: BuildAdapter): DesignTokens {
+    return readFromMemory({ files, entryFile }, adapter.readOptions);
 }

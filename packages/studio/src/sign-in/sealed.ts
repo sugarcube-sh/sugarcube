@@ -4,10 +4,10 @@ const IV_BYTES = 12;
 
 export interface Sealer {
     seal(text: string, purpose: string): Promise<string>;
-    open(sealed: string | undefined, purpose: string): Promise<string | undefined>;
+    unseal(sealed: string | undefined, purpose: string): Promise<string | undefined>;
 }
 
-export function sealerFor(secret: string): Sealer {
+export function createSealer(secret: string): Sealer {
     const key = crypto.subtle
         .digest("SHA-256", new TextEncoder().encode(secret))
         .then((bytes) =>
@@ -16,21 +16,21 @@ export function sealerFor(secret: string): Sealer {
     return {
         async seal(text, purpose) {
             const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-            const sealed = await crypto.subtle.encrypt(
+            const encrypted = await crypto.subtle.encrypt(
                 { name: "AES-GCM", iv, additionalData: new TextEncoder().encode(purpose) },
                 await key,
                 new TextEncoder().encode(text),
             );
-            const bytes = new Uint8Array(iv.length + sealed.byteLength);
+            const bytes = new Uint8Array(iv.length + encrypted.byteLength);
             bytes.set(iv);
-            bytes.set(new Uint8Array(sealed), iv.length);
+            bytes.set(new Uint8Array(encrypted), iv.length);
             return toBase64url(bytes);
         },
-        async open(sealed, purpose) {
+        async unseal(sealed, purpose) {
             if (!sealed) return undefined;
             try {
                 const bytes = fromBase64url(sealed);
-                const opened = await crypto.subtle.decrypt(
+                const decrypted = await crypto.subtle.decrypt(
                     {
                         name: "AES-GCM",
                         iv: bytes.slice(0, IV_BYTES),
@@ -39,7 +39,7 @@ export function sealerFor(secret: string): Sealer {
                     await key,
                     bytes.slice(IV_BYTES),
                 );
-                return new TextDecoder().decode(opened);
+                return new TextDecoder().decode(decrypted);
             } catch {
                 return undefined;
             }

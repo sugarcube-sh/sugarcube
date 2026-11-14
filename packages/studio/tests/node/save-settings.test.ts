@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gitSaveFor, repositoryFromRemote } from "../../src/node/save-settings";
+import { getGitSaveSettings, parseGitHubRepository } from "../../src/node/save-settings";
 
 describe("the repository a git remote points at", () => {
     it.for([
@@ -10,16 +10,16 @@ describe("the repository a git remote points at", () => {
         ["ssh://git@github.com/acme/site.git"],
         ["https://x-access-token:secret@github.com/acme/site.git"],
     ])("is acme/site for %s", ([remote]) => {
-        expect(repositoryFromRemote(remote ?? "")).toBe("acme/site");
+        expect(parseGitHubRepository(remote ?? "")).toBe("acme/site");
     });
 
     it("is unknown for a remote that isn't on GitHub", () => {
-        expect(repositoryFromRemote("https://gitlab.com/acme/site.git")).toBeUndefined();
-        expect(repositoryFromRemote("not a remote")).toBeUndefined();
+        expect(parseGitHubRepository("https://gitlab.com/acme/site.git")).toBeUndefined();
+        expect(parseGitHubRepository("not a remote")).toBeUndefined();
     });
 });
 
-function gitAt(answers: Record<string, string>) {
+function fakeGit(answers: Record<string, string>) {
     const asked: string[] = [];
     const git = (args: readonly string[]) => {
         asked.push(args.join(" "));
@@ -29,17 +29,17 @@ function gitAt(answers: Record<string, string>) {
 }
 
 const checkout = () =>
-    gitAt({
+    fakeGit({
         "remote get-url origin": "git@github.com:acme/site.git",
         "branch --show-current": "redesign",
         "rev-parse --show-toplevel": "/work/site",
     });
 
-const noCheckout = () => gitAt({});
+const noCheckout = () => fakeGit({});
 
 describe("what the build writes down for saving", () => {
     it("takes the repository from studio's settings and the branch being built from the checkout", () => {
-        const { gitSave } = gitSaveFor({
+        const { gitSave } = getGitSaveSettings({
             studio: { repository: "acme/site", githubApp: "acme-studio" },
             resolver: "design/tokens.resolver.json",
             cwd: "/work/site/apps/docs",
@@ -57,7 +57,7 @@ describe("what the build writes down for saving", () => {
 
     it("takes the branch from studio's settings when they give one, asking git nothing for it", () => {
         const { git, asked } = checkout();
-        const { gitSave } = gitSaveFor({
+        const { gitSave } = getGitSaveSettings({
             studio: { repository: "acme/site", branch: "main" },
             resolver: "tokens.resolver.json",
             cwd: "/work/site",
@@ -68,7 +68,7 @@ describe("what the build writes down for saving", () => {
     });
 
     it("takes an absolute resolver path the same way", () => {
-        const { gitSave } = gitSaveFor({
+        const { gitSave } = getGitSaveSettings({
             studio: { repository: "acme/site" },
             resolver: "/work/site/tokens/tokens.resolver.json",
             cwd: "/work/site",
@@ -78,7 +78,7 @@ describe("what the build writes down for saving", () => {
     });
 
     it("takes the project's folder as the repository's root when there's no checkout to say", () => {
-        const { gitSave } = gitSaveFor({
+        const { gitSave } = getGitSaveSettings({
             studio: { repository: "acme/site", branch: "main" },
             resolver: "tokens/tokens.resolver.json",
             cwd: "/build",
@@ -89,7 +89,7 @@ describe("what the build writes down for saving", () => {
 
     it("takes a sign-in function somewhere else", () => {
         expect(
-            gitSaveFor({
+            getGitSaveSettings({
                 studio: { repository: "acme/site", signInPath: "/auth/studio" },
                 resolver: "tokens.resolver.json",
                 cwd: "/work/site",
@@ -99,7 +99,7 @@ describe("what the build writes down for saving", () => {
     });
 
     it("warns, once, when there is no app name for the install link", () => {
-        const { gitSave, warnings } = gitSaveFor({
+        const { gitSave, warnings } = getGitSaveSettings({
             studio: { repository: "acme/site" },
             resolver: "tokens.resolver.json",
             cwd: "/work/site",
@@ -113,7 +113,7 @@ describe("what the build writes down for saving", () => {
     it("is nothing at all, and asks nothing, when saving is turned off", () => {
         const { git, asked } = noCheckout();
         expect(
-            gitSaveFor({
+            getGitSaveSettings({
                 studio: { save: false },
                 resolver: "tokens.resolver.json",
                 cwd: "/x",
@@ -127,7 +127,7 @@ describe("what the build writes down for saving", () => {
 describe("a build that can't tell where to save", () => {
     it("stops without a repository, suggesting the one the git remote names", () => {
         expect(() =>
-            gitSaveFor({
+            getGitSaveSettings({
                 resolver: "tokens.resolver.json",
                 cwd: "/work/site",
                 git: checkout().git,
@@ -137,13 +137,17 @@ describe("a build that can't tell where to save", () => {
 
     it("stops without a repository, saying what to set, when there's no remote to suggest", () => {
         expect(() =>
-            gitSaveFor({ resolver: "tokens.resolver.json", cwd: "/build", git: noCheckout().git }),
+            getGitSaveSettings({
+                resolver: "tokens.resolver.json",
+                cwd: "/build",
+                git: noCheckout().git,
+            }),
         ).toThrow("studio.repository");
     });
 
     it("stops without a branch when there's no checkout to read it from", () => {
         expect(() =>
-            gitSaveFor({
+            getGitSaveSettings({
                 studio: { repository: "acme/site" },
                 resolver: "tokens.resolver.json",
                 cwd: "/build",
@@ -154,7 +158,7 @@ describe("a build that can't tell where to save", () => {
 
     it("stops when the resolver isn't inside the repository", () => {
         expect(() =>
-            gitSaveFor({
+            getGitSaveSettings({
                 studio: { repository: "acme/site" },
                 resolver: "/elsewhere/tokens.resolver.json",
                 cwd: "/elsewhere",

@@ -1,23 +1,23 @@
 import { NavLink } from "react-router";
-import { hrefFor } from "../app/token-path";
+import { toHref } from "../app/token-path";
 import {
     type DeprecationView,
     type DescriptionView,
-    deprecationEdit,
-    descriptionEdit,
+    createDeprecationEdit,
+    createDescriptionEdit,
 } from "../controllers/properties";
 import { useStudio } from "../providers/studio-context";
 import { useDraft } from "./use-draft";
 import { useEdit } from "./use-edit";
 
-export function DeprecatedLine({ line }: { line: NonNullable<DeprecationView["line"]> }) {
+export function DeprecatedLine({ line }: { line: NonNullable<DeprecationView["notice"]> }) {
     return (
         <p>
             Deprecated
-            {line.by && (
+            {line.group && (
                 <>
                     {" "}
-                    by <NavLink to={hrefFor(line.by)}>{line.by}</NavLink>
+                    by <NavLink to={toHref(line.group)}>{line.group}</NavLink>
                 </>
             )}
             {line.message && `: ${line.message}`}.
@@ -40,7 +40,7 @@ export function DescriptionRow({ path, view }: { path: string; view: Description
                         value={text}
                         onChange={(event) => {
                             setText(event.target.value);
-                            const { result, options } = descriptionEdit(
+                            const { result, options } = createDescriptionEdit(
                                 studio.state.tokens,
                                 path,
                                 event.target.value,
@@ -54,7 +54,7 @@ export function DescriptionRow({ path, view }: { path: string; view: Description
                 {view.from !== undefined && (
                     <>
                         {" "}
-                        From <NavLink to={hrefFor(view.from)}>{view.from}</NavLink>
+                        From <NavLink to={toHref(view.from)}>{view.from}</NavLink>
                     </>
                 )}
                 {edit.view}
@@ -68,13 +68,13 @@ export function DeprecationRow({
     box,
 }: {
     path: string;
-    box: NonNullable<DeprecationView["box"]>;
+    box: NonNullable<DeprecationView["checkbox"]>;
 }) {
     const studio = useStudio();
     const edit = useEdit();
     const [text, setText] = useDraft(box.message, box.message);
     const write = (checked: boolean, reason: string) => {
-        const { result, options } = deprecationEdit(
+        const { result, options } = createDeprecationEdit(
             studio.state.tokens,
             path,
             box,

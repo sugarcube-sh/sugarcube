@@ -1,28 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { createSearch } from "../../src/controllers/search";
-import { groupView } from "../../src/controllers/views";
-import { plainMessage, studioOn, withFile } from "./demo-message";
+import { getGroupView } from "../../src/controllers/views";
+import { plainMessage, createDemoStudio, withFile } from "./demo-message";
 
 describe("a plain DTCG project, with the plain adapter", () => {
     it("opens with no problems, showing the default permutation", () => {
-        const studio = studioOn(plainMessage());
+        const studio = createDemoStudio(plainMessage());
 
         expect(studio.state.problems).toEqual([]);
-        expect(studio.state.showing.isDefault).toBe(true);
+        expect(studio.state.shownPermutation.isDefault).toBe(true);
     });
 
     it("lists a group's tokens with the values the plain adapter writes", () => {
-        const studio = studioOn(plainMessage());
-        const fluid = studio.state.showing.getGroup("size.fluid");
+        const studio = createDemoStudio(plainMessage());
+        const fluid = studio.state.shownPermutation.getGroup("size.fluid");
 
-        const gutter = fluid && groupView(fluid, studio.state.value).tokens[0];
+        const gutter = fluid && getGroupView(fluid, studio.state.getValue).tokens[0];
 
         expect(gutter?.path).toBe("size.fluid.gutter");
         expect(gutter?.css).toBe("2rem");
     });
 
     it("finds tokens, each with the value the plain adapter writes", () => {
-        const search = createSearch(studioOn(plainMessage()));
+        const search = createSearch(createDemoStudio(plainMessage()));
 
         search.setQuery("gutter");
 
@@ -30,9 +30,9 @@ describe("a plain DTCG project, with the plain adapter", () => {
     });
 
     it("writes the page's CSS with the plain adapter's settings", () => {
-        expect(studioOn(plainMessage()).state.css).not.toContain("[data-mode");
+        expect(createDemoStudio(plainMessage()).state.css).not.toContain("[data-mode");
 
-        const studio = studioOn(
+        const studio = createDemoStudio(
             plainMessage({
                 naming: { prefix: "ds" },
                 blocks: [
@@ -47,13 +47,15 @@ describe("a plain DTCG project, with the plain adapter", () => {
     });
 
     it("lists what the read finds wrong in a file", () => {
-        const studio = studioOn(withFile("dark.json", '{ "color": { "text": ', plainMessage()));
+        const studio = createDemoStudio(
+            withFile("dark.json", '{ "color": { "text": ', plainMessage()),
+        );
 
         expect(studio.state.problems.map(({ kind }) => kind)).toContain("invalid-json");
     });
 
     it("takes in a changed file", () => {
-        const studio = studioOn(plainMessage());
+        const studio = createDemoStudio(plainMessage());
         const size = plainMessage().files["size.json"] ?? "";
 
         studio.receive(
@@ -67,7 +69,7 @@ describe("a plain DTCG project, with the plain adapter", () => {
             ),
         );
 
-        const gutter = studio.state.showing.getToken("size.fluid.gutter");
-        expect(gutter && studio.state.value(gutter)).toBe("3rem");
+        const gutter = studio.state.shownPermutation.getToken("size.fluid.gutter");
+        expect(gutter && studio.state.getValue(gutter)).toBe("3rem");
     });
 });

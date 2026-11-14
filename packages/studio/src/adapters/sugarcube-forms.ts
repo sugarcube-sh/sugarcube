@@ -31,59 +31,60 @@ const exponentialSettings: readonly Setting[] = [
     ["steps.positive", "Steps above", "number"],
 ];
 
-export function sugarcubeForm(
+export function getSugarcubeForm(
     tokens: DesignTokens,
     node: Token | Group,
     at?: DefinitionOptions["at"],
 ): ExtensionForm | undefined {
-    if (node.kind === "group") return scaleForm(tokens, node);
-    if (node.generated) return stepForm(node);
-    return at && fluidForm(tokens, node, at);
+    if (node.kind === "group") return getScaleForm(tokens, node);
+    if (node.generated) return getStepForm(node);
+    return at && getFluidForm(tokens, node, at);
 }
 
-function fluidForm(
+function getFluidForm(
     tokens: DesignTokens,
     token: Token,
     at: DefinitionOptions["at"],
 ): ExtensionForm | undefined {
     if (token.type !== "dimension") return undefined;
     const { path } = token;
-    const placeIn = (now: DesignTokens) =>
-        now.getDefinitions(path).find(({ span }) => span.file === at.file);
-    const written = placeIn(tokens)?.json;
-    const fluid = sugarcubeSetting(
-        isJsonObject(written) ? written.$extensions : undefined,
+    const findDefinition = (stepTokens: DesignTokens) =>
+        stepTokens.getDefinitions(path).find(({ span }) => span.file === at.file);
+    const definitionJson = findDefinition(tokens)?.json;
+    const fluid = getSugarcubeSetting(
+        isJsonObject(definitionJson) ? definitionJson.$extensions : undefined,
         "fluid",
     );
     if (!fluid) return undefined;
-    const atIn = (now: DesignTokens) => placeIn(now)?.span ?? at;
+    const getSpan = (stepTokens: DesignTokens) => findDefinition(stepTokens)?.span ?? at;
     return {
         label: "Fluid",
-        fields: fieldsOf(fluidSettings, fluid),
+        fields: toFormFields(fluidSettings, fluid),
         write(key, value) {
             const setting = [SUGARCUBE_NAMESPACE, "fluid", key] as const;
             if (key !== "max") return setExtension(tokens, path, setting, value, { at });
             return combine(tokens, [
-                (now) => setExtension(now, path, setting, value, { at: atIn(now) }),
-                (now) => setValue(now, path, value, { at: atIn(now) }),
+                (stepTokens) =>
+                    setExtension(stepTokens, path, setting, value, { at: getSpan(stepTokens) }),
+                (stepTokens) => setValue(stepTokens, path, value, { at: getSpan(stepTokens) }),
             ]);
         },
     };
 }
 
-function stepForm(token: Token): ExtensionForm | undefined {
+function getStepForm(token: Token): ExtensionForm | undefined {
     const fluid =
-        token.type === "dimension" ? sugarcubeSetting(token.extensions, "fluid") : undefined;
-    return fluid && { label: "Fluid", fields: fieldsOf(fluidSettings, fluid) };
+        token.type === "dimension" ? getSugarcubeSetting(token.extensions, "fluid") : undefined;
+    return fluid && { label: "Fluid", fields: toFormFields(fluidSettings, fluid) };
 }
 
-function scaleForm(tokens: DesignTokens, group: Group): ExtensionForm | undefined {
-    const scale = sugarcubeSetting(group.extensions, "scale");
-    const settings = scale && scaleSettings(scale);
+function getScaleForm(tokens: DesignTokens, group: Group): ExtensionForm | undefined {
+    const scale = getSugarcubeSetting(group.extensions, "scale");
+    const settings = scale && getScaleSettings(scale);
     if (!scale || !settings) return undefined;
     return {
         label: "Scale",
-        fields: fieldsOf(settings, scale),
+        fields: toFormFields(settings, scale),
         write: (key, value) =>
             setExtension(
                 tokens,
@@ -94,7 +95,7 @@ function scaleForm(tokens: DesignTokens, group: Group): ExtensionForm | undefine
     };
 }
 
-function scaleSettings(scale: Record<string, unknown>): readonly Setting[] | undefined {
+function getScaleSettings(scale: Record<string, unknown>): readonly Setting[] | undefined {
     if (scale.mode === "exponential") return exponentialSettings;
     if (scale.mode !== "multipliers") return undefined;
     const names = isJsonObject(scale.multipliers) ? Object.keys(scale.multipliers) : [];
@@ -105,13 +106,16 @@ function scaleSettings(scale: Record<string, unknown>): readonly Setting[] | und
     ];
 }
 
-function sugarcubeSetting(extensions: JsonValue | undefined, name: string): JsonObject | undefined {
+function getSugarcubeSetting(
+    extensions: JsonValue | undefined,
+    name: string,
+): JsonObject | undefined {
     const settings = isJsonObject(extensions) ? extensions[SUGARCUBE_NAMESPACE] : undefined;
-    const found = isJsonObject(settings) ? settings[name] : undefined;
-    return isJsonObject(found) ? found : undefined;
+    const setting = isJsonObject(settings) ? settings[name] : undefined;
+    return isJsonObject(setting) ? setting : undefined;
 }
 
-function fieldsOf(settings: readonly Setting[], from: JsonObject): FormField[] {
+function toFormFields(settings: readonly Setting[], from: JsonObject): FormField[] {
     return settings.map(([key, label, type]) => ({
         key,
         label,

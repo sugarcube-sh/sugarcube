@@ -5,12 +5,12 @@ import { open as openInBrowser } from "devframe/utils/open";
 import { isAllowedOrigin } from "devframe/utils/origin";
 import { BUILT_APP } from "../built-files";
 import { ErrorMessages } from "../error-messages";
-import { studioHub } from "../hub/studio-hub";
-import { STUDIO_SURFACE } from "../server/define-studio";
-import { studioDevframe } from "../server/definition";
+import { createStudioHub } from "../hub/studio-hub";
+import { STUDIO_DOCK } from "../server/define-studio";
+import { createStudioDevframe } from "../server/definition";
 import type { StudioFiles } from "../server/files";
 import { STUDIO_DOCK_SCRIPT, STUDIO_ROUTE } from "../studio-names";
-import { projectFiles } from "./project-files";
+import { loadProjectFiles } from "./project-files";
 
 export const STUDIO_PORT = 2823;
 
@@ -30,10 +30,10 @@ export type StudioServer = {
 };
 
 export async function serveStudio(options: ServeStudioOptions = {}): Promise<StudioServer> {
-    return serveFiles(await projectFiles(), options);
+    return serveFromFiles(await loadProjectFiles(), options);
 }
 
-export async function serveFiles(
+export async function serveFromFiles(
     files: StudioFiles,
     options: ServeStudioOptions = {},
 ): Promise<StudioServer> {
@@ -41,7 +41,7 @@ export async function serveFiles(
     const port = options.port ?? (await getPort({ port: STUDIO_PORT, host: HOST }));
 
     const hub = initHub({
-        ...studioHub(studioDevframe({ files, clientAssets: BUILT_APP })),
+        ...createStudioHub(createStudioDevframe({ files, clientAssets: BUILT_APP })),
         auth: false,
     });
 
@@ -78,7 +78,7 @@ export async function serveFiles(
     const origin = `http://${HOST}:${boundPort}`;
 
     const ctx = await hub.context;
-    const dock = ctx.docks.values().find((entry) => entry.id === STUDIO_SURFACE.id);
+    const dock = ctx.docks.values().find((entry) => entry.id === STUDIO_DOCK.id);
     if (dock && dock.type === "iframe" && dock.url.startsWith("/")) {
         const { clientScript } = dock;
         ctx.docks.update({
@@ -95,20 +95,20 @@ export async function serveFiles(
         });
     }
 
-    const studioUrl = `${origin}${STUDIO_ROUTE}`;
+    const studioURL = `${origin}${STUDIO_ROUTE}`;
     if (open) {
         try {
-            await openInBrowser(studioUrl);
+            await openInBrowser(studioURL);
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);
-            console.warn(ErrorMessages.NO_BROWSER(reason, studioUrl));
+            console.warn(ErrorMessages.NO_BROWSER(reason, studioURL));
         }
     }
 
     return {
         origin,
         port: boundPort,
-        studioUrl,
+        studioUrl: studioURL,
         embedScriptUrl: `${origin}${STUDIO_DOCK_SCRIPT}`,
         close: async () => {
             detach();
