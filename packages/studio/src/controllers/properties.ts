@@ -1,6 +1,6 @@
 import type { DesignTokens, Group, Token } from "@sugarcube-sh/dtcg";
 import { deprecate, setDescription } from "@sugarcube-sh/dtcg-edit";
-import { type Edit, fieldKey } from "./undo";
+import { type Edit, createMergeKey } from "./undo";
 
 export interface DescriptionView {
     readonly text: string;
@@ -8,78 +8,83 @@ export interface DescriptionView {
     readonly from?: string;
 }
 
-export function descriptionView(node: Token | Group, editable: boolean): DescriptionView {
-    const from = node.kind === "group" ? takenFrom(node) : undefined;
+export function getDescriptionView(node: Token | Group, editable: boolean): DescriptionView {
+    const from = node.kind === "group" ? findDescriptionSource(node) : undefined;
     return { text: node.description ?? "", editable, ...(from !== undefined && { from }) };
 }
 
-function takenFrom(group: Group): string | undefined {
-    const taken = group.original?.description === undefined && group.description !== undefined;
-    return taken ? group.extends?.path : undefined;
+function findDescriptionSource(group: Group): string | undefined {
+    const isInherited =
+        group.original?.description === undefined && group.description !== undefined;
+    return isInherited ? group.extends?.path : undefined;
 }
 
-export function descriptionEdit(tokens: DesignTokens, path: string, text: string): Edit {
+export function createDescriptionEdit(tokens: DesignTokens, path: string, text: string): Edit {
     return {
         result: setDescription(tokens, path, text === "" ? null : text),
-        options: { mergeKey: fieldKey({ path, writes: "description" }) },
+        options: { mergeKey: createMergeKey({ path, property: "description" }) },
     };
 }
 
 export interface DeprecationView {
-    readonly line?: { readonly by?: string; readonly message?: string };
-    readonly box?: {
+    readonly notice?: { readonly group?: string; readonly message?: string };
+    readonly checkbox?: {
         readonly checked: boolean;
-        readonly untick: false | null;
+        readonly uncheckedValue: false | null;
         readonly message: string;
     };
 }
 
-export function deprecationView(node: Token | Group, editable: boolean): DeprecationView {
-    const { deprecated, deprecatedByGroup: by } = node;
-    const applies = deprecated !== undefined;
-    const line = {
-        ...(by !== undefined && { by }),
+export function getDeprecationView(node: Token | Group, editable: boolean): DeprecationView {
+    const { deprecated, deprecatedByGroup: group } = node;
+    const isDeprecated = deprecated !== undefined;
+    const notice = {
+        ...(group !== undefined && { group }),
         ...(typeof deprecated === "string" && { message: deprecated }),
     };
-    const box = editable ? boxFor(node, applies, line.message ?? "") : undefined;
-    return { ...(applies && { line }), ...(box && { box }) };
+    const checkbox = editable ? getCheckbox(node, isDeprecated, notice.message ?? "") : undefined;
+    return { ...(isDeprecated && { notice }), ...(checkbox && { checkbox }) };
 }
 
-function boxFor(node: Token | Group, applies: boolean, message: string): DeprecationView["box"] {
-    if (node.original?.deprecated !== undefined || !applies) {
-        return { checked: applies, untick: null, message };
+function getCheckbox(
+    node: Token | Group,
+    isDeprecated: boolean,
+    message: string,
+): DeprecationView["checkbox"] {
+    if (node.original?.deprecated !== undefined || !isDeprecated) {
+        return { checked: isDeprecated, uncheckedValue: null, message };
     }
-    const by = node.deprecatedByGroup;
-    if (node.kind === "group" && by !== undefined && extended(node).includes(by)) {
-        return { checked: true, untick: false, message };
+    const group = node.deprecatedByGroup;
+    if (node.kind === "group" && group !== undefined && getExtendedPaths(node).includes(group)) {
+        return { checked: true, uncheckedValue: false, message };
     }
     return undefined;
 }
 
-function extended(group: Group): string[] {
+function getExtendedPaths(group: Group): string[] {
     const paths: string[] = [];
     for (let from = group.extends; from; from = from.extends) paths.push(from.path);
     return paths;
 }
 
-export function deprecationEdit(
+export function createDeprecationEdit(
     tokens: DesignTokens,
     path: string,
-    box: NonNullable<DeprecationView["box"]>,
+    checkbox: NonNullable<DeprecationView["checkbox"]>,
     checked: boolean,
     reason: string,
 ): Edit {
     return {
-        result: deprecate(tokens, path, written(box, checked, reason)),
-        options: { mergeKey: fieldKey({ path, writes: "deprecated" }) },
+        result: deprecate(tokens, path, toDeprecatedValue(checkbox, checked, reason)),
+        options: { mergeKey: createMergeKey({ path, property: "deprecated" }) },
     };
 }
 
-function written(
-    { untick }: NonNullable<DeprecationView["box"]>,
+function toDeprecatedValue(
+    { uncheckedValue }: NonNullable<DeprecationView["checkbox"]>,
     checked: boolean,
     reason: string,
 ): string | boolean | null {
-    if (!checked) return untick;
+    if (!checked) return uncheckedValue;
     return reason === "" ? true : reason;
 }

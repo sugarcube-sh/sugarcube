@@ -6,24 +6,24 @@ const SITE = "https://acme.com";
 const BASE = `${SITE}${STUDIO_SIGN_IN_BASE}`;
 
 const env = {
-    [STUDIO_SETTINGS.clientId]: "Iv1.client",
+    [STUDIO_SETTINGS.clientID]: "Iv1.client",
     [STUDIO_SETTINGS.clientSecret]: "client-secret",
     [STUDIO_SETTINGS.secret]: "a long random secret for encrypting",
 };
 
-function routed(handlers: ReturnType<typeof signIn>) {
+function routeByMethod(handlers: ReturnType<typeof signIn>) {
     return (request: Request) =>
         (request.method === "POST" ? handlers.POST : handlers.GET)(request);
 }
 
-type Asked = { method: string; url: string; body: unknown; authorization: string | null };
+type RecordedRequest = { method: string; url: string; body: unknown; authorization: string | null };
 
-function github({
+function fakeGitHubFetch({
     swaps = true,
     refreshes = true,
     expiring = true,
 }: { swaps?: boolean; refreshes?: boolean; expiring?: boolean } = {}) {
-    const asked: Asked[] = [];
+    const requests: RecordedRequest[] = [];
     const used = new Set<string>();
     let issued = 0;
     const tokens = () => {
@@ -42,7 +42,7 @@ function github({
         const request = new Request(input, init);
         const text = await request.text();
         const body = text ? JSON.parse(text) : undefined;
-        asked.push({
+        requests.push({
             method: request.method,
             url: request.url,
             body,
@@ -69,27 +69,27 @@ function github({
             return new Response(null, { status: 204 });
         return json({ message: "Not Found" }, 404);
     };
-    return { fetch, asked };
+    return { fetch, requests };
 }
 
 type Cookie = { value: string; attributes: Map<string, string> };
 
-function cookiesOf(response: Response): Map<string, Cookie> {
-    const found = new Map<string, Cookie>();
+function getResponseCookies(response: Response): Map<string, Cookie> {
+    const cookies = new Map<string, Cookie>();
     for (const header of response.headers.getSetCookie()) {
         const [pair = "", ...rest] = header.split(";").map((part) => part.trim());
-        const at = pair.indexOf("=");
+        const equalsIndex = pair.indexOf("=");
         const attributes = new Map<string, string>();
         for (const part of rest) {
             const [name = "", value = ""] = part.split("=");
             attributes.set(name.toLowerCase(), value);
         }
-        found.set(pair.slice(0, at), { value: pair.slice(at + 1), attributes });
+        cookies.set(pair.slice(0, equalsIndex), { value: pair.slice(equalsIndex + 1), attributes });
     }
-    return found;
+    return cookies;
 }
 
-function browser(handler: (request: Request) => Promise<Response>) {
+function createBrowser(handler: (request: Request) => Promise<Response>) {
     const jar = new Map<string, string>();
     return {
         jar,
@@ -98,7 +98,7 @@ function browser(handler: (request: Request) => Promise<Response>) {
             const response = await handler(
                 new Request(url, { method, headers: cookie ? { cookie } : {} }),
             );
-            for (const [name, { value, attributes }] of cookiesOf(response)) {
+            for (const [name, { value, attributes }] of getResponseCookies(response)) {
                 if (attributes.get("max-age") === "0") jar.delete(name);
                 else jar.set(name, value);
             }
@@ -107,18 +107,20 @@ function browser(handler: (request: Request) => Promise<Response>) {
     };
 }
 
-function setUp(answers?: Parameters<typeof github>[0]) {
-    const fake = github(answers);
-    const handler = routed(signIn(env, { fetch: fake.fetch }));
-    return { ...fake, handler, ...browser(handler) };
+function setUp(answers?: Parameters<typeof fakeGitHubFetch>[0]) {
+    const fake = fakeGitHubFetch(answers);
+    const handler = routeByMethod(signIn(env, { fetch: fake.fetch }));
+    return { ...fake, handler, ...createBrowser(handler) };
 }
 
-async function signedIn(answers?: Parameters<typeof github>[0]) {
-    const at = setUp(answers);
-    const going = await at.ask(`${BASE}/sign-in?return=${encodeURIComponent("/docs?tab=dark")}`);
-    const state = new URL(going.headers.get("location") ?? "").searchParams.get("state");
-    const back = await at.ask(`${BASE}/callback?code=the-code&state=${state}`);
-    return { ...at, back };
+async function signInThroughGitHub(answers?: Parameters<typeof fakeGitHubFetch>[0]) {
+    const session = setUp(answers);
+    const signInResponse = await session.ask(
+        `${BASE}/sign-in?return=${encodeURIComponent("/docs?tab=dark")}`,
+    );
+    const state = new URL(signInResponse.headers.get("location") ?? "").searchParams.get("state");
+    const back = await session.ask(`${BASE}/callback?code=the-code&state=${state}`);
+    return { ...session, back };
 }
 
 describe("signing in", () => {
@@ -136,7 +138,7 @@ describe("signing in", () => {
     it("keeps the state in a short-lived cookie the page can't read, for the function only", async () => {
         const { handler } = setUp();
         const response = await handler(new Request(`${BASE}/sign-in?return=%2Fdocs`));
-        const state = cookiesOf(response).get(STUDIO_COOKIES.state);
+        const state = getResponseCookies(response).get(STUDIO_COOKIES.state);
         expect(state?.attributes.has("httponly")).toBe(true);
         expect(state?.attributes.get("path")).toBe(STUDIO_SIGN_IN_BASE);
         expect(Number(state?.attributes.get("max-age"))).toBeLessThanOrEqual(600);
@@ -154,10 +156,10 @@ describe("signing in", () => {
 
 describe("coming back from GitHub", () => {
     it("swaps the code for a key with the app's secret, and goes back to the page it came from", async () => {
-        const { back, asked } = await signedIn();
+        const { back, requests } = await signInThroughGitHub();
         expect(back.status).toBe(302);
         expect(back.headers.get("location")).toBe(`${SITE}/docs?tab=dark`);
-        expect(asked[0]).toMatchObject({
+        expect(requests[0]).toMatchObject({
             method: "POST",
             url: "https://github.com/login/oauth/access_token",
             body: {
@@ -170,8 +172,8 @@ describe("coming back from GitHub", () => {
     });
 
     it("keeps the key sealed where the page can't read it, for the function only, as long as GitHub says it lasts", async () => {
-        const { back } = await signedIn();
-        const key = cookiesOf(back).get(STUDIO_COOKIES.key);
+        const { back } = await signInThroughGitHub();
+        const key = getResponseCookies(back).get(STUDIO_COOKIES.key);
         expect(key?.value).not.toContain("ghu_key1");
         expect(key?.attributes.has("httponly")).toBe(true);
         expect(key?.attributes.get("path")).toBe(STUDIO_SIGN_IN_BASE);
@@ -179,19 +181,19 @@ describe("coming back from GitHub", () => {
     });
 
     it("leaves who signed in where the page can read it, for as long as the sign-in lasts", async () => {
-        const { back, asked } = await signedIn();
-        const login = cookiesOf(back).get(STUDIO_COOKIES.login);
+        const { back, requests } = await signInThroughGitHub();
+        const login = getResponseCookies(back).get(STUDIO_COOKIES.login);
         expect(login?.value).toBe("mark");
         expect(login?.attributes.get("max-age")).toBe("15897600");
-        expect(asked[1]).toMatchObject({
+        expect(requests[1]).toMatchObject({
             url: "https://api.github.com/user",
             authorization: "Bearer ghu_key1",
         });
     });
 
     it("keeps the refresh token encrypted, where the page can't read it, for the function only", async () => {
-        const { back } = await signedIn();
-        const refresh = cookiesOf(back).get(STUDIO_COOKIES.refresh);
+        const { back } = await signInThroughGitHub();
+        const refresh = getResponseCookies(back).get(STUDIO_COOKIES.refresh);
         expect(refresh?.value).not.toContain("ghr_refresh1");
         expect(refresh?.attributes.has("httponly")).toBe(true);
         expect(refresh?.attributes.get("path")).toBe(STUDIO_SIGN_IN_BASE);
@@ -199,59 +201,67 @@ describe("coming back from GitHub", () => {
     });
 
     it("clears the state once it has been used", async () => {
-        const { back } = await signedIn();
-        expect(cookiesOf(back).get(STUDIO_COOKIES.state)?.attributes.get("max-age")).toBe("0");
+        const { back } = await signInThroughGitHub();
+        expect(getResponseCookies(back).get(STUDIO_COOKIES.state)?.attributes.get("max-age")).toBe(
+            "0",
+        );
     });
 
     it("keeps a key GitHub says never runs out for as long as a sign-in lasts", async () => {
-        const { back } = await signedIn({ expiring: false });
-        expect(cookiesOf(back).get(STUDIO_COOKIES.key)?.attributes.get("max-age")).toBe("15897600");
-        expect(cookiesOf(back).has(STUDIO_COOKIES.refresh)).toBe(false);
+        const { back } = await signInThroughGitHub({ expiring: false });
+        expect(getResponseCookies(back).get(STUDIO_COOKIES.key)?.attributes.get("max-age")).toBe(
+            "15897600",
+        );
+        expect(getResponseCookies(back).has(STUDIO_COOKIES.refresh)).toBe(false);
     });
 
     it("goes back signed out when the state doesn't match", async () => {
-        const { ask, asked } = setUp();
+        const { ask, requests } = setUp();
         await ask(`${BASE}/sign-in?return=%2Fdocs`);
         const back = await ask(`${BASE}/callback?code=the-code&state=someone-elses`);
         expect(back.headers.get("location")).toBe(`${SITE}/docs`);
-        expect(cookiesOf(back).has(STUDIO_COOKIES.key)).toBe(false);
-        expect(asked).toStrictEqual([]);
+        expect(getResponseCookies(back).has(STUDIO_COOKIES.key)).toBe(false);
+        expect(requests).toStrictEqual([]);
     });
 
     it("goes back to the site's front page when there is no state at all", async () => {
         const { ask } = setUp();
         const back = await ask(`${BASE}/callback?code=the-code&state=anything`);
         expect(back.headers.get("location")).toBe(`${SITE}/`);
-        expect(cookiesOf(back).has(STUDIO_COOKIES.key)).toBe(false);
+        expect(getResponseCookies(back).has(STUDIO_COOKIES.key)).toBe(false);
     });
 
     it("goes back signed out when the person said no on GitHub", async () => {
         const { ask } = setUp();
-        const going = await ask(`${BASE}/sign-in?return=%2Fdocs`);
-        const state = new URL(going.headers.get("location") ?? "").searchParams.get("state");
+        const signInResponse = await ask(`${BASE}/sign-in?return=%2Fdocs`);
+        const state = new URL(signInResponse.headers.get("location") ?? "").searchParams.get(
+            "state",
+        );
         const back = await ask(`${BASE}/callback?error=access_denied&state=${state}`);
         expect(back.headers.get("location")).toBe(`${SITE}/docs`);
-        expect(cookiesOf(back).has(STUDIO_COOKIES.key)).toBe(false);
+        expect(getResponseCookies(back).has(STUDIO_COOKIES.key)).toBe(false);
     });
 
     it("goes back signed out when GitHub won't say who the person is", async () => {
-        const at = setUp();
+        const session = setUp();
         const fetch = async (input: RequestInfo | URL, init?: RequestInit) =>
             new Request(input, init).url === "https://api.github.com/user"
                 ? new Response("{}", { status: 401 })
-                : at.fetch(input, init);
-        const { ask } = browser(routed(signIn(env, { fetch })));
-        const going = await ask(`${BASE}/sign-in?return=%2Fdocs`);
-        const state = new URL(going.headers.get("location") ?? "").searchParams.get("state");
+                : session.fetch(input, init);
+        const { ask } = createBrowser(routeByMethod(signIn(env, { fetch })));
+        const signInResponse = await ask(`${BASE}/sign-in?return=%2Fdocs`);
+        const state = new URL(signInResponse.headers.get("location") ?? "").searchParams.get(
+            "state",
+        );
         const back = await ask(`${BASE}/callback?code=the-code&state=${state}`);
         expect(back.headers.get("location")).toBe(`${SITE}/docs`);
-        expect(cookiesOf(back).has(STUDIO_COOKIES.key)).toBe(false);
+        expect(getResponseCookies(back).has(STUDIO_COOKIES.key)).toBe(false);
     });
 
     it("goes back signed out when GitHub won't swap the code", async () => {
-        const { back } = await signedIn({ swaps: false });
+        const { back } = await signInThroughGitHub({ swaps: false });
         expect(back.headers.get("location")).toBe(`${SITE}/docs?tab=dark`);
-        expect(cookiesOf(back).has(STUDIO_COOKIES.key)).toBe(false);
+        expect(getResponseCookies(back).has(STUDIO_COOKIES.key)).toBe(false);
     });
 });
 
@@ -259,8 +269,10 @@ describe("the page to come back to", () => {
     it("keeps the path, its query and its fragment on this site", async () => {
         const { ask } = setUp();
         const given = "/docs/colours?tab=dark#brand";
-        const going = await ask(`${BASE}/sign-in?return=${encodeURIComponent(given)}`);
-        const state = new URL(going.headers.get("location") ?? "").searchParams.get("state");
+        const signInResponse = await ask(`${BASE}/sign-in?return=${encodeURIComponent(given)}`);
+        const state = new URL(signInResponse.headers.get("location") ?? "").searchParams.get(
+            "state",
+        );
         const back = await ask(`${BASE}/callback?error=access_denied&state=${state}`);
         expect(back.headers.get("location")).toBe(`${SITE}${given}`);
     });
@@ -276,8 +288,12 @@ describe("the page to come back to", () => {
         ["", "nothing"],
     ])("is the site's front page when given %s (%s)", async ([given]) => {
         const { ask } = setUp();
-        const going = await ask(`${BASE}/sign-in?return=${encodeURIComponent(given ?? "")}`);
-        const state = new URL(going.headers.get("location") ?? "").searchParams.get("state");
+        const signInResponse = await ask(
+            `${BASE}/sign-in?return=${encodeURIComponent(given ?? "")}`,
+        );
+        const state = new URL(signInResponse.headers.get("location") ?? "").searchParams.get(
+            "state",
+        );
         const back = await ask(`${BASE}/callback?error=access_denied&state=${state}`);
         expect(back.headers.get("location")).toBe(`${SITE}/`);
     });
@@ -285,17 +301,17 @@ describe("the page to come back to", () => {
 
 describe("the key for the page", () => {
     it("is handed to the page from its sealed cookie, never to be stored", async () => {
-        const { ask, asked } = await signedIn();
-        const before = asked.length;
+        const { ask, requests } = await signInThroughGitHub();
+        const before = requests.length;
         const response = await ask(`${BASE}/key`, "POST");
         expect(response.status).toBe(200);
         expect(response.headers.get("cache-control")).toBe("no-store");
         expect(await response.json()).toStrictEqual({ key: "ghu_key1" });
-        expect(asked).toHaveLength(before);
+        expect(requests).toHaveLength(before);
     });
 
     it("is a new one when the old has run out but the sign-in hasn't", async () => {
-        const { ask, jar } = await signedIn();
+        const { ask, jar } = await signInThroughGitHub();
         jar.delete(STUDIO_COOKIES.key);
         const response = await ask(`${BASE}/key`, "POST");
         expect(response.status).toBe(200);
@@ -307,12 +323,14 @@ describe("the key for the page", () => {
         const { ask } = setUp();
         const response = await ask(`${BASE}/key`, "POST");
         expect(response.status).toBe(401);
-        expect(cookiesOf(response).get(STUDIO_COOKIES.login)?.attributes.get("max-age")).toBe("0");
+        expect(
+            getResponseCookies(response).get(STUDIO_COOKIES.login)?.attributes.get("max-age"),
+        ).toBe("0");
     });
 
     it("isn't a cookie the page could read", async () => {
-        const { back } = await signedIn();
-        const readable = [...cookiesOf(back)].filter(
+        const { back } = await signInThroughGitHub();
+        const readable = [...getResponseCookies(back)].filter(
             ([, { value, attributes }]) => value && !attributes.has("httponly"),
         );
         expect(readable.map(([name]) => name)).toStrictEqual([STUDIO_COOKIES.login]);
@@ -321,10 +339,10 @@ describe("the key for the page", () => {
 
 describe("a new key", () => {
     it("is swapped for the refresh token, which is sent to GitHub as it was given", async () => {
-        const { ask, asked } = await signedIn();
+        const { ask, requests } = await signInThroughGitHub();
         const response = await ask(`${BASE}/refresh`, "POST");
         expect(response.status).toBe(200);
-        expect(asked.at(-2)).toMatchObject({
+        expect(requests.at(-2)).toMatchObject({
             url: "https://github.com/login/oauth/access_token",
             body: {
                 client_id: "Iv1.client",
@@ -334,33 +352,35 @@ describe("a new key", () => {
             },
         });
         expect(await response.json()).toStrictEqual({ key: "ghu_key2" });
-        expect(cookiesOf(response).get(STUDIO_COOKIES.key)?.value).toBeTruthy();
-        expect(cookiesOf(response).get(STUDIO_COOKIES.refresh)?.value).toBeTruthy();
+        expect(getResponseCookies(response).get(STUDIO_COOKIES.key)?.value).toBeTruthy();
+        expect(getResponseCookies(response).get(STUDIO_COOKIES.refresh)?.value).toBeTruthy();
     });
 
     it("asks GitHub again who the person is, so the sign-in lasts as long as the new refresh token", async () => {
-        const { ask, jar, asked } = await signedIn();
+        const { ask, jar, requests } = await signInThroughGitHub();
         jar.delete(STUDIO_COOKIES.login);
         const response = await ask(`${BASE}/refresh`, "POST");
         expect(response.status).toBe(200);
-        expect(asked.at(-1)).toMatchObject({
+        expect(requests.at(-1)).toMatchObject({
             url: "https://api.github.com/user",
             authorization: "Bearer ghu_key2",
         });
-        expect(cookiesOf(response).get(STUDIO_COOKIES.login)).toMatchObject({ value: "mark" });
+        expect(getResponseCookies(response).get(STUDIO_COOKIES.login)).toMatchObject({
+            value: "mark",
+        });
     });
 
     it("can't be had without a refresh token, and clears what the page reads", async () => {
         const { ask } = setUp();
         const response = await ask(`${BASE}/refresh`, "POST");
         expect(response.status).toBe(401);
-        const cleared = cookiesOf(response);
+        const cleared = getResponseCookies(response);
         expect(cleared.get(STUDIO_COOKIES.key)?.attributes.get("max-age")).toBe("0");
         expect(cleared.get(STUDIO_COOKIES.login)?.attributes.get("max-age")).toBe("0");
     });
 
     it("leaves the newest sign-in alone when another tab used the same refresh token first", async () => {
-        const { ask, jar, handler } = await signedIn();
+        const { ask, jar, handler } = await signInThroughGitHub();
         const before = [...jar].map(([name, value]) => `${name}=${value}`).join("; ");
         await ask(`${BASE}/refresh`, "POST");
         const late = await handler(
@@ -371,13 +391,13 @@ describe("a new key", () => {
     });
 
     it("can't be had when GitHub refuses the refresh token", async () => {
-        const { ask } = await signedIn({ refreshes: false });
+        const { ask } = await signInThroughGitHub({ refreshes: false });
         expect((await ask(`${BASE}/refresh`, "POST")).status).toBe(401);
     });
 
     it("can't be had from a refresh token another site's secret encrypted", async () => {
-        const first = await signedIn();
-        const other = routed(
+        const first = await signInThroughGitHub();
+        const other = routeByMethod(
             signIn(
                 {
                     ...env,
@@ -396,17 +416,17 @@ describe("a new key", () => {
 
 describe("signing out", () => {
     it("revokes the key at GitHub with the app's own credentials, and clears every cookie where it was set", async () => {
-        const { ask, asked, back } = await signedIn();
+        const { ask, requests, back } = await signInThroughGitHub();
         const response = await ask(`${BASE}/sign-out`, "POST");
         expect(response.status).toBe(204);
-        expect(asked.at(-1)).toMatchObject({
+        expect(requests.at(-1)).toMatchObject({
             method: "DELETE",
             url: "https://api.github.com/applications/Iv1.client/token",
             body: { access_token: "ghu_key1" },
             authorization: `Basic ${btoa("Iv1.client:client-secret")}`,
         });
-        const cleared = cookiesOf(response);
-        const set = cookiesOf(back);
+        const cleared = getResponseCookies(response);
+        const set = getResponseCookies(back);
         for (const name of [STUDIO_COOKIES.key, STUDIO_COOKIES.login, STUDIO_COOKIES.refresh]) {
             expect(cleared.get(name)?.attributes.get("max-age")).toBe("0");
             expect(cleared.get(name)?.attributes.get("path")).toBe(
@@ -416,16 +436,16 @@ describe("signing out", () => {
     });
 
     it("clears the cookies even with no key to revoke", async () => {
-        const { ask, asked } = setUp();
+        const { ask, requests } = setUp();
         const response = await ask(`${BASE}/sign-out`, "POST");
         expect(response.status).toBe(204);
-        expect(asked).toStrictEqual([]);
+        expect(requests).toStrictEqual([]);
     });
 });
 
 describe("what another site can't do", () => {
     it("can't post to the function: no new key, no signing out, nothing cleared", async () => {
-        const { handler, jar } = await signedIn();
+        const { handler, jar } = await signInThroughGitHub();
         const cookie = [...jar].map(([name, value]) => `${name}=${value}`).join("; ");
         for (const address of ["key", "refresh", "sign-out"]) {
             const response = await handler(
@@ -451,27 +471,27 @@ describe("what another site can't do", () => {
     });
 
     it("can't use one sealed cookie in another's place", async () => {
-        const at = setUp();
-        const going = await at.handler(new Request(`${BASE}/sign-in?return=%2F`));
-        const state = going.headers
+        const session = setUp();
+        const signInResponse = await session.handler(new Request(`${BASE}/sign-in?return=%2F`));
+        const state = signInResponse.headers
             .getSetCookie()
             .find((header) => header.startsWith(`${STUDIO_COOKIES.state}=`))
             ?.split(";")[0]
             ?.split("=")[1];
-        const response = await at.handler(
+        const response = await session.handler(
             new Request(`${BASE}/refresh`, {
                 method: "POST",
                 headers: { cookie: `${STUDIO_COOKIES.refresh}=${state}` },
             }),
         );
         expect(response.status).toBe(401);
-        expect(at.asked).toStrictEqual([]);
+        expect(session.requests).toStrictEqual([]);
     });
 });
 
 describe("the function itself", () => {
     it("hands back a GET and a POST for the host's route file", async () => {
-        const { GET, POST } = signIn(env, { fetch: github().fetch });
+        const { GET, POST } = signIn(env, { fetch: fakeGitHubFetch().fetch });
         expect((await GET(new Request(`${BASE}/sign-in?return=%2F`))).status).toBe(302);
         expect((await POST(new Request(`${BASE}/sign-out`, { method: "POST" }))).status).toBe(204);
     });
@@ -488,18 +508,22 @@ describe("the function itself", () => {
         const response = await handler(
             new Request("http://127.0.0.1:4321/api/sugarcube-studio/sign-in?return=%2F"),
         );
-        expect(cookiesOf(response).get(STUDIO_COOKIES.state)?.attributes.has("secure")).toBe(false);
+        expect(
+            getResponseCookies(response).get(STUDIO_COOKIES.state)?.attributes.has("secure"),
+        ).toBe(false);
     });
 
     it("refuses an encryption secret too short to be safe", async () => {
-        const handler = routed(signIn({ ...env, [STUDIO_SETTINGS.secret]: "short" }));
+        const handler = routeByMethod(signIn({ ...env, [STUDIO_SETTINGS.secret]: "short" }));
         const response = await handler(new Request(`${BASE}/sign-in?return=%2F`));
         expect(response.status).toBe(500);
         expect(await response.text()).toContain(STUDIO_SETTINGS.secret);
     });
 
     it("names the setting that is missing", async () => {
-        const handler = routed(signIn({ ...env, [STUDIO_SETTINGS.clientSecret]: undefined }));
+        const handler = routeByMethod(
+            signIn({ ...env, [STUDIO_SETTINGS.clientSecret]: undefined }),
+        );
         const response = await handler(new Request(`${BASE}/sign-in?return=%2F`));
         expect(response.status).toBe(500);
         expect(await response.text()).toContain(STUDIO_SETTINGS.clientSecret);

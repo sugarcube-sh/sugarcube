@@ -7,19 +7,19 @@ export interface Edit {
     readonly options: StepOptions;
 }
 
-export interface Field {
+export interface MergeKeyInput {
     readonly path: string;
-    readonly writes: string;
-    readonly place?: string | undefined;
+    readonly property: string;
+    readonly row?: string | undefined;
     readonly part?: JsonPath | undefined;
     readonly control?: string | undefined;
 }
 
-export function fieldKey({ path, writes, place, part = [], control }: Field): string {
-    return JSON.stringify([path, writes, place ?? null, part, control ?? null]);
+export function createMergeKey({ path, property, row, part = [], control }: MergeKeyInput): string {
+    return JSON.stringify([path, property, row ?? null, part, control ?? null]);
 }
 
-export function changeBarActions(
+export function getChangeBarActions(
     { state, save }: Pick<Studio, "state" | "save">,
     { canSave }: { canSave: boolean } = { canSave: true },
 ) {
@@ -40,7 +40,7 @@ export interface KeyPress {
     readonly altKey: boolean;
 }
 
-export function undoKey({ key, metaKey, ctrlKey, shiftKey, altKey }: KeyPress) {
+export function getUndoShortcut({ key, metaKey, ctrlKey, shiftKey, altKey }: KeyPress) {
     if (altKey || !(metaKey || ctrlKey)) return undefined;
     const pressed = key.toLowerCase();
     if (pressed === "z") return shiftKey ? "redo" : "undo";
@@ -48,13 +48,13 @@ export function undoKey({ key, metaKey, ctrlKey, shiftKey, altKey }: KeyPress) {
     return undefined;
 }
 
-export interface Focused {
+export interface FocusedElement {
     readonly tagName: string;
     readonly type: string;
     readonly isContentEditable: boolean;
 }
 
-const notTyped = new Set([
+const nonTextInputTypes = new Set([
     "button",
     "checkbox",
     "color",
@@ -65,16 +65,16 @@ const notTyped = new Set([
     "submit",
 ]);
 
-export function isTyping({ tagName, type, isContentEditable }: Focused): boolean {
+export function isTyping({ tagName, type, isContentEditable }: FocusedElement): boolean {
     if (isContentEditable || tagName === "TEXTAREA") return true;
-    return tagName === "INPUT" && !notTyped.has(type);
+    return tagName === "INPUT" && !nonTextInputTypes.has(type);
 }
 
-export function undoFor(
+export function getUndoAction(
     press: KeyPress,
-    focused: Focused,
-    offered: ReturnType<typeof changeBarActions>,
+    focused: FocusedElement,
+    actions: ReturnType<typeof getChangeBarActions>,
 ): "undo" | "redo" | undefined {
-    const action = undoKey(press);
-    return action && !isTyping(focused) && offered[action] ? action : undefined;
+    const action = getUndoShortcut(press);
+    return action && !isTyping(focused) && actions[action] ? action : undefined;
 }

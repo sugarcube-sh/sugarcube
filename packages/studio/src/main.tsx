@@ -7,14 +7,14 @@ import { RouterProvider } from "react-router";
 import { createStudioRouter } from "./app/create-router";
 import { ErrorMessages } from "./error-messages";
 
-const rootEl = document.getElementById("root");
-if (!rootEl) {
+const rootElement = document.getElementById("root");
+if (!rootElement) {
     throw new Error(ErrorMessages.NO_MOUNT_POINT);
 }
 
 const router = createStudioRouter();
 
-createRoot(rootEl).render(
+createRoot(rootElement).render(
     <StrictMode>
         <StudioProvider>
             <RouterProvider router={router} />

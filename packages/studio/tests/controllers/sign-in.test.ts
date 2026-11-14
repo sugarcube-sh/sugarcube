@@ -1,18 +1,18 @@
 import { setValue } from "@sugarcube-sh/dtcg-edit";
 import { ForbiddenError, TokenRevokedError } from "forges";
 import { describe, expect, it } from "vitest";
-import { adapterFor } from "../../src/adapters";
+import { createAdapter } from "../../src/adapters";
 import { encodeEdits } from "../../src/controllers/edits-text";
-import { keepUnsaved } from "../../src/controllers/unsaved";
+import { persistUnsavedEdits } from "../../src/controllers/unsaved";
 import {
-    barMessages,
+    getBarMessages,
     type Page,
     type SignInState,
     createSignIn,
-    pressSaveWith,
-    saveFor,
-    saveOffer,
-    signedInAs,
+    startSave,
+    getSaveOffer,
+    toSaveOffer,
+    getLogin,
 } from "../../src/controllers/sign-in";
 import { createStudio } from "../../src/controllers/studio";
 import type { Access } from "../../src/git-hosts/git-host";
@@ -20,8 +20,8 @@ import { STUDIO_COOKIES, STUDIO_SIGN_IN_BASE, STUDIO_STORAGE } from "../../src/s
 import { fakeGitHub } from "../git-hosts/fake-github";
 import { demoMessage } from "./demo-message";
 
-const darkText = { input: { mode: "dark" } } as const;
-const WAITING = `${STUDIO_STORAGE.saveWaiting}tokens/tokens.resolver.json`;
+const darkOptions = { input: { mode: "dark" } } as const;
+const WAITING = `${STUDIO_STORAGE.pendingSave}tokens/tokens.resolver.json`;
 const PAGE = "/docs/colours?tab=dark#brand";
 
 function page({ signedIn = true, key = "ghu_one", refreshes = true } = {}) {
@@ -34,9 +34,9 @@ function page({ signedIn = true, key = "ghu_one", refreshes = true } = {}) {
     const asked: Array<{ url: string; method: string | undefined }> = [];
     const went: string[] = [];
     const fake: Page = {
-        cookie: (name) => cookies.get(name),
-        here: () => PAGE,
-        go: (url) => went.push(url),
+        getCookie: (name) => cookies.get(name),
+        getReturnPath: () => PAGE,
+        redirect: (url) => went.push(url),
         storage: {
             getItem: (name) => stored.get(name) ?? null,
             setItem: (name, value) => stored.set(name, value),
@@ -78,23 +78,23 @@ function setUp({
         page: at.page,
         repository: "acme/site",
         entry: "tokens/tokens.resolver.json",
-        hostFor: (login, keyNow) => ({
+        createHost: (login, keyNow) => ({
             ...github.host,
-            latest: async () => {
+            getLatestCommit: async () => {
                 keys.push(`${login}:${await keyNow()}`);
-                return github.host.latest();
+                return github.host.getLatestCommit();
             },
-            access: async () => {
+            getAccess: async () => {
                 await keyNow();
                 accessAsked++;
                 return answer;
             },
         }),
     });
-    const studio = createStudio(message, adapterFor, signIn.save);
+    const studio = createStudio(message, createAdapter, signIn.save);
     const edit = () =>
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
     return {
         ...at,
@@ -112,7 +112,7 @@ describe("someone who isn't signed in", () => {
     it("is shown as no one, and nothing is asked of anyone", async () => {
         const { signIn, studio, asked } = setUp({ signedIn: false });
         await signIn.start(studio);
-        expect(signIn.state.person).toBeUndefined();
+        expect(signIn.state.login).toBeUndefined();
         expect(asked).toStrictEqual([]);
     });
 
@@ -142,13 +142,13 @@ describe("coming back from GitHub", () => {
         const before = setUp({ signedIn: false });
         before.edit();
         const unsaved = `${STUDIO_STORAGE.unsaved}tokens/tokens.resolver.json`;
-        await keepUnsaved(before.studio, before.page.storage!, unsaved);
+        await persistUnsavedEdits(before.studio, before.page.storage!, unsaved);
         before.studio.do(
             setValue(
                 before.studio.state.tokens,
                 "color.text.muted",
                 "{color.neutral.300}",
-                darkText,
+                darkOptions,
             ),
         );
         await new Promise((resolve) => setTimeout(resolve, 10));
@@ -156,7 +156,7 @@ describe("coming back from GitHub", () => {
 
         const after = setUp();
         for (const [name, value] of before.stored) after.stored.set(name, value);
-        await keepUnsaved(after.studio, after.page.storage!, unsaved);
+        await persistUnsavedEdits(after.studio, after.page.storage!, unsaved);
         await after.signIn.start(after.studio);
 
         expect(after.github.pulls()).toHaveLength(1);
@@ -178,7 +178,7 @@ describe("coming back from GitHub", () => {
         stored.set(WAITING, await encodeEdits(studio.unsaved));
         await signIn.start(studio);
         expect(github.pulls()).toStrictEqual([]);
-        expect(saveFor(signIn)).toStrictEqual({
+        expect(getSaveOffer(signIn)).toStrictEqual({
             canSave: false,
             reason: "You can't save to acme/site.",
         });
@@ -189,7 +189,7 @@ describe("coming back from GitHub", () => {
         edit();
         stored.set(WAITING, await encodeEdits(studio.unsaved));
         await signIn.start(studio);
-        expect(signIn.state.said).toBe("Not signed in. Try again.");
+        expect(signIn.state.message).toBe("Not signed in. Try again.");
         expect(studio.state.changes).toHaveLength(1);
         expect(stored.has(WAITING)).toBe(false);
     });
@@ -204,9 +204,12 @@ describe("someone signed in", () => {
                 page: at.page,
                 repository: "acme/site",
                 entry: "tokens/tokens.resolver.json",
-                hostFor: () => ({ ...at.github.host, access: async () => ({ can: "write" }) }),
+                createHost: () => ({
+                    ...at.github.host,
+                    getAccess: async () => ({ can: "write" }),
+                }),
             });
-            expect(signIn.state.person).toBeUndefined();
+            expect(signIn.state.login).toBeUndefined();
         }
     });
 
@@ -230,7 +233,7 @@ describe("someone signed in", () => {
 
     it("is shown by name from the cookie, with no request for it", () => {
         const { signIn, asked } = setUp();
-        expect(signIn.state.person).toBe("mark");
+        expect(signIn.state.login).toBe("mark");
         expect(asked).toStrictEqual([]);
     });
 
@@ -277,7 +280,7 @@ describe("someone signed in", () => {
         github.forge.failNext("contents.resolveRef", () => revoked);
         await signIn.pressSave(studio);
         expect(studio.state.saved).toStrictEqual({ failed: "Not signed in. Try again." });
-        expect(signIn.state.person).toBeUndefined();
+        expect(signIn.state.login).toBeUndefined();
         expect(studio.state.changes).toHaveLength(1);
     });
 
@@ -292,7 +295,7 @@ describe("someone signed in", () => {
         );
         await signIn.pressSave(studio);
         expect(signIn.state.access).toStrictEqual({ can: "read" });
-        expect(barMessages(studio.state.saved, saveFor(signIn))).toStrictEqual({
+        expect(getBarMessages(studio.state.saved, getSaveOffer(signIn))).toStrictEqual({
             reason: "You can't save to acme/site.",
         });
     });
@@ -305,7 +308,7 @@ describe("someone signed in", () => {
             { url: `${STUDIO_SIGN_IN_BASE}/key`, method: "POST" },
             { url: `${STUDIO_SIGN_IN_BASE}/sign-out`, method: "POST" },
         ]);
-        expect(signIn.state).toMatchObject({ person: undefined, access: undefined });
+        expect(signIn.state).toMatchObject({ login: undefined, access: undefined });
     });
 
     it("tells whoever is listening when what is known changes", async () => {
@@ -319,59 +322,66 @@ describe("someone signed in", () => {
 
 describe("what the change bar offers", () => {
     const state = (change: Partial<SignInState>): SignInState => ({
-        person: "mark",
+        login: "mark",
         access: { can: "write" },
-        said: undefined,
+        message: undefined,
         ...change,
     });
 
     it("offers Save to someone signed out, as the way to sign in", () => {
         expect(
-            saveOffer(state({ person: undefined, access: undefined }), "acme/site"),
+            toSaveOffer(state({ login: undefined, access: undefined }), "acme/site"),
         ).toStrictEqual({ canSave: true });
     });
 
     it("offers Save to someone who can write", () => {
-        expect(saveOffer(state({}), "acme/site")).toStrictEqual({ canSave: true });
+        expect(toSaveOffer(state({}), "acme/site")).toStrictEqual({ canSave: true });
     });
 
     it("waits to offer Save until it knows what someone signed in may do", () => {
-        expect(saveOffer(state({ access: undefined }), "acme/site")).toStrictEqual({
+        expect(toSaveOffer(state({ access: undefined }), "acme/site")).toStrictEqual({
             canSave: false,
         });
     });
 
     it("says why someone who can only read can't save", () => {
-        expect(saveOffer(state({ access: { can: "read" } }), "acme/site")).toStrictEqual({
+        expect(toSaveOffer(state({ access: { can: "read" } }), "acme/site")).toStrictEqual({
             canSave: false,
             reason: "You can't save to acme/site.",
         });
         expect(
-            saveOffer(state({ access: { can: "nothing", reason: "no-access" } }), "acme/site"),
+            toSaveOffer(state({ access: { can: "nothing", reason: "no-access" } }), "acme/site"),
         ).toStrictEqual({ canSave: false, reason: "You can't save to acme/site." });
     });
 
     it("says the app isn't installed, with the link when there is one", () => {
-        const install = "https://github.com/apps/acme-studio/installations/new";
+        const installURL = "https://github.com/apps/acme-studio/installations/new";
         expect(
-            saveOffer(
-                state({ access: { can: "nothing", reason: "not-installed", install } }),
+            toSaveOffer(
+                state({ access: { can: "nothing", reason: "not-installed", installURL } }),
                 "acme/site",
             ),
         ).toStrictEqual({
             canSave: false,
             reason: "studio isn't installed on acme/site.",
-            install,
+            installURL,
         });
         expect(
-            saveOffer(state({ access: { can: "nothing", reason: "not-installed" } }), "acme/site"),
+            toSaveOffer(
+                state({ access: { can: "nothing", reason: "not-installed" } }),
+                "acme/site",
+            ),
         ).toStrictEqual({ canSave: false, reason: "studio isn't installed on acme/site." });
     });
 
     it("says what went wrong signing in", () => {
         expect(
-            saveOffer(
-                state({ person: undefined, access: undefined, said: "Not signed in. Try again." }),
+            toSaveOffer(
+                state({
+                    login: undefined,
+                    access: undefined,
+                    message: "Not signed in. Try again.",
+                }),
                 "acme/site",
             ),
         ).toStrictEqual({ canSave: true, reason: "Not signed in. Try again." });
@@ -381,16 +391,16 @@ describe("what the change bar offers", () => {
 describe("studio with no sign-in, as on a developer's computer", () => {
     it("offers Save as it always has, and saves straight to the host", async () => {
         const saved: string[] = [];
-        const studio = createStudio(demoMessage(), adapterFor, async () => {
+        const studio = createStudio(demoMessage(), createAdapter, async () => {
             saved.push("saved");
-            return { written: [], deleted: [] };
+            return { savedFiles: [], deleted: [] };
         });
-        expect(saveFor(undefined)).toStrictEqual({ canSave: true });
-        expect(signedInAs(undefined)).toBeUndefined();
+        expect(getSaveOffer(undefined)).toStrictEqual({ canSave: true });
+        expect(getLogin(undefined)).toBeUndefined();
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
-        await pressSaveWith(studio, undefined);
+        await startSave(studio, undefined);
         expect(saved).toStrictEqual(["saved"]);
     });
 });
@@ -398,18 +408,18 @@ describe("studio with no sign-in, as on a developer's computer", () => {
 describe("studio with a sign-in", () => {
     it("asks the sign-in what Save does and who is signed in", async () => {
         const { signIn, studio, edit, went } = setUp({ signedIn: false });
-        expect(signedInAs(signIn)).toBeUndefined();
-        expect(saveFor(signIn)).toStrictEqual({ canSave: true });
+        expect(getLogin(signIn)).toBeUndefined();
+        expect(getSaveOffer(signIn)).toStrictEqual({ canSave: true });
         edit();
-        await pressSaveWith(studio, signIn);
+        await startSave(studio, signIn);
         expect(went).toHaveLength(1);
     });
 
     it("names the person and gives the repository's reasons", async () => {
         const { signIn, studio } = setUp({ access: { can: "read" } });
         await signIn.start(studio);
-        expect(signedInAs(signIn)).toBe("mark");
-        expect(saveFor(signIn)).toStrictEqual({
+        expect(getLogin(signIn)).toBe("mark");
+        expect(getSaveOffer(signIn)).toStrictEqual({
             canSave: false,
             reason: "You can't save to acme/site.",
         });
@@ -421,32 +431,34 @@ describe("what the change bar says", () => {
     const pullRequest = { pullRequest: { number: 7 }, files: {} };
 
     it("says the save's result when nothing stands in the way of saving", () => {
-        expect(barMessages(pullRequest, { canSave: true })).toStrictEqual({ outcome: pullRequest });
-        expect(barMessages(failed, { canSave: true })).toStrictEqual({ outcome: failed });
+        expect(getBarMessages(pullRequest, { canSave: true })).toStrictEqual({
+            outcome: pullRequest,
+        });
+        expect(getBarMessages(failed, { canSave: true })).toStrictEqual({ outcome: failed });
     });
 
     it("says why Save isn't possible instead of a failure that led to finding out", () => {
         expect(
-            barMessages(failed, { canSave: false, reason: "You can't save to acme/site." }),
+            getBarMessages(failed, { canSave: false, reason: "You can't save to acme/site." }),
         ).toStrictEqual({ reason: "You can't save to acme/site." });
     });
 
     it("says both a result and the reason when the result isn't a failure", () => {
-        const install = "https://github.com/apps/acme-studio/installations/new";
+        const installURL = "https://github.com/apps/acme-studio/installations/new";
         expect(
-            barMessages(pullRequest, {
+            getBarMessages(pullRequest, {
                 canSave: false,
                 reason: "studio isn't installed on acme/site.",
-                install,
+                installURL,
             }),
         ).toStrictEqual({
             outcome: pullRequest,
             reason: "studio isn't installed on acme/site.",
-            install,
+            installURL,
         });
     });
 
     it("says nothing when there is nothing to say", () => {
-        expect(barMessages(undefined, { canSave: true })).toStrictEqual({});
+        expect(getBarMessages(undefined, { canSave: true })).toStrictEqual({});
     });
 });

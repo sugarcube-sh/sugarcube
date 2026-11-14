@@ -3,15 +3,15 @@ import { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "@sugarcu
 import type { Plugin } from "vite";
 import { BUILT_APP } from "../built-files";
 import { ErrorMessages } from "../error-messages";
-import { studioHub } from "../hub/studio-hub";
-import { studioDevframe } from "../server/definition";
+import { createStudioHub } from "../hub/studio-hub";
+import { createStudioDevframe } from "../server/definition";
 import type { StudioFiles } from "../server/files";
 import { STUDIO_VITE_PLUGIN } from "../studio-names";
 
-export function filesFromSugarcube(): { plugin: Plugin; files: Promise<StudioFiles> } {
-    let found: (files: StudioFiles) => void = () => {};
+export function createFilesPlugin(): { plugin: Plugin; files: Promise<StudioFiles> } {
+    let resolveFiles: (files: StudioFiles) => void = () => {};
     const files = new Promise<StudioFiles>((resolve) => {
-        found = resolve;
+        resolveFiles = resolve;
     });
 
     const plugin: Plugin = {
@@ -25,7 +25,7 @@ export function filesFromSugarcube(): { plugin: Plugin; files: Promise<StudioFil
                 config.logger.warn(ErrorMessages.NO_SUGARCUBE_PLUGIN);
                 return;
             }
-            found({ now: () => context, onChange: context.onReload });
+            resolveFiles({ getSnapshot: () => context, onChange: context.onReload });
         },
     };
 
@@ -33,8 +33,8 @@ export function filesFromSugarcube(): { plugin: Plugin; files: Promise<StudioFil
 }
 
 export default function sugarcubeStudio(): Plugin[] {
-    const { plugin, files } = filesFromSugarcube();
-    const hub = studioHub(studioDevframe({ files, clientAssets: BUILT_APP }));
+    const { plugin, files } = createFilesPlugin();
+    const hub = createStudioHub(createStudioDevframe({ files, clientAssets: BUILT_APP }));
 
     return [plugin, viteDevframeHub({ ...hub, auth: false, quiet: true })];
 }

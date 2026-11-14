@@ -1,18 +1,18 @@
 import { useSyncExternalStore } from "react";
 
 const MOBILE_BREAKPOINT = 768;
-const QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
+const MOBILE_QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
 
 function subscribe(callback: () => void): () => void {
-    const mql = window.matchMedia(QUERY);
-    mql.addEventListener("change", callback);
-    return () => mql.removeEventListener("change", callback);
+    const mediaQuery = window.matchMedia(MOBILE_QUERY);
+    mediaQuery.addEventListener("change", callback);
+    return () => mediaQuery.removeEventListener("change", callback);
 }
 
 export function useIsMobile(): boolean {
     return useSyncExternalStore(
         subscribe,
-        () => window.matchMedia(QUERY).matches,
+        () => window.matchMedia(MOBILE_QUERY).matches,
         () => false,
     );
 }

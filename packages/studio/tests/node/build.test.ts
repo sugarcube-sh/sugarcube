@@ -2,9 +2,9 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { type StudioBuild, buildFiles } from "../../src/node/build";
+import { type StudioBuild, buildFromFiles } from "../../src/node/build";
 import { STUDIO_DEVFRAME_ID, STUDIO_RPC } from "../../src/studio-names";
-import { demoResolver, filesAt } from "./demo";
+import { demoResolver, createDemoFiles } from "./demo";
 
 describe("buildStudio", () => {
     let outDir: string;
@@ -13,8 +13,11 @@ describe("buildStudio", () => {
 
     beforeAll(async () => {
         outDir = mkdtempSync(join(tmpdir(), "studio-build-"));
-        const files = await filesAt(demoResolver, { repository: "acme/site", branch: "main" });
-        built = await buildFiles(files, { outDir });
+        const files = await createDemoFiles(demoResolver, {
+            repository: "acme/site",
+            branch: "main",
+        });
+        built = await buildFromFiles(files, { outDir });
     }, 60_000);
 
     afterAll(() => {
@@ -93,9 +96,9 @@ describe("buildStudio", () => {
 describe("buildStudio with nothing to build", () => {
     it("refuses, naming the problems, rather than writing an empty studio", async () => {
         const outDir = mkdtempSync(join(tmpdir(), "studio-build-empty-"));
-        const files = await filesAt(join(outDir, "missing.resolver.json"));
+        const files = await createDemoFiles(join(outDir, "missing.resolver.json"));
 
-        await expect(buildFiles(files, { outDir })).rejects.toThrow(
+        await expect(buildFromFiles(files, { outDir })).rejects.toThrow(
             /^\[sugarcube studio\] Nothing to build[^]*missing\.resolver\.json/,
         );
 

@@ -24,14 +24,14 @@ export interface Search {
 export function createSearch(studio: Studio): Search {
     const listeners = new Map<() => void, () => void>();
     let query = "";
-    let kept: { from: StudioState; query: string; state: SearchState } | undefined;
+    let cached: { from: StudioState; query: string; state: SearchState } | undefined;
 
     return {
         get state() {
-            if (kept?.from !== studio.state || kept.query !== query) {
-                kept = { from: studio.state, query, state: found(studio.state, query) };
+            if (cached?.from !== studio.state || cached.query !== query) {
+                cached = { from: studio.state, query, state: findHits(studio.state, query) };
             }
-            return kept.state;
+            return cached.state;
         },
         subscribe(listener) {
             const stop = studio.subscribe(listener);
@@ -52,7 +52,7 @@ export function createSearch(studio: Studio): Search {
     };
 }
 
-function found({ tokens, showing, value: asWritten }: StudioState, query: string): SearchState {
+function findHits({ tokens, shownPermutation, getValue }: StudioState, query: string): SearchState {
     const needle = query.trim().toLowerCase();
     const hits: Hit[] = [];
     if (!needle) return { query, hits, capped: false };
@@ -60,8 +60,8 @@ function found({ tokens, showing, value: asWritten }: StudioState, query: string
     for (const path of tokens.getTokenPaths()) {
         if (!path.toLowerCase().includes(needle)) continue;
         if (hits.length === MAX_HITS) return { query, hits, capped: true };
-        const token = showing.getToken(path);
-        const css = token && asWritten(token);
+        const token = shownPermutation.getToken(path);
+        const css = token && getValue(token);
         const value = typeof css === "string" ? css : undefined;
         hits.push({ path, swatch: token?.type === "color" ? value : undefined, value });
     }

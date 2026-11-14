@@ -1,7 +1,7 @@
 import { type Group, type JsonValue, type TokenType, tokenPath } from "@sugarcube-sh/dtcg";
 import { tokenTypes } from "@sugarcube-sh/dtcg/values";
 import { useId, useState } from "react";
-import { canAddToken, newTokenEdit } from "../controllers/actions";
+import { canAddToken, createTokenEdit } from "../controllers/actions";
 import { hasField } from "../controllers/value-field";
 import { useStudio } from "../providers/studio-context";
 import { JsonInput } from "./JsonInput";
@@ -16,7 +16,7 @@ export function NewToken({ group }: { group: Group }) {
     const [type, setType] = useState<TokenType>(group.type ?? "color");
     const [value, setValue] = useState<JsonValue>();
     const [text, setText] = useState("");
-    const valueId = useId();
+    const valueID = useId();
     const heading = useId();
     const path = tokenPath.join(group.path, name);
 
@@ -26,7 +26,7 @@ export function NewToken({ group }: { group: Group }) {
             onSubmit={(event) => {
                 event.preventDefault();
                 if (value === undefined) return;
-                const { result, options } = newTokenEdit(studio.state.tokens, group, name, {
+                const { result, options } = createTokenEdit(studio.state.tokens, group, name, {
                     type,
                     value,
                 });
@@ -63,16 +63,16 @@ export function NewToken({ group }: { group: Group }) {
                     <TypedField
                         key={type}
                         type={type}
-                        written={value}
+                        value={value}
                         label="Value"
                         onWrite={setValue}
                     />
                 </EditedTokenContext.Provider>
             ) : (
                 <>
-                    <label htmlFor={valueId}>Value</label>{" "}
+                    <label htmlFor={valueID}>Value</label>{" "}
                     <JsonInput
-                        id={valueId}
+                        id={valueID}
                         text={text}
                         onText={(next, parsed) => {
                             setText(next);

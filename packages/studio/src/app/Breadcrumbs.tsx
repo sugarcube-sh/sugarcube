@@ -9,15 +9,15 @@ import {
     BreadcrumbSeparator,
 } from "../components/ui/breadcrumb/breadcrumb";
 import { useSelectedPath } from "../canvas/NodeRoute";
-import { trail } from "../controllers/views";
-import { hrefFor } from "./token-path";
+import { getBreadcrumbs } from "../controllers/views";
+import { toHref } from "./token-path";
 
 export function Breadcrumbs() {
     const path = useSelectedPath();
     if (path === undefined) return null;
 
-    const crumbs = trail(path);
-    const current = crumbs.length - 1;
+    const crumbs = getBreadcrumbs(path);
+    const lastIndex = crumbs.length - 1;
 
     return (
         <Breadcrumb>
@@ -26,11 +26,11 @@ export function Breadcrumbs() {
                     <Fragment key={crumb.path}>
                         {index > 0 && <BreadcrumbSeparator />}
                         <BreadcrumbItem>
-                            {index === current ? (
+                            {index === lastIndex ? (
                                 <BreadcrumbPage>{crumb.name}</BreadcrumbPage>
                             ) : (
                                 <BreadcrumbLink asChild>
-                                    <Link to={hrefFor(crumb.path)}>{crumb.name}</Link>
+                                    <Link to={toHref(crumb.path)}>{crumb.name}</Link>
                                 </BreadcrumbLink>
                             )}
                         </BreadcrumbItem>

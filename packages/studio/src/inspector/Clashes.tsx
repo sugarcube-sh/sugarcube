@@ -1,21 +1,22 @@
 import type { Clash } from "@sugarcube-sh/dtcg-edit";
 import { useMemo } from "react";
-import { useHeld } from "../canvas/use-held";
-import { reasonsFor } from "../controllers/held";
-import { type ClashRow, clashRows } from "../controllers/token-page";
+import { useKeyedState } from "../canvas/use-keyed-state";
+import { ValueText } from "../canvas/Value";
+import { getReasons } from "../controllers/keyed-value";
+import { type ClashRow, toClashRows } from "../controllers/token-page";
 import { useStudio, useStudioState } from "../providers/studio-context";
 
 export function Clashes() {
     const studio = useStudio();
     const tokens = useStudioState((state) => state.tokens);
     const clashes = useStudioState((state) => state.clashes);
-    const rows = useMemo(() => clashRows(tokens, clashes), [tokens, clashes]);
-    const [why = [], holdWhy] = useHeld<readonly string[]>(clashes);
+    const rows = useMemo(() => toClashRows(tokens, clashes), [tokens, clashes]);
+    const [reasons = [], setReasons] = useKeyedState<readonly string[]>(clashes);
     if (rows.length === 0) return null;
 
     const keepYours = (clash: Clash) => {
-        const done = studio.keep(clash, "yours");
-        holdWhy(reasonsFor(done), studio.state.clashes);
+        const commitResult = studio.resolveClash(clash, "yours");
+        setReasons(getReasons(commitResult), studio.state.clashes);
     };
 
     return (
@@ -30,12 +31,12 @@ export function Clashes() {
                             </button>{" "}
                         </>
                     )}
-                    <button type="button" onClick={() => studio.keep(row.clash, "theirs")}>
+                    <button type="button" onClick={() => studio.resolveClash(row.clash, "theirs")}>
                         Keep theirs
                     </button>
                 </li>
             ))}
-            {why.map((reason) => (
+            {reasons.map((reason) => (
                 <li key={reason}>{reason}</li>
             ))}
         </ul>
@@ -51,12 +52,12 @@ function Line({ row }: { row: ClashRow }) {
             </>
         );
     }
-    const theme = row.label && ` (${row.label})`;
+    const permutationSuffix = row.label && ` (${row.label})`;
     if (row.kind === "removed") {
         return (
             <>
                 You removed <code>{row.path}</code>. Changed elsewhere. Theirs:{" "}
-                <Side value={row.theirs} />
+                <ValueText value={row.theirs} missing="removed" />
             </>
         );
     }
@@ -64,20 +65,17 @@ function Line({ row }: { row: ClashRow }) {
         return (
             <>
                 <code>{row.path}</code>
-                {theme} removed or renamed elsewhere. Yours: <Side value={row.yours} />
+                {permutationSuffix} removed or renamed elsewhere. Yours:{" "}
+                <ValueText value={row.yours} missing="removed" />
             </>
         );
     }
     return (
         <>
             <code>{row.path}</code>
-            {theme} changed elsewhere. Yours: <Side value={row.yours} /> Theirs:{" "}
-            <Side value={row.theirs} />
+            {permutationSuffix} changed elsewhere. Yours:{" "}
+            <ValueText value={row.yours} missing="removed" /> Theirs:{" "}
+            <ValueText value={row.theirs} missing="removed" />
         </>
     );
-}
-
-function Side({ value }: { value: unknown }) {
-    if (value === undefined) return <>removed</>;
-    return <code>{typeof value === "string" ? value : JSON.stringify(value)}</code>;
 }

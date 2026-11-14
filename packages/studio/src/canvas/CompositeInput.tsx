@@ -4,17 +4,17 @@ import {
     type FieldWithParts,
     type FieldPart,
     type Slot,
-    withAdded,
-    withRemoved,
+    addFieldItem,
+    removeFieldItem,
 } from "../controllers/parts";
-import { Choice } from "./Choice";
+import { Select } from "./Select";
 import { JsonField } from "./JsonField";
 import { TypedField } from "./TypedField";
 import { useItemKeys } from "./use-draft";
 
-type Write = (value: JsonValue, part?: JsonPath, control?: string) => void;
+type WriteHandler = (value: JsonValue, part?: JsonPath, control?: string) => void;
 
-const itemNames = { shadow: "Layer", gradient: "Stop" } as const;
+const itemLabelByType = { shadow: "Layer", gradient: "Stop" } as const;
 
 export function CompositeInput({
     field,
@@ -23,7 +23,7 @@ export function CompositeInput({
 }: {
     field: FieldWithParts;
     label: string;
-    onWrite: Write;
+    onWrite: WriteHandler;
 }) {
     switch (field.kind) {
         case "parts":
@@ -35,8 +35,8 @@ export function CompositeInput({
     }
 }
 
-function within(at: JsonPath, onWrite: Write): Write {
-    return (value, part = [], control) => onWrite(value, [...at, ...part], control);
+function prefixPath(path: JsonPath, onWrite: WriteHandler): WriteHandler {
+    return (value, part = [], control) => onWrite(value, [...path, ...part], control);
 }
 
 function Parts({
@@ -46,7 +46,7 @@ function Parts({
 }: {
     parts: readonly FieldPart[];
     label: string;
-    onWrite: Write;
+    onWrite: WriteHandler;
 }) {
     return (
         <fieldset aria-label={label}>
@@ -56,7 +56,7 @@ function Parts({
                     <SlotField
                         slot={part}
                         label={`${label}, ${part.name}`}
-                        onWrite={within(part.at, onWrite)}
+                        onWrite={prefixPath(part.part, onWrite)}
                     />
                 </div>
             ))}
@@ -64,18 +64,18 @@ function Parts({
     );
 }
 
-function SlotField({ slot, label, onWrite }: { slot: Slot; label: string; onWrite: Write }) {
+function SlotField({ slot, label, onWrite }: { slot: Slot; label: string; onWrite: WriteHandler }) {
     if (slot.type === "boolean") {
         return (
             <input
                 type="checkbox"
                 aria-label={label}
-                checked={slot.written === true}
+                checked={slot.value === true}
                 onChange={(event) => onWrite(event.target.checked)}
             />
         );
     }
-    return <TypedField type={slot.type} written={slot.written} label={label} onWrite={onWrite} />;
+    return <TypedField type={slot.type} value={slot.value} label={label} onWrite={onWrite} />;
 }
 
 function List({
@@ -85,37 +85,37 @@ function List({
 }: {
     field: Extract<FieldWithParts, { kind: "list" }>;
     label: string;
-    onWrite: Write;
+    onWrite: WriteHandler;
 }) {
     const keys = useItemKeys(field.items.length);
-    const name = itemNames[field.type];
+    const name = itemLabelByType[field.type];
 
     return (
         <ol aria-label={label}>
             {field.items.map((item, index) => {
-                const here = `${label}, ${name.toLowerCase()} ${index + 1}`;
-                const write = within(item.at, onWrite);
+                const itemLabel = `${label}, ${name.toLowerCase()} ${index + 1}`;
+                const write = prefixPath(item.part, onWrite);
                 return (
                     <li key={keys.keys[index]}>
                         {name} {index + 1}{" "}
-                        {item.shown === "parts" ? (
-                            <Parts parts={item.parts} label={here} onWrite={write} />
-                        ) : item.shown === "reference" ? (
+                        {item.display === "parts" ? (
+                            <Parts parts={item.parts} label={itemLabel} onWrite={write} />
+                        ) : item.display === "reference" ? (
                             <TypedField
                                 type={field.type}
-                                written={item.written}
-                                label={here}
+                                value={item.value}
+                                label={itemLabel}
                                 onWrite={write}
                             />
                         ) : (
-                            <JsonField written={item.written} label={here} onWrite={write} />
+                            <JsonField value={item.value} label={itemLabel} onWrite={write} />
                         )}
                         <button
                             type="button"
                             disabled={field.items.length === 1}
                             onClick={() => {
-                                keys.removed(index);
-                                onWrite(withRemoved(field, index));
+                                keys.remove(index);
+                                onWrite(removeFieldItem(field, index));
                             }}
                         >
                             Remove
@@ -127,8 +127,8 @@ function List({
                 <button
                     type="button"
                     onClick={() => {
-                        keys.added();
-                        onWrite(withAdded(field));
+                        keys.add();
+                        onWrite(addFieldItem(field));
                     }}
                 >
                     Add {name.toLowerCase()}
@@ -145,18 +145,18 @@ function Dashes({
 }: {
     field: Extract<FieldWithParts, { kind: "dashes" }>;
     label: string;
-    onWrite: Write;
+    onWrite: WriteHandler;
 }) {
     const keys = useItemKeys(field.dashes.length);
 
     return (
         <>
-            <Choice
+            <Select
                 label={label}
-                chosen="dashes"
-                choices={[...strokeStyleKeywords, "dashes"]}
-                names={{ dashes: "Dashes" }}
-                onChoose={(choice) => {
+                value="dashes"
+                options={[...strokeStyleKeywords, "dashes"]}
+                optionLabels={{ dashes: "Dashes" }}
+                onChange={(choice) => {
                     if (choice !== "dashes") onWrite(choice);
                 }}
             />
@@ -166,14 +166,14 @@ function Dashes({
                         <SlotField
                             slot={dash}
                             label={`${label}, dash ${index + 1}`}
-                            onWrite={within(dash.at, onWrite)}
+                            onWrite={prefixPath(dash.part, onWrite)}
                         />{" "}
                         <button
                             type="button"
                             disabled={field.dashes.length === 1}
                             onClick={() => {
-                                keys.removed(index);
-                                onWrite(withRemoved(field, index));
+                                keys.remove(index);
+                                onWrite(removeFieldItem(field, index));
                             }}
                         >
                             Remove
@@ -184,19 +184,19 @@ function Dashes({
                     <button
                         type="button"
                         onClick={() => {
-                            keys.added();
-                            onWrite(withAdded(field));
+                            keys.add();
+                            onWrite(addFieldItem(field));
                         }}
                     >
                         Add dash
                     </button>
                 </li>
             </ol>
-            <Choice
+            <Select
                 label={`${label}, line cap`}
-                chosen={field.lineCap}
-                choices={lineCaps}
-                onChoose={(lineCap) => onWrite(lineCap, ["lineCap"])}
+                value={field.lineCap}
+                options={lineCaps}
+                onChange={(lineCap) => onWrite(lineCap, ["lineCap"])}
             />
         </>
     );

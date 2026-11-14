@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { fieldName, settingEdit } from "../../src/controllers/forms";
-import { studioOn } from "./demo-message";
+import { getFieldLabel, createSettingEdit } from "../../src/controllers/forms";
+import { createDemoStudio } from "./demo-message";
 
-describe("fieldName", () => {
+describe("getFieldLabel", () => {
     it("names a form's field after its row, its form and itself, as a value field is named", () => {
-        expect(fieldName("base", "Fluid", "From")).toBe("base, Fluid, From");
+        expect(getFieldLabel("base", "Fluid", "From")).toBe("base, Fluid, From");
     });
 
     it("leaves out the row for a form that has none, on a group or a recipe's step", () => {
-        expect(fieldName(undefined, "Scale", "Ratio to")).toBe("Scale, Ratio to");
+        expect(getFieldLabel(undefined, "Scale", "Ratio to")).toBe("Scale, Ratio to");
     });
 });
 
-describe("settingEdit", () => {
-    const { state } = studioOn();
-    const form = state.formFor(state.showing.getGroup("size.step")!)!;
+describe("createSettingEdit", () => {
+    const { state } = createDemoStudio();
+    const form = state.getForm(state.shownPermutation.getGroup("size.step")!)!;
     const write = form.write!;
     const rem = { value: 1, unit: "rem" };
     const field = (key: string, row?: string) => ({
@@ -25,14 +25,14 @@ describe("settingEdit", () => {
     });
 
     it("is the form's own write of the setting", () => {
-        expect(settingEdit(field("base.min"), write, rem).result.ops).toEqual(
+        expect(createSettingEdit(field("base.min"), write, rem).result.ops).toEqual(
             write("base.min", rem).ops,
         );
     });
 
     it("names one undo field for each setting, on each row", () => {
         const name = (key: string, row?: string) =>
-            settingEdit(field(key, row), write, rem).options.mergeKey;
+            createSettingEdit(field(key, row), write, rem).options.mergeKey;
 
         expect(name("base.min")).toBe(name("base.min"));
         expect(name("base.min")).not.toBe(name("base.max"));

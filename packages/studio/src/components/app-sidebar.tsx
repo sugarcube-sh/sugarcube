@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink, useLocation, useMatch } from "react-router";
-import { ancestorsOf, hrefFor } from "../app/token-path";
+import { getAncestorPaths, toHref } from "../app/token-path";
 import { Logo } from "../app/Logo";
-import { signedInAs } from "../controllers/sign-in";
+import { getLogin } from "../controllers/sign-in";
 import { useSignIn } from "../providers/sign-in-context";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible/collapsible";
 import { Icon } from "./ui/icon/Icons";
@@ -21,19 +21,19 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from "./ui/sidebar/sidebar";
-import { type TreeNode, sidebarTree } from "../controllers/views";
+import { type TreeNode, getSidebarTree } from "../controllers/views";
 import { useStudioState } from "../providers/studio-context";
 
-function useNodeActive(path: string) {
-    return !!useMatch({ path: hrefFor(path), end: true });
+function useIsNodeActive(path: string) {
+    return !!useMatch({ path: toHref(path), end: true });
 }
 
 function TreeLinkButton({ node }: { node: TreeNode }) {
-    const isActive = useNodeActive(node.path);
+    const isActive = useIsNodeActive(node.path);
 
     return (
         <SidebarMenuButton asChild isActive={isActive} tooltip={node.name}>
-            <NavLink to={hrefFor(node.path)} end>
+            <NavLink to={toHref(node.path)} end>
                 <span>{node.name}</span>
             </NavLink>
         </SidebarMenuButton>
@@ -41,11 +41,11 @@ function TreeLinkButton({ node }: { node: TreeNode }) {
 }
 
 function TreeSubLinkButton({ node }: { node: TreeNode }) {
-    const isActive = useNodeActive(node.path);
+    const isActive = useIsNodeActive(node.path);
 
     return (
         <SidebarMenuSubButton asChild isActive={isActive}>
-            <NavLink to={hrefFor(node.path)} end>
+            <NavLink to={toHref(node.path)} end>
                 <span>{node.name}</span>
             </NavLink>
         </SidebarMenuSubButton>
@@ -53,12 +53,12 @@ function TreeSubLinkButton({ node }: { node: TreeNode }) {
 }
 
 function TreeBranchRow({ node, nested }: { node: TreeNode; nested?: boolean }) {
-    const isActive = useNodeActive(node.path);
+    const isActive = useIsNodeActive(node.path);
 
     return (
         <CollapsibleTrigger asChild>
             <NavLink
-                to={hrefFor(node.path)}
+                to={toHref(node.path)}
                 end
                 className={
                     nested ? "sidebar-branch-row sidebar-branch-row-sub" : "sidebar-branch-row"
@@ -76,7 +76,7 @@ function TreeBranchRow({ node, nested }: { node: TreeNode; nested?: boolean }) {
 
 type TreeItemProps = {
     node: TreeNode;
-    open: ReadonlySet<string>;
+    openPaths: ReadonlySet<string>;
     onToggle: (path: string) => void;
     nested?: boolean;
 };
@@ -97,8 +97,8 @@ function TreeLeafItem({ node, nested }: { node: TreeNode; nested?: boolean }) {
     );
 }
 
-function TreeBranchItem({ node, open, onToggle, nested }: TreeItemProps) {
-    const expanded = open.has(node.path);
+function TreeBranchItem({ node, openPaths, onToggle, nested }: TreeItemProps) {
+    const expanded = openPaths.has(node.path);
     const MenuItem = nested ? SidebarMenuSubItem : SidebarMenuItem;
 
     return (
@@ -111,7 +111,7 @@ function TreeBranchItem({ node, open, onToggle, nested }: TreeItemProps) {
                             <TreeItem
                                 key={child.path}
                                 node={child}
-                                open={open}
+                                openPaths={openPaths}
                                 onToggle={onToggle}
                                 nested
                             />
@@ -123,29 +123,30 @@ function TreeBranchItem({ node, open, onToggle, nested }: TreeItemProps) {
     );
 }
 
-function TreeItem({ node, open, onToggle, nested }: TreeItemProps) {
+function TreeItem({ node, openPaths, onToggle, nested }: TreeItemProps) {
     if (node.children.length === 0) {
         return <TreeLeafItem node={node} nested={nested} />;
     }
 
-    return <TreeBranchItem node={node} open={open} onToggle={onToggle} nested={nested} />;
+    return <TreeBranchItem node={node} openPaths={openPaths} onToggle={onToggle} nested={nested} />;
 }
 
 export function AppSidebar() {
     const tokens = useStudioState((state) => state.tokens);
-    const tree = useMemo(() => sidebarTree(tokens), [tokens]);
+    const tree = useMemo(() => getSidebarTree(tokens), [tokens]);
     const { pathname } = useLocation();
-    const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
-    const [seen, setSeen] = useState<string | null>(null);
+    const [openPaths, setOpenPaths] = useState<ReadonlySet<string>>(new Set());
+    const [lastPathname, setLastPathname] = useState<string | null>(null);
 
-    if (pathname !== seen) {
-        setSeen(pathname);
-        const ancestors = ancestorsOf(pathname);
-        if (!ancestors.every((path) => open.has(path))) setOpen(new Set([...open, ...ancestors]));
+    if (pathname !== lastPathname) {
+        setLastPathname(pathname);
+        const ancestors = getAncestorPaths(pathname);
+        if (!ancestors.every((path) => openPaths.has(path)))
+            setOpenPaths(new Set([...openPaths, ...ancestors]));
     }
 
     function toggle(path: string) {
-        setOpen((current) => {
+        setOpenPaths((current) => {
             const next = new Set(current);
             if (!next.delete(path)) next.add(path);
             return next;
@@ -175,7 +176,7 @@ export function AppSidebar() {
                                 <TreeItem
                                     key={node.path}
                                     node={node}
-                                    open={open}
+                                    openPaths={openPaths}
                                     onToggle={toggle}
                                 />
                             ))}
@@ -190,7 +191,7 @@ export function AppSidebar() {
 
 function Person() {
     const signIn = useSignIn();
-    const person = signedInAs(signIn);
+    const person = getLogin(signIn);
     if (!signIn || person === undefined) return null;
     return (
         <SidebarFooter>

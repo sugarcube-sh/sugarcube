@@ -1,32 +1,34 @@
 import type { Token } from "@sugarcube-sh/dtcg";
 import { NavLink } from "react-router";
-import { hrefFor } from "../app/token-path";
-import { type MadeBy, tokenPage } from "../controllers/token-page";
+import { toHref } from "../app/token-path";
+import { type GenerationSource, getTokenPageView } from "../controllers/token-page";
 import { useStudioState } from "../providers/studio-context";
 import { EditRow } from "./EditRow";
 import { ExtensionFields } from "./ExtensionFields";
 import { DeprecatedLine, DeprecationRow, DescriptionRow } from "./Properties";
-import { Showing } from "./Showing";
+import { PermutationSelect } from "./PermutationSelect";
 import { useDraft } from "./use-draft";
 import { NodeActions } from "./NodeActions";
-import { AsCSS } from "./Value";
+import { CSSValue } from "./Value";
 
-export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
+export function TokenPage({ token, isShown }: { token: Token; isShown: boolean }) {
     const state = useStudioState((each) => each);
-    const [adding, setAdding] = useDraft<readonly string[]>([], token.path);
-    const page = tokenPage(state, token, adding);
+    const [overridesToAdd, setOverridesToAdd] = useDraft<readonly string[]>([], token.path);
+    const page = getTokenPageView(state, token, overridesToAdd);
 
     return (
         <article>
             <h1>{token.path}</h1>
-            {page.deprecation.line && <DeprecatedLine line={page.deprecation.line} />}
-            <Showing />
-            {page.made && <MadeByLine made={page.made} />}
-            {page.form && <ExtensionFields path={token.path} form={page.form} label={undefined} />}
+            {page.deprecation.notice && <DeprecatedLine line={page.deprecation.notice} />}
+            <PermutationSelect />
+            {page.generatedBy && <GenerationSourceLine generatedBy={page.generatedBy} />}
+            {page.form && (
+                <ExtensionFields path={token.path} form={page.form} rowName={undefined} />
+            )}
             <dl>
                 <DescriptionRow path={token.path} view={page.description} />
-                {page.deprecation.box && (
-                    <DeprecationRow path={token.path} box={page.deprecation.box} />
+                {page.deprecation.checkbox && (
+                    <DeprecationRow path={token.path} box={page.deprecation.checkbox} />
                 )}
                 <dt>Type</dt>
                 <dd>{token.type}</dd>
@@ -46,10 +48,11 @@ export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
                             <ul>
                                 {page.problems.map((problem) => (
                                     <li
-                                        key={`${problem.kind} ${problem.message} ${problem.inPermutations}`}
+                                        key={`${problem.kind} ${problem.message} ${problem.permutationLabel}`}
                                     >
                                         {problem.message}
-                                        {problem.inPermutations && ` (${problem.inPermutations})`}
+                                        {problem.permutationLabel &&
+                                            ` (${problem.permutationLabel})`}
                                     </li>
                                 ))}
                             </ul>
@@ -58,35 +61,40 @@ export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
                 )}
                 <dt>CSS</dt>
                 <dd>
-                    {shown ? (
-                        <AsCSS type={page.row.type} css={page.row.css} />
+                    {isShown ? (
+                        <CSSValue type={page.row.type} css={page.row.css} />
                     ) : (
-                        <>Not in {state.showing.label}</>
+                        <>Not in {state.shownPermutation.label}</>
                     )}
                 </dd>
             </dl>
-            {page.offers.map((label) => (
-                <button key={label} type="button" onClick={() => setAdding([...adding, label])}>
+            {page.overridableContexts.map((label) => (
+                <button
+                    key={label}
+                    type="button"
+                    onClick={() => setOverridesToAdd([...overridesToAdd, label])}
+                >
                     Override for {label}
                 </button>
             ))}
-            {page.actions && <NodeActions path={token.path} />}
+            {page.editable && <NodeActions path={token.path} />}
         </article>
     );
 }
 
-function MadeByLine({ made }: { made: MadeBy }) {
-    switch (made.kind) {
+function GenerationSourceLine({ generatedBy }: { generatedBy: GenerationSource }) {
+    switch (generatedBy.kind) {
         case "recipe":
             return (
                 <p>
-                    Made by the {made.by} on <NavLink to={hrefFor(made.from)}>{made.from}</NavLink>.
+                    Made by the {generatedBy.by} on{" "}
+                    <NavLink to={toHref(generatedBy.from)}>{generatedBy.from}</NavLink>.
                 </p>
             );
         case "group":
             return (
                 <p>
-                    Made by <NavLink to={hrefFor(made.from)}>{made.from}</NavLink>.
+                    Made by <NavLink to={toHref(generatedBy.from)}>{generatedBy.from}</NavLink>.
                 </p>
             );
         case "top-level":

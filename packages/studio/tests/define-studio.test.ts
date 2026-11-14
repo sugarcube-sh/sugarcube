@@ -6,12 +6,12 @@ import { read } from "@sugarcube-sh/dtcg/node";
 import { createSession, setValue } from "@sugarcube-sh/dtcg-edit";
 import { afterEach, describe, expect, it } from "vitest";
 import type { StudioMessage } from "../src/protocol";
-import { STUDIO_SURFACE, defineStudio } from "../src/server/define-studio";
+import { STUDIO_DOCK, setupStudio } from "../src/server/define-studio";
 import { STUDIO_DEVFRAME_ID, STUDIO_ROUTE, STUDIO_RPC } from "../src/studio-names";
-import type { FilesNow, StudioFiles } from "../src/server/files";
+import type { FilesSnapshot, StudioFiles } from "../src/server/files";
 import type { StudioHostBridge, StudioSharedState } from "../src/server/types";
-import { configProblem, sugarcubeSettings } from "./controllers/demo-message";
-import { demoCopy } from "./server/demo-copy";
+import { configProblem, getSugarcubeSettings } from "./controllers/demo-message";
+import { copyDemo } from "./server/copy-demo";
 
 type FakeState<T extends object> = StudioSharedState<T> & { value(): T };
 
@@ -30,10 +30,10 @@ function fakeState<T extends object>(initialValue: T): FakeState<T> {
 let remove = () => {};
 afterEach(() => remove());
 
-async function setup(change: Partial<FilesNow> = {}) {
-    const copy = demoCopy();
+async function setup(change: Partial<FilesSnapshot> = {}) {
+    const copy = copyDemo();
     remove = copy.remove;
-    let now: FilesNow = {
+    let now: FilesSnapshot = {
         config: copy.config,
         tokens: await read(copy.config.resolver, createReadOptions(copy.config)),
         configProblems: [],
@@ -41,7 +41,7 @@ async function setup(change: Partial<FilesNow> = {}) {
     };
     const listeners = new Set<() => void>();
     const files: StudioFiles = {
-        now: () => now,
+        getSnapshot: () => now,
         onChange: (listener) => {
             listeners.add(listener);
             return () => listeners.delete(listener);
@@ -75,16 +75,16 @@ async function setup(change: Partial<FilesNow> = {}) {
         configs,
         message: () => states.get(STUDIO_RPC.MESSAGE)?.value() as StudioMessage,
         save: (sent: unknown) => actions.get(STUDIO_RPC.SAVE)?.(sent),
-        change: (next: Partial<FilesNow>) => {
+        change: (next: Partial<FilesSnapshot>) => {
             now = { ...now, ...next };
             for (const listener of listeners) listener();
         },
     };
 }
 
-describe("defineStudio", () => {
+describe("setupStudio", () => {
     it("names the surface as data, leaving each host to mount it", () => {
-        expect(STUDIO_SURFACE).toEqual({
+        expect(STUDIO_DOCK).toEqual({
             id: STUDIO_DEVFRAME_ID,
             title: "studio",
             route: STUDIO_ROUTE,
@@ -101,7 +101,7 @@ describe("defineStudio", () => {
             signIn: "/api/sugarcube-studio",
         } as const;
 
-        await defineStudio(s.files, s.host, { gitSave });
+        await setupStudio(s.files, s.host, { gitSave });
 
         expect(s.configs).toEqual([{ gitSave }]);
     });
@@ -109,7 +109,7 @@ describe("defineStudio", () => {
     it("publishes nothing about saving when there is a server to save to", async () => {
         const s = await setup();
 
-        await defineStudio(s.files, s.host);
+        await setupStudio(s.files, s.host);
 
         expect(s.configs).toEqual([]);
     });
@@ -117,21 +117,23 @@ describe("defineStudio", () => {
     it("shares the files the host read, with the config and its problems", async () => {
         const s = await setup({ configProblems: [configProblem] });
 
-        await defineStudio(s.files, s.host);
+        await setupStudio(s.files, s.host);
 
         expect(s.message().entryFile).toBe("tokens.resolver.json");
         expect(s.message().files["dark.json"]).toBe(readFileSync(join(s.dir, "dark.json"), "utf8"));
-        expect(sugarcubeSettings(s.message()).resolver).toBe(s.config.resolver);
+        expect(getSugarcubeSettings(s.message()).resolver).toBe(s.config.resolver);
         expect(s.message().adapter.problems).toEqual([configProblem]);
     });
 
     it("shares the files again when the host reads them again", async () => {
         const s = await setup();
-        await defineStudio(s.files, s.host);
+        await setupStudio(s.files, s.host);
         const edited = s.message().files["dark.json"]?.replace("50}", "100}") ?? "";
 
         s.change({
-            tokens: s.files.now().tokens.rereadAll({ ...s.message().files, "dark.json": edited }),
+            tokens: s.files
+                .getSnapshot()
+                .tokens.rereadAll({ ...s.message().files, "dark.json": edited }),
         });
 
         expect(s.message().files["dark.json"]).toBe(edited);
@@ -145,19 +147,19 @@ describe("defineStudio", () => {
         };
         s.change({ config: named });
 
-        await defineStudio(s.files, s.host);
+        await setupStudio(s.files, s.host);
         s.change({});
 
         expect(s.warnings).toHaveLength(1);
         expect(s.warnings[0]).toContain("names variables with a function");
-        expect(sugarcubeSettings(s.message()).variables.variableName).toBeUndefined();
+        expect(getSugarcubeSettings(s.message()).variables.variableName).toBeUndefined();
     });
 
     it("saves edits sent from the browser to the files on disk", async () => {
         const s = await setup();
-        await defineStudio(s.files, s.host);
+        await setupStudio(s.files, s.host);
         const session = createSession(
-            readFromMemory(s.message(), createReadOptions(sugarcubeSettings(s.message()))),
+            readFromMemory(s.message(), createReadOptions(getSugarcubeSettings(s.message()))),
         );
         session.do(
             setValue(session.tokens, "color.brand.500", {
@@ -168,13 +170,13 @@ describe("defineStudio", () => {
 
         const saved = await s.save(JSON.parse(JSON.stringify(session.unsavedEdits)));
 
-        expect(saved).toEqual({ written: ["color.json"], deleted: [] });
+        expect(saved).toEqual({ savedFiles: ["color.json"], deleted: [] });
         expect(readFileSync(join(s.dir, "color.json"), "utf8")).toContain("0.9");
     });
 
     it("refuses to save what isn't edits", async () => {
         const s = await setup();
-        await defineStudio(s.files, s.host);
+        await setupStudio(s.files, s.host);
 
         await expect(s.save({ title: "", files: [] })).rejects.toThrow(/^\[sugarcube studio\] /);
     });

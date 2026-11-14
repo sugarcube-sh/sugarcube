@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { NavLink } from "react-router";
-import { hrefFor } from "../app/token-path";
-import { problemRows } from "../controllers/views";
+import { toHref } from "../app/token-path";
+import { toProblemRows } from "../controllers/views";
 import { useStudioState } from "../providers/studio-context";
 
 export function Problems() {
     const problems = useStudioState((state) => state.problems);
-    const rows = useMemo(() => problemRows(problems), [problems]);
+    const rows = useMemo(() => toProblemRows(problems), [problems]);
     if (rows.length === 0) return null;
 
     return (
@@ -14,16 +14,17 @@ export function Problems() {
             <h2>Problems</h2>
             <ul>
                 {rows.map((row) => (
-                    <li key={`${row.place} ${row.kind} ${row.message} ${row.inPermutations}`}>
-                        {row.place && <code>{row.place}</code>} {row.severity}: {row.message}
-                        {row.inPermutations && ` (${row.inPermutations})`} <small>{row.kind}</small>
+                    <li key={`${row.location} ${row.kind} ${row.message} ${row.permutationLabel}`}>
+                        {row.location && <code>{row.location}</code>} {row.severity}: {row.message}
+                        {row.permutationLabel && ` (${row.permutationLabel})`}{" "}
+                        <small>{row.kind}</small>
                         {row.paths && (
                             <p>
                                 In:{" "}
                                 {row.paths.map((path, index) => (
                                     <span key={path}>
                                         {index > 0 && ", "}
-                                        <NavLink to={hrefFor(path)}>{path}</NavLink>
+                                        <NavLink to={toHref(path)}>{path}</NavLink>
                                     </span>
                                 ))}
                             </p>

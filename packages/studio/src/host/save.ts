@@ -1,28 +1,29 @@
 import type { Edits } from "@sugarcube-sh/dtcg-edit";
 import { type Page, type SignIn, createSignIn } from "../controllers/sign-in";
-import { githubHost } from "../git-hosts/github";
-import type { GitSaveSettings, SaveOutcome, StudioSave } from "../protocol";
+import { createGitHubHost } from "../git-hosts/github";
+import type { GitSaveSettings, SaveResult, StudioSave } from "../protocol";
 
 export function pickSave({
     live,
-    call,
+    saveOnHost,
     gitSave,
     page,
 }: {
     live: boolean;
-    call: (edits: Edits) => Promise<SaveOutcome>;
+    saveOnHost: (edits: Edits) => Promise<SaveResult>;
     gitSave?: GitSaveSettings | undefined;
     page: Page;
 }): { save?: StudioSave; signIn?: SignIn } {
-    if (live) return { save: call };
+    if (live) return { save: saveOnHost };
     if (!gitSave) return {};
-    const { repository, branch, entry, signIn: base, install } = gitSave;
+    const { repository, branch, entry, signIn: signInBase, installURL } = gitSave;
     const signIn = createSignIn({
         page,
         repository,
         entry,
-        base,
-        hostFor: (login, key) => githubHost({ key, repository, branch, login, install }),
+        base: signInBase,
+        createHost: (login, key) =>
+            createGitHubHost({ key, repository, branch, login, installURL }),
     });
     return { save: signIn.save, signIn };
 }

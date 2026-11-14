@@ -1,8 +1,10 @@
 import type { BuildAdapter } from "../controllers/adapter";
-import type { SentAdapter } from "../protocol";
-import { plain } from "./plain";
-import { sugarcube } from "./sugarcube";
+import type { MessageAdapter } from "../protocol";
+import { createPlainAdapter } from "./plain";
+import { createSugarcubeAdapter } from "./sugarcube";
 
-export function adapterFor(sent: SentAdapter): BuildAdapter {
-    return sent.name === "sugarcube" ? sugarcube(sent.settings) : plain(sent.settings);
+export function createAdapter(sent: MessageAdapter): BuildAdapter {
+    return sent.name === "sugarcube"
+        ? createSugarcubeAdapter(sent.settings)
+        : createPlainAdapter(sent.settings);
 }

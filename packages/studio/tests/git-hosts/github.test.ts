@@ -1,6 +1,6 @@
 import type { RepoPermissions } from "forges";
 import { describe, expect, it } from "vitest";
-import { accessFrom, githubHost } from "../../src/git-hosts/github";
+import { toAccess, createGitHubHost } from "../../src/git-hosts/github";
 
 const INSTALL = "https://github.com/apps/acme-studio/installations/new";
 
@@ -69,12 +69,12 @@ function github(answers: {
             return json(repository("site", answers.site));
         return json({ message: "Not Found" }, 404);
     };
-    const host = githubHost({
+    const host = createGitHubHost({
         key: "ghu_key",
         repository: "acme/site",
         branch: "main",
         login: "mark",
-        install: INSTALL,
+        installURL: INSTALL,
         fetch,
     });
     return { host, asked };
@@ -86,7 +86,7 @@ describe("what the person signed in may do on the repository", () => {
             installations: [{ id: 9, owner: "acme", selection: "all" }],
             site: writer,
         });
-        expect(await host.access()).toStrictEqual({ can: "write" });
+        expect(await host.getAccess()).toStrictEqual({ can: "write" });
     });
 
     it("is read for someone who can only read", async () => {
@@ -94,12 +94,12 @@ describe("what the person signed in may do on the repository", () => {
             installations: [{ id: 9, owner: "acme", selection: "all" }],
             site: reader,
         });
-        expect(await host.access()).toStrictEqual({ can: "read" });
+        expect(await host.getAccess()).toStrictEqual({ can: "read" });
     });
 
     it("is nothing for someone GitHub doesn't show the repository to, with no pointer to install", async () => {
         const { host } = github({ installations: [{ id: 9, owner: "acme", selection: "all" }] });
-        expect(await host.access()).toStrictEqual({ can: "nothing", reason: "no-access" });
+        expect(await host.getAccess()).toStrictEqual({ can: "nothing", reason: "no-access" });
     });
 
     it("is nothing, with the pointer to install, when the app isn't on the owner's account", async () => {
@@ -107,10 +107,10 @@ describe("what the person signed in may do on the repository", () => {
             installations: [{ id: 9, owner: "someone-else", selection: "all" }],
             site: writer,
         });
-        expect(await host.access()).toStrictEqual({
+        expect(await host.getAccess()).toStrictEqual({
             can: "nothing",
             reason: "not-installed",
-            install: INSTALL,
+            installURL: INSTALL,
         });
     });
 
@@ -120,10 +120,10 @@ describe("what the person signed in may do on the repository", () => {
             repositories: [repository("docs", writer)],
             site: writer,
         });
-        expect(await host.access()).toStrictEqual({
+        expect(await host.getAccess()).toStrictEqual({
             can: "nothing",
             reason: "not-installed",
-            install: INSTALL,
+            installURL: INSTALL,
         });
     });
 
@@ -132,7 +132,7 @@ describe("what the person signed in may do on the repository", () => {
             installations: [{ id: 9, owner: "acme", selection: "selected" }],
             repositories: [repository("docs", reader), repository("site", writer)],
         });
-        expect(await host.access()).toStrictEqual({ can: "write" });
+        expect(await host.getAccess()).toStrictEqual({ can: "write" });
     });
 
     it("finds the repository on a later page of the installation's list", async () => {
@@ -141,7 +141,7 @@ describe("what the person signed in may do on the repository", () => {
             installations: [{ id: 9, owner: "acme", selection: "selected" }],
             repositories: [...others, repository("site", reader)],
         });
-        expect(await host.access()).toStrictEqual({ can: "read" });
+        expect(await host.getAccess()).toStrictEqual({ can: "read" });
     });
 
     it("finds the repository in the installation's list whatever its case", async () => {
@@ -149,7 +149,7 @@ describe("what the person signed in may do on the repository", () => {
             installations: [{ id: 9, owner: "acme", selection: "selected" }],
             repositories: [repository("Site", writer)],
         });
-        expect(await host.access()).toStrictEqual({ can: "write" });
+        expect(await host.getAccess()).toStrictEqual({ can: "write" });
     });
 
     it("matches the owner whatever its case", async () => {
@@ -157,7 +157,7 @@ describe("what the person signed in may do on the repository", () => {
             installations: [{ id: 9, owner: "Acme", selection: "all" }],
             site: writer,
         });
-        expect(await host.access()).toStrictEqual({ can: "write" });
+        expect(await host.getAccess()).toStrictEqual({ can: "write" });
     });
 
     it("asks GitHub with the person's key", async () => {
@@ -165,7 +165,7 @@ describe("what the person signed in may do on the repository", () => {
             installations: [{ id: 9, owner: "acme", selection: "all" }],
             site: writer,
         });
-        await host.access();
+        await host.getAccess();
         expect(asked.map(({ path }) => path)).toStrictEqual([
             "/user/installations",
             "/repos/acme/site",
@@ -176,7 +176,7 @@ describe("what the person signed in may do on the repository", () => {
 
 describe("asking GitHub what someone may do", () => {
     it("says GitHub couldn't be reached when it can't be", async () => {
-        const host = githubHost({
+        const host = createGitHubHost({
             key: "ghu_key",
             repository: "acme/site",
             branch: "main",
@@ -185,33 +185,33 @@ describe("asking GitHub what someone may do", () => {
                 throw new TypeError("Failed to fetch");
             },
         });
-        await expect(host.access()).rejects.toThrow("Couldn't reach GitHub. Try again.");
+        await expect(host.getAccess()).rejects.toThrow("Couldn't reach GitHub. Try again.");
     });
 });
 
 describe("the rule for what someone may do", () => {
     it("is write with push, read with pull, and does nothing otherwise", () => {
-        expect(accessFrom({ installed: true, permissions: writer })).toStrictEqual({
+        expect(toAccess({ installed: true, permissions: writer })).toStrictEqual({
             can: "write",
         });
-        expect(accessFrom({ installed: true, permissions: reader })).toStrictEqual({ can: "read" });
-        expect(accessFrom({ installed: true, permissions: none })).toStrictEqual({
+        expect(toAccess({ installed: true, permissions: reader })).toStrictEqual({ can: "read" });
+        expect(toAccess({ installed: true, permissions: none })).toStrictEqual({
             can: "nothing",
             reason: "no-access",
         });
-        expect(accessFrom({ installed: true, permissions: undefined })).toStrictEqual({
+        expect(toAccess({ installed: true, permissions: undefined })).toStrictEqual({
             can: "nothing",
             reason: "no-access",
         });
     });
 
     it("says the app isn't installed, with the pointer to install when there is one", () => {
-        expect(accessFrom({ installed: false, permissions: writer }, INSTALL)).toStrictEqual({
+        expect(toAccess({ installed: false, permissions: writer }, INSTALL)).toStrictEqual({
             can: "nothing",
             reason: "not-installed",
-            install: INSTALL,
+            installURL: INSTALL,
         });
-        expect(accessFrom({ installed: false, permissions: writer })).toStrictEqual({
+        expect(toAccess({ installed: false, permissions: writer })).toStrictEqual({
             can: "nothing",
             reason: "not-installed",
         });

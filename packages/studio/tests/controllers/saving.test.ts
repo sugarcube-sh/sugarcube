@@ -4,39 +4,42 @@ import { createReadOptions } from "@sugarcube-sh/core/client";
 import type { Change } from "@sugarcube-sh/dtcg";
 import { type Edits, setValue } from "@sugarcube-sh/dtcg-edit";
 import { afterEach, describe, expect, it } from "vitest";
-import { adapterFor } from "../../src/adapters";
+import { createAdapter } from "../../src/adapters";
 import { createStudio } from "../../src/controllers/studio";
 import { UserFacingError } from "../../src/error-messages";
-import type { SaveOutcome } from "../../src/protocol";
+import type { SaveResult } from "../../src/protocol";
 import { saveEdits } from "../../src/server/save";
-import { demoCopy } from "../server/demo-copy";
-import { demoMessage, studioOn } from "./demo-message";
+import { copyDemo } from "../server/copy-demo";
+import { demoMessage, createDemoStudio } from "./demo-message";
 
-const darkText = { input: { mode: "dark" } } as const;
+const darkOptions = { input: { mode: "dark" } } as const;
 
-function withHost(answer: (edits: Edits) => Promise<SaveOutcome>) {
+function createSavingStudio(answer: (edits: Edits) => Promise<SaveResult>) {
     const sent: Edits[] = [];
-    const told: (readonly Change[])[] = [];
-    const studio = createStudio(demoMessage(), adapterFor, (edits, changes) => {
+    const sentChanges: (readonly Change[])[] = [];
+    const studio = createStudio(demoMessage(), createAdapter, (edits, changes) => {
         sent.push(edits);
-        told.push(changes);
+        sentChanges.push(changes);
         return answer(edits);
     });
-    return { studio, sent, told };
+    return { studio, sent, sentChanges };
 }
 
 const darkFile = () => demoMessage().files["dark.json"] ?? "";
 
-const asNow = (file: string, text: string) => ({ ...demoMessage().files, [file]: text });
+const withFileText = (file: string, text: string) => ({ ...demoMessage().files, [file]: text });
 
 let remove = () => {};
 afterEach(() => remove());
 
 describe("saving", () => {
     it("sends the unsaved edits, and has none left once the host has written them", async () => {
-        const { studio, sent } = withHost(async () => ({ written: ["dark.json"], deleted: [] }));
+        const { studio, sent } = createSavingStudio(async () => ({
+            savedFiles: ["dark.json"],
+            deleted: [],
+        }));
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         const edits = sent.length;
 
@@ -45,7 +48,7 @@ describe("saving", () => {
         expect(edits).toBe(0);
         expect(sent).toHaveLength(1);
         expect(sent[0]?.steps).toHaveLength(1);
-        expect(saved).toEqual({ written: ["dark.json"], deleted: [] });
+        expect(saved).toEqual({ savedFiles: ["dark.json"], deleted: [] });
         expect(studio.state.changes).toEqual([]);
     });
 
@@ -55,9 +58,9 @@ describe("saving", () => {
             kind: "gone",
             reason: "x.json is gone",
         } as const;
-        const { studio } = withHost(async () => ({ conflicts: [conflict] }));
+        const { studio } = createSavingStudio(async () => ({ conflicts: [conflict] }));
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
 
         const saved = await studio.save?.();
@@ -67,25 +70,28 @@ describe("saving", () => {
     });
 
     it("tells the host what changed, for wording the save", async () => {
-        const { studio, told } = withHost(async () => ({ written: ["dark.json"], deleted: [] }));
+        const { studio, sentChanges } = createSavingStudio(async () => ({
+            savedFiles: ["dark.json"],
+            deleted: [],
+        }));
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         const changes = studio.state.changes;
 
         await studio.save?.();
 
-        expect(told).toEqual([changes]);
+        expect(sentChanges).toEqual([changes]);
     });
 
     it("shows the files as they are now after a pull request opens, with nothing unsaved", async () => {
         const theirs = darkFile().replace("{color.neutral.50}", "{color.neutral.200}");
-        const { studio } = withHost(async () => ({
+        const { studio } = createSavingStudio(async () => ({
             pullRequest: { number: 7, url: "https://github.com/pr/7" },
-            files: asNow("dark.json", theirs),
+            files: withFileText("dark.json", theirs),
         }));
         studio.do(
-            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkText),
+            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkOptions),
         );
 
         await studio.save?.();
@@ -103,12 +109,12 @@ describe("saving", () => {
             kind: "changed",
             reason: "changed",
         } as const;
-        const { studio } = withHost(async () => ({
+        const { studio } = createSavingStudio(async () => ({
             conflicts: [conflict],
-            files: asNow("dark.json", theirs),
+            files: withFileText("dark.json", theirs),
         }));
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
 
         await studio.save?.();
@@ -121,32 +127,32 @@ describe("saving", () => {
     });
 
     it("keeps an edit made while the save was on its way as unsaved", async () => {
-        let answer: (saved: SaveOutcome) => void = () => {};
-        const { studio } = withHost(() => new Promise((resolve) => (answer = resolve)));
+        let answer: (saved: SaveResult) => void = () => {};
+        const { studio } = createSavingStudio(() => new Promise((resolve) => (answer = resolve)));
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
 
         const saving = studio.save?.();
         studio.do(
-            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkText),
+            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkOptions),
         );
-        answer({ written: ["dark.json"], deleted: [] });
+        answer({ savedFiles: ["dark.json"], deleted: [] });
         await saving;
 
         expect(studio.state.changes.map(({ path }) => path)).toContain("color.text.muted");
     });
 
     it("keeps only an edit made while a pull request was opening as unsaved, not the one it sent", async () => {
-        let answer: (saved: SaveOutcome) => void = () => {};
-        const { studio } = withHost(() => new Promise((resolve) => (answer = resolve)));
+        let answer: (saved: SaveResult) => void = () => {};
+        const { studio } = createSavingStudio(() => new Promise((resolve) => (answer = resolve)));
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
 
         const saving = studio.save?.();
         studio.do(
-            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkText),
+            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkOptions),
         );
         answer({
             pullRequest: { number: 7, url: "https://github.com/pr/7" },
@@ -158,61 +164,64 @@ describe("saving", () => {
     });
 
     it("offers no save when the host gives none, as a static build", () => {
-        expect(studioOn().save).toBeUndefined();
+        expect(createDemoStudio().save).toBeUndefined();
     });
 
     it("writes the edits into the files on disk through the host's save", async () => {
-        const copy = demoCopy();
+        const copy = copyDemo();
         remove = copy.remove;
         const onDisk = { entryFile: copy.config.resolver, options: createReadOptions(copy.config) };
-        const studio = createStudio(demoMessage(), adapterFor, (edits) =>
+        const studio = createStudio(demoMessage(), createAdapter, (edits) =>
             saveEdits(onDisk, JSON.parse(JSON.stringify(edits))),
         );
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
 
-        expect(await studio.save?.()).toEqual({ written: ["dark.json"], deleted: [] });
+        expect(await studio.save?.()).toEqual({ savedFiles: ["dark.json"], deleted: [] });
         expect(readFileSync(join(copy.dir, "dark.json"), "utf8")).toContain("{color.neutral.100}");
         expect(studio.state.changes).toEqual([]);
     });
 
     it("keeps the save's result in its state, shown until the edits change", async () => {
         const pullRequest = { number: 7, url: "https://github.com/pr/7" };
-        const { studio } = withHost(async () => ({ pullRequest, files: demoMessage().files }));
+        const { studio } = createSavingStudio(async () => ({
+            pullRequest,
+            files: demoMessage().files,
+        }));
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         await studio.save?.();
         expect(studio.state.saved).toStrictEqual({ pullRequest, files: demoMessage().files });
         studio.do(
-            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkText),
+            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkOptions),
         );
         expect(studio.state.saved).toBeUndefined();
     });
 
     it("keeps a clash's result while the clash is shown", async () => {
-        const { studio } = withHost(
+        const { studio } = createSavingStudio(
             async (edits) =>
                 ({
                     conflicts: [{ kind: "changed", reason: "changed", op: edits.steps[0]?.ops[0] }],
                     files: demoMessage().files,
-                    changedOn: "GitHub",
-                }) as SaveOutcome,
+                    changedHost: "GitHub",
+                }) as SaveResult,
         );
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         await studio.save?.();
         expect(studio.state.saved).toMatchObject({ conflicts: [expect.anything()] });
     });
 
     it("doesn't throw when a save fails, and keeps studio's own words for why alone", async () => {
-        const { studio } = withHost(async () => {
+        const { studio } = createSavingStudio(async () => {
             throw new UserFacingError("Couldn't reach GitHub. Try again.");
         });
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         expect(await studio.save?.()).toBeUndefined();
         expect(studio.state.saved).toStrictEqual({ failed: "Couldn't reach GitHub. Try again." });
@@ -220,11 +229,11 @@ describe("saving", () => {
     });
 
     it('puts "Save failed:" before any other failure\'s words', async () => {
-        const { studio } = withHost(async () => {
+        const { studio } = createSavingStudio(async () => {
             throw new Error("EACCES: permission denied, open 'dark.json'");
         });
         studio.do(
-            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkOptions),
         );
         await studio.save?.();
         expect(studio.state.saved).toStrictEqual({

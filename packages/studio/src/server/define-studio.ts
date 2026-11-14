@@ -2,40 +2,43 @@ import { getTokensOnDisk } from "@sugarcube-sh/core";
 import { ErrorMessages } from "../error-messages";
 import type { StudioMessage } from "../protocol";
 import { STUDIO_DEVFRAME_ID, STUDIO_ROUTE, STUDIO_RPC } from "../studio-names";
-import type { FilesNow, StudioFiles } from "./files";
-import { studioMessage } from "./message";
+import type { FilesSnapshot, StudioFiles } from "./files";
+import { toStudioMessage } from "./message";
 import { saveEdits } from "./save";
-import type { DefineStudioOptions, StudioHostBridge, StudioSurface } from "./types";
+import type { SetupStudioOptions, StudioHostBridge, StudioDock } from "./types";
 
-export const STUDIO_SURFACE: StudioSurface = {
+export const STUDIO_DOCK: StudioDock = {
     id: STUDIO_DEVFRAME_ID,
     title: "studio",
     route: STUDIO_ROUTE,
 };
 
-export async function defineStudio(
+export async function setupStudio(
     files: StudioFiles,
     host: StudioHostBridge,
-    options: DefineStudioOptions = {},
+    options: SetupStudioOptions = {},
 ): Promise<void> {
     if (options.gitSave) host.publishConfig?.({ gitSave: options.gitSave });
 
     let warnedNaming = false;
-    const message = (now: FilesNow): StudioMessage => {
-        if (!warnedNaming && typeof now.config.variables.variableName === "function") {
+    const createMessage = (snapshot: FilesSnapshot): StudioMessage => {
+        if (!warnedNaming && typeof snapshot.config.variables.variableName === "function") {
             warnedNaming = true;
             host.warn(ErrorMessages.NAMING_DROPPED);
         }
-        return studioMessage(now);
+        return toStudioMessage(snapshot);
     };
 
-    const shared = await host.sharedState<StudioMessage>(STUDIO_RPC.MESSAGE, message(files.now()));
+    const sharedMessage = await host.sharedState<StudioMessage>(
+        STUDIO_RPC.MESSAGE,
+        createMessage(files.getSnapshot()),
+    );
     files.onChange(() => {
-        const next = message(files.now());
-        shared.mutate((draft) => Object.assign(draft, next));
+        const next = createMessage(files.getSnapshot());
+        sharedMessage.mutate((draft) => Object.assign(draft, next));
     });
 
-    host.registerAction<[unknown]>(STUDIO_RPC.SAVE, (sent) =>
-        saveEdits(getTokensOnDisk(files.now().config), sent),
+    host.registerAction<[unknown]>(STUDIO_RPC.SAVE, (payload) =>
+        saveEdits(getTokensOnDisk(files.getSnapshot().config), payload),
     );
 }

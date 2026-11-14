@@ -5,7 +5,7 @@ const PLAIN_DEMO = join(__dirname, "../../../dtcg-edit/tests/fixtures/demo");
 
 export const PLAIN_ENTRY = "tokens.resolver.json";
 
-export function plainFiles(): Record<string, string> {
+export function readPlainFiles(): Record<string, string> {
     return Object.fromEntries(
         readdirSync(PLAIN_DEMO)
             .filter((name) => name.endsWith(".json"))

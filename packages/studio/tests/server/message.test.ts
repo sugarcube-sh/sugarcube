@@ -2,25 +2,25 @@ import { createReadOptions } from "@sugarcube-sh/core/client";
 import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { afterEach, describe, expect, it } from "vitest";
-import { studioMessage } from "../../src/server/message";
-import { configProblem, sugarcubeSettings } from "../controllers/demo-message";
-import { demoCopy } from "./demo-copy";
+import { toStudioMessage } from "../../src/server/message";
+import { configProblem, getSugarcubeSettings } from "../controllers/demo-message";
+import { copyDemo } from "./copy-demo";
 
 let remove = () => {};
 afterEach(() => remove());
 
 async function demo() {
-    const copy = demoCopy();
+    const copy = copyDemo();
     remove = copy.remove;
     const tokens = await read(copy.config.resolver, createReadOptions(copy.config));
     return { ...copy, tokens };
 }
 
-describe("studioMessage", () => {
+describe("toStudioMessage", () => {
     it("sends every file the tokens were read from, by the names they read them by", async () => {
         const { config, tokens } = await demo();
 
-        const message = studioMessage({ config, tokens, configProblems: [] });
+        const message = toStudioMessage({ config, tokens, configProblems: [] });
 
         expect(Object.keys(message.files).sort()).toEqual([...tokens.files].sort());
         expect(message.files["dark.json"]).toBe(tokens.getText("dark.json"));
@@ -30,8 +30,8 @@ describe("studioMessage", () => {
     it("sends what a browser needs to read the same tokens", async () => {
         const { config, tokens } = await demo();
 
-        const message = studioMessage({ config, tokens, configProblems: [] });
-        const there = readFromMemory(message, createReadOptions(sugarcubeSettings(message)));
+        const message = toStudioMessage({ config, tokens, configProblems: [] });
+        const there = readFromMemory(message, createReadOptions(getSugarcubeSettings(message)));
 
         expect(there.getTokenPaths()).toEqual(tokens.getTokenPaths());
     });
@@ -39,7 +39,7 @@ describe("studioMessage", () => {
     it("sends sugarcube's adapter, with the config as its settings", async () => {
         const { config, tokens } = await demo();
 
-        const { adapter } = studioMessage({ config, tokens, configProblems: [] });
+        const { adapter } = toStudioMessage({ config, tokens, configProblems: [] });
 
         expect(adapter.name).toBe("sugarcube");
         expect(adapter.settings).toEqual(JSON.parse(JSON.stringify(config)));
@@ -52,9 +52,9 @@ describe("studioMessage", () => {
             variables: { ...config.variables, variableName: (path: string) => path },
         };
 
-        const message = studioMessage({ config: named, tokens, configProblems: [] });
+        const message = toStudioMessage({ config: named, tokens, configProblems: [] });
 
-        expect(sugarcubeSettings(message).variables.variableName).toBeUndefined();
+        expect(getSugarcubeSettings(message).variables.variableName).toBeUndefined();
         expect(JSON.parse(JSON.stringify(message))).toEqual(message);
     });
 
@@ -62,7 +62,7 @@ describe("studioMessage", () => {
         const { config, tokens } = await demo();
 
         expect(
-            studioMessage({ config, tokens, configProblems: [configProblem] }).adapter.problems,
+            toStudioMessage({ config, tokens, configProblems: [configProblem] }).adapter.problems,
         ).toEqual([configProblem]);
     });
 });

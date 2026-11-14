@@ -3,10 +3,10 @@ import type { SignIn } from "../controllers/sign-in";
 
 export const SignInContext = createContext<SignIn | undefined>(undefined);
 
-const noChanges = () => () => {};
+const subscribeNone = () => () => {};
 
 export function useSignIn(): SignIn | undefined {
     const signIn = useContext(SignInContext);
-    useSyncExternalStore(signIn?.subscribe ?? noChanges, () => signIn?.state);
+    useSyncExternalStore(signIn?.subscribe ?? subscribeNone, () => signIn?.state);
     return signIn;
 }

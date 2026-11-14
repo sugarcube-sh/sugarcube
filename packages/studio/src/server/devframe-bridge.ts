@@ -1,6 +1,6 @@
 import { defineRpcFunction } from "devframe";
 import type { DevframeNodeContext } from "devframe/types";
-import { STUDIO_NAME } from "../error-messages";
+import { STUDIO_NAME } from "../studio-names";
 import { STUDIO_RPC } from "../studio-names";
 import type { StudioHostBridge } from "./types";
 

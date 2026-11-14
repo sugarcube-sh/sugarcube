@@ -3,14 +3,14 @@ import { setValue } from "@sugarcube-sh/dtcg-edit";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
-import { plain } from "../../src/adapters/plain";
+import { createPlainAdapter } from "../../src/adapters/plain";
 import { GroupPage } from "../../src/canvas/GroupPage";
 import { NodeActions } from "../../src/canvas/NodeActions";
 import { NodeRoute } from "../../src/canvas/NodeRoute";
 import { createStudio } from "../../src/controllers/studio";
 import { StudioContext } from "../../src/providers/studio-context";
 
-function studioOnFiles() {
+function createTestStudio() {
     return createStudio(
         {
             adapter: { name: "plain", settings: {}, problems: [] },
@@ -24,12 +24,12 @@ function studioOnFiles() {
                 }),
             },
         },
-        (sent) => plain(sent.name === "plain" ? sent.settings : {}),
+        (sent) => createPlainAdapter(sent.name === "plain" ? sent.settings : {}),
     );
 }
 
-function onPage(path: string) {
-    const studio = studioOnFiles();
+function renderPage(path: string) {
+    const studio = createTestStudio();
     const screen = render(
         <MemoryRouter initialEntries={[`/${path.split(".").join("/")}`]}>
             <StudioContext.Provider value={studio}>
@@ -42,44 +42,44 @@ function onPage(path: string) {
 
 describe("a group's page", () => {
     it("renames the group, and stays on it under its new name", async () => {
-        const { studio, screen } = onPage("space");
+        const { studio, screen } = renderPage("space");
         const page = await screen;
 
         const rename = page.getByRole("form", { name: "Rename" });
         await rename.getByRole("textbox", { name: "Name" }).fill("size");
         await rename.getByRole("button", { name: "Rename" }).click();
 
-        expect(studio.state.showing.getGroup("size")).toBeDefined();
+        expect(studio.state.shownPermutation.getGroup("size")).toBeDefined();
         await expect.element(page.getByRole("heading", { name: "size", level: 1 })).toBeVisible();
     });
 
     it("says what removing the group would break, and removes it when asked", async () => {
-        const { studio, screen } = onPage("space");
+        const { studio, screen } = renderPage("space");
         const page = await screen;
 
         await page.getByRole("button", { name: "Remove", exact: true }).click();
         await expect.element(page.getByText("Breaks")).toHaveTextContent("Breaks gap.");
         await page.getByRole("button", { name: "Remove anyway" }).click();
 
-        expect(studio.state.showing.getGroup("space")).toBeUndefined();
+        expect(studio.state.shownPermutation.getGroup("space")).toBeUndefined();
     });
 
     it("adds a group inside it and goes to the new group's page", async () => {
-        const { studio, screen } = onPage("space");
+        const { studio, screen } = renderPage("space");
         const page = await screen;
         const group = page.getByRole("form", { name: "New group" });
 
         await group.getByRole("textbox", { name: "Name" }).fill("large");
         await group.getByRole("button", { name: "Add" }).click();
 
-        expect(studio.state.showing.getGroup("space.large")).toBeDefined();
+        expect(studio.state.shownPermutation.getGroup("space.large")).toBeDefined();
         await expect
             .element(page.getByRole("heading", { name: "space.large", level: 1 }))
             .toBeVisible();
     });
 
     it("offers no actions on a group only there through $extends", async () => {
-        const { screen } = onPage("primary.icon");
+        const { screen } = renderPage("primary.icon");
         const page = await screen;
 
         await expect.element(page.getByRole("heading", { name: "primary.icon" })).toBeVisible();
@@ -91,7 +91,7 @@ describe("a group's page", () => {
 
 describe("the Rename box", () => {
     it("shows the current name when the path changes, without being drawn again from scratch", async () => {
-        const studio = studioOnFiles();
+        const studio = createTestStudio();
         const actions = (path: string) => (
             <StudioContext.Provider value={studio}>
                 <NodeActions path={path} />
@@ -109,11 +109,14 @@ describe("the Rename box", () => {
 
 describe("the New token and New group forms", () => {
     it("start empty when the page shows another group", async () => {
-        const studio = studioOnFiles();
+        const studio = createTestStudio();
         const page = (path: string) => (
             <MemoryRouter>
                 <StudioContext.Provider value={studio}>
-                    <GroupPage group={studio.state.showing.getGroup(path) as Group} shown />
+                    <GroupPage
+                        group={studio.state.shownPermutation.getGroup(path) as Group}
+                        isShown
+                    />
                 </StudioContext.Provider>
             </MemoryRouter>
         );
@@ -159,7 +162,7 @@ describe("a question about which file to write in", () => {
                     "dim.json": accent,
                 },
             },
-            (sent) => plain(sent.name === "plain" ? sent.settings : {}),
+            (sent) => createPlainAdapter(sent.name === "plain" ? sent.settings : {}),
         );
         const screen = await render(
             <MemoryRouter>
@@ -170,7 +173,7 @@ describe("a question about which file to write in", () => {
                                 .getPermutation({ mode: "dark" })
                                 .getGroup("accent") as Group
                         }
-                        shown
+                        isShown
                     />
                 </StudioContext.Provider>
             </MemoryRouter>,

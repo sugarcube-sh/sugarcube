@@ -5,7 +5,7 @@ import { read } from "@sugarcube-sh/dtcg/node";
 import { createSession, setValue } from "@sugarcube-sh/dtcg-edit";
 import { afterEach, describe, expect, it } from "vitest";
 import { saveEdits } from "../../src/server/save";
-import { demoCopy } from "./demo-copy";
+import { copyDemo } from "./copy-demo";
 
 const lighter = { colorSpace: "oklch", components: [0.9, 0.05, 258] };
 
@@ -13,7 +13,7 @@ let remove = () => {};
 afterEach(() => remove());
 
 async function demo() {
-    const copy = demoCopy();
+    const copy = copyDemo();
     remove = copy.remove;
     const onDisk = { entryFile: copy.config.resolver, options: createReadOptions(copy.config) };
     const session = createSession(await read(onDisk.entryFile, onDisk.options));
@@ -28,7 +28,7 @@ describe("saveEdits", () => {
 
         const saved = await saveEdits(onDisk, JSON.parse(JSON.stringify(edits)));
 
-        expect(saved).toEqual({ written: ["color.json"], deleted: [] });
+        expect(saved).toEqual({ savedFiles: ["color.json"], deleted: [] });
         expect(readFileSync(join(dir, "color.json"), "utf8")).toContain("0.9");
         expect(readFileSync(join(dir, "space.json"), "utf8")).toBe(space);
     });

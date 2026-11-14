@@ -3,7 +3,7 @@ import { openStudio } from "../../src/host/open-studio";
 import type { StudioMessage } from "../../src/protocol";
 import { demoMessage, withFile } from "../controllers/demo-message";
 
-function shared(initial?: StudioMessage) {
+function fakeSharedMessage(initial?: StudioMessage) {
     let current: StudioMessage | undefined = initial;
     const listeners = new Set<(value: StudioMessage) => void>();
     return {
@@ -24,7 +24,7 @@ describe("openStudio", () => {
         const started: unknown[] = [];
         const signIn = { start: async (studio: unknown) => void started.push(studio) };
         const studio = await openStudio(
-            { message: shared(demoMessage()), signIn },
+            { message: fakeSharedMessage(demoMessage()), signIn },
             new AbortController().signal,
         );
         await vi.waitFor(() => expect(started).toStrictEqual([studio]));
@@ -32,7 +32,7 @@ describe("openStudio", () => {
 
     it("opens the message the host has already shared", async () => {
         const studio = await openStudio(
-            { message: shared(demoMessage()) },
+            { message: fakeSharedMessage(demoMessage()) },
             new AbortController().signal,
         );
 
@@ -40,7 +40,7 @@ describe("openStudio", () => {
     });
 
     it("waits for a message the host hasn't shared yet", async () => {
-        const state = shared();
+        const state = fakeSharedMessage();
         const opening = openStudio({ message: state }, new AbortController().signal);
 
         state.send(demoMessage());
@@ -49,7 +49,7 @@ describe("openStudio", () => {
     });
 
     it("takes in each message the host shares after it opens", async () => {
-        const state = shared(demoMessage());
+        const state = fakeSharedMessage(demoMessage());
         const studio = await openStudio({ message: state }, new AbortController().signal);
         const dark = demoMessage().files["dark.json"] ?? "";
 
@@ -61,7 +61,7 @@ describe("openStudio", () => {
     });
 
     it("stops taking in messages once aborted", async () => {
-        const state = shared(demoMessage());
+        const state = fakeSharedMessage(demoMessage());
         const controller = new AbortController();
         const studio = await openStudio({ message: state }, controller.signal);
         const before = studio.state;
@@ -73,13 +73,13 @@ describe("openStudio", () => {
     });
 
     it("saves through the connection's save, and has none when the connection has none", async () => {
-        const save = async () => ({ written: [], deleted: [] });
+        const save = async () => ({ savedFiles: [], deleted: [] });
         const saving = await openStudio(
-            { message: shared(demoMessage()), save },
+            { message: fakeSharedMessage(demoMessage()), save },
             new AbortController().signal,
         );
         const reading = await openStudio(
-            { message: shared(demoMessage()) },
+            { message: fakeSharedMessage(demoMessage()) },
             new AbortController().signal,
         );
 
@@ -89,7 +89,7 @@ describe("openStudio", () => {
 
     it("gives up when aborted before a message arrives", async () => {
         const controller = new AbortController();
-        const opening = openStudio({ message: shared() }, controller.signal);
+        const opening = openStudio({ message: fakeSharedMessage() }, controller.signal);
 
         controller.abort();
 
@@ -97,7 +97,7 @@ describe("openStudio", () => {
     });
 
     it("says the host sent nothing when no message arrives in time", async () => {
-        const opening = openStudio({ message: shared() }, new AbortController().signal, {
+        const opening = openStudio({ message: fakeSharedMessage() }, new AbortController().signal, {
             waitMs: 10,
         });
 

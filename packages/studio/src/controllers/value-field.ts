@@ -1,10 +1,11 @@
-import type {
-    CubicBezierValue,
-    DimensionValue,
-    DurationValue,
-    JsonValue,
-    StrokeStyleKeyword,
-    TokenType,
+import {
+    type CubicBezierValue,
+    type DimensionValue,
+    type DurationValue,
+    type JsonValue,
+    type StrokeStyleKeyword,
+    type TokenType,
+    isEqualJson,
 } from "@sugarcube-sh/dtcg";
 import {
     type FontWeightKeyword,
@@ -15,22 +16,28 @@ import {
     parseReference,
     strokeStyleKeywords,
 } from "@sugarcube-sh/dtcg/values";
-import { type ColorDraft, type ColorField, colorDraft, colorField, colorFrom } from "./color";
+import {
+    type ColorDraft,
+    type ColorField,
+    toColorDraft,
+    parseColorField,
+    parseColorDraft,
+} from "./color";
 import {
     type FieldWithParts,
-    compositeField,
-    dashesField,
+    parseCompositeField,
+    parseDashesField,
     isComposite,
-    writtenWithParts,
+    toCompositeValue,
 } from "./parts";
-import { numberIn } from "./typed-text";
+import { parseNumber } from "./typed-text";
 
 export type Field =
     | { readonly kind: "dimension"; readonly value: number; readonly unit: DimensionValue["unit"] }
     | { readonly kind: "duration"; readonly value: number; readonly unit: DurationValue["unit"] }
     | { readonly kind: "number"; readonly value: number }
     | { readonly kind: "fontWeight"; readonly value: number | FontWeightKeyword }
-    | { readonly kind: "fontFamily"; readonly fonts: readonly string[]; readonly alone: boolean }
+    | { readonly kind: "fontFamily"; readonly fonts: readonly string[]; readonly single: boolean }
     | { readonly kind: "cubicBezier"; readonly points: CubicBezierValue }
     | { readonly kind: "strokeStyle"; readonly keyword: StrokeStyleKeyword }
     | { readonly kind: "reference"; readonly path: string }
@@ -48,7 +55,7 @@ export type Draft =
           readonly choice: FontWeightKeyword | "number" | "";
           readonly amount: string;
       }
-    | { readonly kind: "fontFamily"; readonly fonts: readonly string[]; readonly alone: boolean }
+    | { readonly kind: "fontFamily"; readonly fonts: readonly string[]; readonly single: boolean }
     | { readonly kind: "cubicBezier"; readonly points: readonly [string, string, string, string] }
     | { readonly kind: "strokeStyle"; readonly keyword: string }
     | ColorDraft;
@@ -70,70 +77,70 @@ export function hasField(type: TokenType): type is FieldType {
     return Object.hasOwn(fieldTypes, type);
 }
 
-export function fieldFor(type: TokenType | undefined, written: JsonValue): Field {
-    const json: Field = { kind: "json", value: written };
+export function parseField(type: TokenType | undefined, value: JsonValue): Field {
+    const json: Field = { kind: "json", value };
     if (type === undefined) return json;
-    const reference = parseReference(written);
+    const reference = parseReference(value);
     if (reference) {
         return reference.syntax === "curly-brace"
             ? { kind: "reference", path: reference.path }
             : json;
     }
-    if (isComposite(type)) return compositeField(type, written) ?? json;
+    if (isComposite(type)) return parseCompositeField(type, value) ?? json;
     if (type === "strokeStyle") {
-        const dashes = dashesField(written);
+        const dashes = parseDashesField(value);
         if (dashes) return dashes;
     }
     if (!hasField(type)) return json;
-    return literalField(type, written) ?? json;
+    return parseLiteralField(type, value) ?? json;
 }
 
-function literalField(type: FieldType, written: JsonValue): Field | undefined {
+function parseLiteralField(type: FieldType, value: JsonValue): Field | undefined {
     switch (type) {
         case "dimension": {
-            const read = parseValue(type, written, { references: false });
-            return read.ok
-                ? { kind: type, value: read.value.value, unit: read.value.unit }
+            const parsed = parseValue(type, value, { references: false });
+            return parsed.ok
+                ? { kind: type, value: parsed.value.value, unit: parsed.value.unit }
                 : undefined;
         }
         case "duration": {
-            const read = parseValue(type, written, { references: false });
-            return read.ok
-                ? { kind: type, value: read.value.value, unit: read.value.unit }
+            const parsed = parseValue(type, value, { references: false });
+            return parsed.ok
+                ? { kind: type, value: parsed.value.value, unit: parsed.value.unit }
                 : undefined;
         }
         case "number": {
-            const read = parseValue(type, written, { references: false });
-            return read.ok ? { kind: type, value: read.value } : undefined;
+            const parsed = parseValue(type, value, { references: false });
+            return parsed.ok ? { kind: type, value: parsed.value } : undefined;
         }
         case "fontWeight": {
-            const read = parseValue(type, written, { references: false });
-            if (!read.ok) return undefined;
-            const keyword = weightKeywords.find((each) => each === written);
-            return { kind: type, value: keyword ?? read.value };
+            const parsed = parseValue(type, value, { references: false });
+            if (!parsed.ok) return undefined;
+            const keyword = weightKeywords.find((each) => each === value);
+            return { kind: type, value: keyword ?? parsed.value };
         }
         case "fontFamily": {
-            const read = parseValue(type, written, { references: false });
-            return read.ok
-                ? { kind: type, fonts: read.value, alone: typeof written === "string" }
+            const parsed = parseValue(type, value, { references: false });
+            return parsed.ok
+                ? { kind: type, fonts: parsed.value, single: typeof value === "string" }
                 : undefined;
         }
         case "cubicBezier": {
-            const read = parseValue(type, written, { references: false });
-            return read.ok ? { kind: type, points: read.value } : undefined;
+            const parsed = parseValue(type, value, { references: false });
+            return parsed.ok ? { kind: type, points: parsed.value } : undefined;
         }
         case "strokeStyle": {
-            const read = parseValue(type, written, { references: false });
-            return read.ok && typeof read.value === "string"
-                ? { kind: type, keyword: read.value }
+            const parsed = parseValue(type, value, { references: false });
+            return parsed.ok && typeof parsed.value === "string"
+                ? { kind: type, keyword: parsed.value }
                 : undefined;
         }
         case "color":
-            return colorField(written);
+            return parseColorField(value);
     }
 }
 
-export function writtenFor(field: Field): JsonValue {
+export function toJsonValue(field: Field): JsonValue {
     switch (field.kind) {
         case "dimension":
         case "duration":
@@ -143,7 +150,7 @@ export function writtenFor(field: Field): JsonValue {
             return field.value;
         case "fontFamily": {
             const [only] = field.fonts;
-            return field.alone && field.fonts.length === 1 && only !== undefined
+            return field.single && field.fonts.length === 1 && only !== undefined
                 ? only
                 : [...field.fonts];
         }
@@ -154,21 +161,21 @@ export function writtenFor(field: Field): JsonValue {
         case "reference":
             return `{${field.path}}`;
         case "color":
-            return field.written;
+            return field.value;
         case "parts":
         case "list":
         case "dashes":
-            return writtenWithParts(field);
+            return toCompositeValue(field);
         case "json":
             return field.value;
     }
 }
 
-export function changes(field: Field, written: JsonValue | undefined): boolean {
-    return written === undefined || !same(writtenFor(field), written);
+export function isChanged(field: Field, value: JsonValue | undefined): boolean {
+    return value === undefined || !isEqualJson(toJsonValue(field), value);
 }
 
-export function draftFor(type: FieldType, field: Field | undefined): Draft {
+export function toDraft(type: FieldType, field: Field | undefined): Draft {
     switch (type) {
         case "dimension":
         case "duration":
@@ -186,8 +193,8 @@ export function draftFor(type: FieldType, field: Field | undefined): Draft {
         }
         case "fontFamily":
             return field?.kind === type
-                ? { kind: type, fonts: field.fonts, alone: field.alone }
-                : { kind: type, fonts: [""], alone: true };
+                ? { kind: type, fonts: field.fonts, single: field.single }
+                : { kind: type, fonts: [""], single: true };
         case "cubicBezier": {
             if (field?.kind !== type) return { kind: type, points: ["", "", "", ""] };
             const [a, b, c, d] = field.points;
@@ -196,42 +203,42 @@ export function draftFor(type: FieldType, field: Field | undefined): Draft {
         case "strokeStyle":
             return { kind: type, keyword: field?.kind === type ? field.keyword : "" };
         case "color":
-            return colorDraft(field?.kind === type ? field : undefined);
+            return toColorDraft(field?.kind === type ? field : undefined);
     }
 }
 
-export function fieldFrom(draft: Draft): Field | undefined {
+export function parseDraft(draft: Draft): Field | undefined {
     switch (draft.kind) {
         case "dimension": {
-            const value = numberIn(draft.amount);
+            const value = parseNumber(draft.amount);
             const unit = dimensionUnits.find((each) => each === draft.unit);
             return value === undefined || unit === undefined
                 ? undefined
                 : { kind: draft.kind, value, unit };
         }
         case "duration": {
-            const value = numberIn(draft.amount);
+            const value = parseNumber(draft.amount);
             const unit = durationUnits.find((each) => each === draft.unit);
             return value === undefined || unit === undefined
                 ? undefined
                 : { kind: draft.kind, value, unit };
         }
         case "number": {
-            const value = numberIn(draft.amount);
+            const value = parseNumber(draft.amount);
             return value === undefined ? undefined : { kind: draft.kind, value };
         }
         case "fontWeight": {
             if (draft.choice === "") return undefined;
             if (draft.choice !== "number") return { kind: draft.kind, value: draft.choice };
-            const value = numberIn(draft.amount);
+            const value = parseNumber(draft.amount);
             return value === undefined ? undefined : { kind: draft.kind, value };
         }
         case "fontFamily":
             return draft.fonts.length > 0 && draft.fonts.every((name) => name !== "")
-                ? { kind: draft.kind, fonts: draft.fonts, alone: draft.alone }
+                ? { kind: draft.kind, fonts: draft.fonts, single: draft.single }
                 : undefined;
         case "cubicBezier": {
-            const [a, b, c, d] = draft.points.map(numberIn);
+            const [a, b, c, d] = draft.points.map(parseNumber);
             return a === undefined || b === undefined || c === undefined || d === undefined
                 ? undefined
                 : { kind: draft.kind, points: [a, b, c, d] };
@@ -242,7 +249,7 @@ export function fieldFrom(draft: Draft): Field | undefined {
         }
         case "color":
         case "hexColor":
-            return colorFrom(draft);
+            return parseColorDraft(draft);
     }
 }
 
@@ -256,20 +263,16 @@ export function withPoint(
     return { ...draft, points: [at(0, a), at(1, b), at(2, c), at(3, d)] };
 }
 
-export function says(draft: Draft, field: Field | undefined): boolean {
-    const made = fieldFrom(draft);
-    return made === undefined || field === undefined
-        ? made === field
-        : same(writtenFor(made), writtenFor(field));
+export function isSameValue(draft: Draft, field: Field | undefined): boolean {
+    const draftField = parseDraft(draft);
+    return draftField === undefined || field === undefined
+        ? draftField === field
+        : isEqualJson(toJsonValue(draftField), toJsonValue(field));
 }
 
-function same(a: JsonValue, b: JsonValue): boolean {
-    return JSON.stringify(a) === JSON.stringify(b);
-}
-
-export function fieldText(type: TokenType | undefined, written: JsonValue | undefined): string {
-    if (written === undefined) return "";
-    const field = fieldFor(type, written);
+export function formatValue(type: TokenType | undefined, value: JsonValue | undefined): string {
+    if (value === undefined) return "";
+    const field = parseField(type, value);
     switch (field.kind) {
         case "dimension":
         case "duration":
@@ -277,6 +280,6 @@ export function fieldText(type: TokenType | undefined, written: JsonValue | unde
         case "number":
             return String(field.value);
         default:
-            return JSON.stringify(writtenFor(field));
+            return JSON.stringify(toJsonValue(field));
     }
 }

@@ -14,13 +14,16 @@ export interface PlainSettings {
 
 const DEFAULT_BLOCKS: readonly CSSBlockInput[] = [{ input: {}, selector: ":root" }];
 
-export function plain({ naming, blocks = DEFAULT_BLOCKS }: PlainSettings = {}): BuildAdapter {
+export function createPlainAdapter({
+    naming,
+    blocks = DEFAULT_BLOCKS,
+}: PlainSettings = {}): BuildAdapter {
     return {
-        read: {},
+        readOptions: {},
         write(tokens) {
-            const values = createCSSWriter({ naming, references: "values" });
+            const valueWriter = createCSSWriter({ naming, references: "values" });
             return {
-                value: (token) => values.getValue(token)?.css,
+                getValue: (token) => valueWriter.getValue(token)?.css,
                 css: toCSS(getCSSBlocks(tokens, blocks, { writer: createCSSWriter({ naming }) })),
                 problems: tokens.diagnostics,
             };

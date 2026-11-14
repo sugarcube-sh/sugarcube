@@ -8,14 +8,14 @@ import type {
     TokenType,
 } from "@sugarcube-sh/dtcg";
 import type { TypographyCSS } from "@sugarcube-sh/dtcg/css";
-import { UserFacingError } from "../error-messages";
+import { ErrorMessages, UserFacingError } from "../error-messages";
 import type { BuildOutput, BuildProblem, ExtensionForm } from "./adapter";
 import type { StudioState } from "./studio";
 import {
     type DeprecationView,
     type DescriptionView,
-    deprecationView,
-    descriptionView,
+    getDeprecationView,
+    getDescriptionView,
 } from "./properties";
 
 export interface TreeNode {
@@ -41,15 +41,15 @@ export interface TokenRow {
     readonly path: string;
     readonly name: string;
     readonly type: TokenType;
-    readonly written: unknown;
+    readonly originalValue: unknown;
     readonly css: string | TypographyCSS | undefined;
 }
 
 export interface ProblemRow {
-    readonly place?: string;
+    readonly location?: string;
     readonly severity: BuildProblem["severity"];
     readonly message: string;
-    readonly inPermutations?: string;
+    readonly permutationLabel?: string;
     readonly kind: string;
     readonly paths?: readonly string[];
 }
@@ -59,7 +59,7 @@ export interface ChangeLine {
     readonly path: string;
     readonly topLevel?: true;
     readonly from?: string;
-    readonly inPermutations?: string;
+    readonly permutationLabel?: string;
 }
 
 export interface GroupView {
@@ -68,15 +68,15 @@ export interface GroupView {
     readonly tokens: readonly TokenRow[];
 }
 
-type Draft = { path: string; name: string; children: Map<string, Draft>; hasValue?: true };
+type TreeDraft = { path: string; name: string; children: Map<string, TreeDraft>; hasValue?: true };
 
-export function sidebarTree(tokens: DesignTokens): TreeNode[] {
-    const roots = new Map<string, Draft>();
+export function getSidebarTree(tokens: DesignTokens): TreeNode[] {
+    const roots = new Map<string, TreeDraft>();
 
-    function place(
+    function addChildren(
         children: readonly (Token | Group)[],
-        level: Map<string, Draft>,
-        parent?: { draft: Draft; group: Group },
+        level: Map<string, TreeDraft>,
+        parent?: { draft: TreeDraft; group: Group },
     ) {
         for (const child of children) {
             if (parent && child === parent.group.rootToken) {
@@ -90,55 +90,61 @@ export function sidebarTree(tokens: DesignTokens): TreeNode[] {
                 level.set(name, draft);
             }
             if (child.kind === "group")
-                place(child.children, draft.children, { draft, group: child });
+                addChildren(child.children, draft.children, { draft, group: child });
         }
     }
 
-    for (const permutation of tokens.permutations) place(permutation.children, roots);
+    for (const permutation of tokens.permutations) addChildren(permutation.children, roots);
 
-    return Array.from(roots.values(), finish);
+    return Array.from(roots.values(), toTreeNode);
 }
 
-function finish(draft: Draft): TreeNode {
-    const children = Array.from(draft.children.values(), finish);
-    const own = draft.hasValue ? 1 : 0;
+function toTreeNode(draft: TreeDraft): TreeNode {
+    const children = Array.from(draft.children.values(), toTreeNode);
+    const ownCount = draft.hasValue ? 1 : 0;
     return {
         path: draft.path,
         name: draft.name,
         count:
-            children.length > 0 ? own + children.reduce((sum, child) => sum + child.count, 0) : 1,
+            children.length > 0
+                ? ownCount + children.reduce((sum, child) => sum + child.count, 0)
+                : 1,
         children,
         ...(draft.hasValue ? { hasValue: true as const } : {}),
     };
 }
 
-export function nodeAt(
+export function findTokenOrGroup(
     tokens: DesignTokens,
     showing: Permutation,
     path: string,
-): { node: Token | Group; shown: boolean } | undefined {
-    const here = showing.getTokenOrGroup(path);
-    if (here) return { node: here, shown: true };
+): { node: Token | Group; isShown: boolean } | undefined {
+    const shownNode = showing.getTokenOrGroup(path);
+    if (shownNode) return { node: shownNode, isShown: true };
     for (const permutation of tokens.permutations) {
-        const there = permutation.getTokenOrGroup(path);
-        if (there) return { node: there, shown: false };
+        const otherNode = permutation.getTokenOrGroup(path);
+        if (otherNode) return { node: otherNode, isShown: false };
     }
     return undefined;
 }
 
-export function trail(path: string): Crumb[] {
+export function getBreadcrumbs(path: string): Crumb[] {
     const names = path.split(".");
     return names.map((name, index) => ({ path: names.slice(0, index + 1).join("."), name }));
 }
 
-export function groupView(group: Group, value: BuildOutput["value"]): GroupView {
-    const below = (child: Token | Group) => child.path.slice(group.path.length + 1);
+export function getGroupView(group: Group, value: BuildOutput["getValue"]): GroupView {
+    const getChildName = (child: Token | Group) => child.path.slice(group.path.length + 1);
     return {
         path: group.path,
         groups: group.children
             .filter((child): child is Group => child.kind === "group")
-            .map((child) => ({ path: child.path, name: below(child), count: child.tokens.length })),
-        tokens: group.childTokens.map((token) => tokenRow(token, below(token), value)),
+            .map((child) => ({
+                path: child.path,
+                name: getChildName(child),
+                count: child.tokens.length,
+            })),
+        tokens: group.childTokens.map((token) => toTokenRow(token, getChildName(token), value)),
     };
 }
 
@@ -147,43 +153,43 @@ export interface GroupPageView extends GroupView {
     readonly noTokens: "at-all" | "directly" | undefined;
     readonly description: DescriptionView;
     readonly deprecation: DeprecationView;
-    readonly actions: boolean;
+    readonly editable: boolean;
 }
 
-export function groupPage(state: StudioState, group: Group): GroupPageView {
-    const { showing, value, formFor } = state;
-    const shownValue = (token: Token) => {
-        const here = showing.getToken(token.path);
-        return here && value(here);
+export function getGroupPageView(state: StudioState, group: Group): GroupPageView {
+    const { shownPermutation, getValue, getForm } = state;
+    const getShownValue = (token: Token) => {
+        const shownToken = shownPermutation.getToken(token.path);
+        return shownToken && getValue(shownToken);
     };
-    const view = groupView(group, shownValue);
+    const view = getGroupView(group, getShownValue);
     const noTokens =
         view.tokens.length > 0 ? undefined : view.groups.length > 0 ? "directly" : "at-all";
     const editable = group.inherited === undefined;
     return {
         ...view,
-        form: formFor(group),
+        form: getForm(group),
         noTokens,
-        description: descriptionView(group, editable),
-        deprecation: deprecationView(group, editable),
-        actions: editable,
+        description: getDescriptionView(group, editable),
+        deprecation: getDeprecationView(group, editable),
+        editable,
     };
 }
 
-export function tokenRow(token: Token, name: string, value: BuildOutput["value"]): TokenRow {
+export function toTokenRow(token: Token, name: string, value: BuildOutput["getValue"]): TokenRow {
     return {
         path: token.path,
         name,
         type: token.type,
-        written: token.original?.value,
+        originalValue: token.original?.value,
         css: value(token),
     };
 }
 
-export function problemRows(problems: readonly BuildProblem[]): ProblemRow[] {
+export function toProblemRows(problems: readonly BuildProblem[]): ProblemRow[] {
     return problems.map(
         ({ span, severity, message, permutations, kind, path, relatedInformation }) => {
-            const label = partialLabel(permutations);
+            const label = getPartialLabel(permutations);
             const paths = [
                 ...new Set(
                     [path, ...(relatedInformation ?? []).map((each) => each.path)].filter(isPath),
@@ -191,11 +197,11 @@ export function problemRows(problems: readonly BuildProblem[]): ProblemRow[] {
             ];
             return {
                 ...(span && paths.length === 0
-                    ? { place: `${span.file}:${span.start.line}:${span.start.column}` }
+                    ? { location: `${span.file}:${span.start.line}:${span.start.column}` }
                     : {}),
                 severity,
                 message,
-                ...(label ? { inPermutations: label } : {}),
+                ...(label ? { permutationLabel: label } : {}),
                 kind,
                 ...(paths.length > 0 ? { paths } : {}),
             };
@@ -203,29 +209,32 @@ export function problemRows(problems: readonly BuildProblem[]): ProblemRow[] {
     );
 }
 
-export function changeLines(changes: readonly Change[]): ChangeLine[] {
+export function toChangeLines(changes: readonly Change[]): ChangeLine[] {
     return changes.map((change) => {
-        const label = partialLabel(change.permutations);
+        const label = getPartialLabel(change.permutations);
         return {
             kind: change.kind,
             ...("from" in change ? { from: change.from } : {}),
             path: change.path,
             ...(change.path === "" && { topLevel: true as const }),
-            ...(label ? { inPermutations: label } : {}),
+            ...(label ? { permutationLabel: label } : {}),
         };
     });
 }
 
-export function changeText(line: ChangeLine): string {
-    const theme = line.inPermutations ? ` (${line.inPermutations})` : "";
+export function formatChange(line: ChangeLine): string {
+    const permutationSuffix = line.permutationLabel ? ` (${line.permutationLabel})` : "";
     if (line.kind === "renamed" || line.kind === "group-renamed") {
-        return `\`${line.from}\` renamed to \`${line.path}\`${theme}`;
+        return `\`${line.from}\` renamed to \`${line.path}\`${permutationSuffix}`;
     }
-    const what = line.topLevel ? "Top level" : `\`${line.path}\``;
-    return `${what} ${doneWord[line.kind]}${theme}`;
+    const subject = line.topLevel ? "Top level" : `\`${line.path}\``;
+    return `${subject} ${verbByChangeKind[line.kind]}${permutationSuffix}`;
 }
 
-export const doneWord: Record<Exclude<ChangeLine["kind"], "renamed" | "group-renamed">, string> = {
+export const verbByChangeKind: Record<
+    Exclude<ChangeLine["kind"], "renamed" | "group-renamed">,
+    string
+> = {
     "added": "added",
     "removed": "removed",
     "changed": "changed",
@@ -234,7 +243,7 @@ export const doneWord: Record<Exclude<ChangeLine["kind"], "renamed" | "group-ren
     "group-changed": "changed",
 };
 
-function partialLabel(permutations: Permutations | undefined): string | undefined {
+function getPartialLabel(permutations: Permutations | undefined): string | undefined {
     if (!permutations || permutations.length === 0 || permutations.others.length === 0) {
         return undefined;
     }
@@ -245,7 +254,7 @@ function isPath(path: string | undefined): path is string {
     return path !== undefined;
 }
 
-export function referable(
+export function getReferenceTargets(
     tokens: DesignTokens,
     showing: Permutation,
     type: TokenType,
@@ -253,16 +262,16 @@ export function referable(
 ): string[] {
     return tokens.getTokenPaths().filter((each) => {
         if (each === path) return false;
-        const node = nodeAt(tokens, showing, each)?.node;
+        const node = findTokenOrGroup(tokens, showing, each)?.node;
         return node?.kind !== "group" && node?.type === type;
     });
 }
 
-export function clashText({ changedOn }: { changedOn?: string | undefined }): string {
-    return `Not saved: changed ${changedOn ? `on ${changedOn}` : "elsewhere"}.`;
+export function formatClashMessage({ changedHost }: { changedHost?: string | undefined }): string {
+    return ErrorMessages.CHANGED_ELSEWHERE(changedHost);
 }
 
-export function failedText(error: unknown): string {
+export function formatSaveError(error: unknown): string {
     if (error instanceof UserFacingError) return error.message;
-    return `Save failed: ${error instanceof Error ? error.message : String(error)}`;
+    return ErrorMessages.SAVE_FAILED(error instanceof Error ? error.message : String(error));
 }

@@ -4,7 +4,7 @@ export interface StudioSharedState<T extends object> {
     mutate(fn: (draft: T) => void): void;
 }
 
-export interface StudioSurface {
+export interface StudioDock {
     readonly id: string;
     readonly title: string;
     readonly route: string;
@@ -17,11 +17,9 @@ export interface StudioHostBridge {
         handler: (...args: Args) => Promise<unknown>,
     ): void;
     warn(message: string): void;
-    /** Writes values into the `__connection.json` a client fetches when it
-     * connects, so they reach the client once, at startup, and never come back. */
     publishConfig?(config: StudioConnectionConfig): void;
 }
 
-export interface DefineStudioOptions {
+export interface SetupStudioOptions {
     gitSave?: GitSaveSettings | undefined;
 }

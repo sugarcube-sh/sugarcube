@@ -13,7 +13,7 @@ import type { TypographyCSS } from "@sugarcube-sh/dtcg/css";
 export type BuildProblem = DiagnosticOf<Record<string, unknown>>;
 
 export interface BuildOutput {
-    value(token: Token): string | TypographyCSS | undefined;
+    getValue(token: Token): string | TypographyCSS | undefined;
     readonly css: string;
     readonly problems: readonly BuildProblem[];
 }
@@ -32,9 +32,9 @@ export interface ExtensionForm {
 }
 
 export interface BuildAdapter {
-    readonly read: ReadOptions;
+    readonly readOptions: ReadOptions;
     write(tokens: DesignTokens): BuildOutput;
-    formFor?(
+    getForm?(
         tokens: DesignTokens,
         node: Token | Group,
         at?: DefinitionOptions["at"],

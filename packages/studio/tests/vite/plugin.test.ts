@@ -1,9 +1,9 @@
 import { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "@sugarcube-sh/vite";
 import type { ResolvedConfig } from "vite";
 import { describe, expect, it, vi } from "vitest";
-import sugarcubeStudio, { filesFromSugarcube } from "../../src/vite/plugin";
+import sugarcubeStudio, { createFilesPlugin } from "../../src/vite/plugin";
 
-function context() {
+function fakeSugarcubeContext() {
     const listeners = new Set<() => void>();
     const ctx = {
         config: { resolver: "tokens/tokens.resolver.json", variables: {} },
@@ -17,7 +17,10 @@ function context() {
     return { ctx, readAgain: () => listeners.forEach((fn) => fn()) };
 }
 
-function resolve(plugin: ReturnType<typeof filesFromSugarcube>["plugin"], plugins: unknown[]) {
+function runConfigResolved(
+    plugin: ReturnType<typeof createFilesPlugin>["plugin"],
+    plugins: unknown[],
+) {
     const warnings: string[] = [];
     const config = {
         plugins,
@@ -29,23 +32,25 @@ function resolve(plugin: ReturnType<typeof filesFromSugarcube>["plugin"], plugin
 
 describe("studio's files under Vite", () => {
     it("are what sugarcube's plugin last read", async () => {
-        const { ctx } = context();
-        const { plugin, files } = filesFromSugarcube();
+        const { ctx } = fakeSugarcubeContext();
+        const { plugin, files } = createFilesPlugin();
 
-        const { warnings } = resolve(plugin, [
+        const { warnings } = runConfigResolved(plugin, [
             { name: "vite:something" },
             { name: SUGARCUBE_API_PLUGIN_NAME, api: { getContext: () => ctx } },
         ]);
 
-        expect((await files).now()).toBe(ctx);
+        expect((await files).getSnapshot()).toBe(ctx);
         expect(warnings).toEqual([]);
         expect(plugin.apply).toBe("serve");
     });
 
     it("change whenever sugarcube's plugin reads the tokens again", async () => {
-        const { ctx, readAgain } = context();
-        const { plugin, files } = filesFromSugarcube();
-        resolve(plugin, [{ name: SUGARCUBE_API_PLUGIN_NAME, api: { getContext: () => ctx } }]);
+        const { ctx, readAgain } = fakeSugarcubeContext();
+        const { plugin, files } = createFilesPlugin();
+        runConfigResolved(plugin, [
+            { name: SUGARCUBE_API_PLUGIN_NAME, api: { getContext: () => ctx } },
+        ]);
         const listener = vi.fn();
 
         (await files).onChange(listener);
@@ -55,9 +60,9 @@ describe("studio's files under Vite", () => {
     });
 
     it("say why studio never opens when sugarcube's plugin is not there", () => {
-        const { plugin } = filesFromSugarcube();
+        const { plugin } = createFilesPlugin();
 
-        const { warnings } = resolve(plugin, [{ name: "vite:something" }]);
+        const { warnings } = runConfigResolved(plugin, [{ name: "vite:something" }]);
 
         expect(warnings).toHaveLength(1);
         expect(warnings[0]).toMatch(/^\[sugarcube studio\] /);

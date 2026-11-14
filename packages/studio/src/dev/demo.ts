@@ -3,18 +3,18 @@ import { devframeViteBridge } from "@devframes/vite/single";
 import { fillDefaults } from "@sugarcube-sh/core";
 import type { Plugin } from "vite";
 import { ErrorMessages } from "../error-messages";
-import { studioDevframe } from "../server/definition";
-import { nodeFiles } from "../server/node-files";
+import { createStudioDevframe } from "../server/definition";
+import { createNodeFiles } from "../server/node-files";
 
-const resolver = fileURLToPath(new URL("../../demo/tokens.resolver.json", import.meta.url));
+const resolverPath = fileURLToPath(new URL("../../demo/tokens.resolver.json", import.meta.url));
 
-export async function demoStudio(): Promise<Plugin[]> {
-    const files = await nodeFiles(
-        { ...fillDefaults({ resolver }), resolver },
+export async function createDemoPlugins(): Promise<Plugin[]> {
+    const files = await createNodeFiles(
+        { ...fillDefaults({ resolver: resolverPath }), resolver: resolverPath },
         { onError: (error) => console.error(ErrorMessages.DEMO_FAILED, error) },
     );
 
-    const watch: Plugin = {
+    const watchPlugin: Plugin = {
         name: "studio:demo-tokens",
         apply: "serve",
         configureServer(server) {
@@ -22,5 +22,5 @@ export async function demoStudio(): Promise<Plugin[]> {
         },
     };
 
-    return [devframeViteBridge(studioDevframe({ files }), { auth: false }), watch];
+    return [devframeViteBridge(createStudioDevframe({ files }), { auth: false }), watchPlugin];
 }

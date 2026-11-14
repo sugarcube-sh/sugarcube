@@ -5,21 +5,21 @@ import {
     type Draft,
     type Field,
     type FieldType,
-    changes,
-    draftFor,
-    fieldFor,
-    fieldFrom,
+    isChanged,
+    toDraft,
+    parseField,
+    parseDraft,
     hasField,
-    says,
+    isSameValue,
     weightKeywords,
     withPoint,
-    writtenFor,
+    toJsonValue,
 } from "../controllers/value-field";
-import { moved, without } from "../controllers/lists";
+import { moveListItem, removeListItem } from "../controllers/lists";
 import { hasParts } from "../controllers/parts";
-import { referable } from "../controllers/views";
+import { getReferenceTargets } from "../controllers/views";
 import { useStudioState } from "../providers/studio-context";
-import { Choice } from "./Choice";
+import { Select } from "./Select";
 import { ColorInput } from "./ColorInput";
 import { CompositeInput } from "./CompositeInput";
 import { EditedTokenContext } from "../providers/edited-token-context";
@@ -28,30 +28,30 @@ import { useDraft, useItemKeys } from "./use-draft";
 
 export function TypedField({
     type,
-    written,
+    value,
     label,
     references = true,
     onWrite,
 }: {
     type: TokenType | undefined;
-    written: JsonValue | undefined;
+    value: JsonValue | undefined;
     label: string;
     references?: boolean;
     onWrite(value: JsonValue, part?: JsonPath, control?: string): void;
 }) {
-    const field = written === undefined ? undefined : fieldFor(type, written);
-    const shown = written === undefined ? "" : JSON.stringify(written);
-    const [side, setSide] = useDraft<"value" | "token">(
+    const field = value === undefined ? undefined : parseField(type, value);
+    const valueText = value === undefined ? "" : JSON.stringify(value);
+    const [source, setSource] = useDraft<"value" | "token">(
         field?.kind === "reference" ? "token" : "value",
-        shown,
+        valueText,
     );
-    const name = useId();
+    const radioName = useId();
     const write = (next: Field, control?: string) => {
-        if (changes(next, written)) onWrite(writtenFor(next), undefined, control);
+        if (isChanged(next, value)) onWrite(toJsonValue(next), undefined, control);
     };
 
     if (type === undefined || field?.kind === "json") {
-        return <JsonField written={written} label={label} onWrite={onWrite} />;
+        return <JsonField value={value} label={label} onWrite={onWrite} />;
     }
 
     return (
@@ -61,29 +61,29 @@ export function TypedField({
                     <label>
                         <input
                             type="radio"
-                            name={name}
-                            checked={side === "value"}
-                            onChange={() => setSide("value")}
+                            name={radioName}
+                            checked={source === "value"}
+                            onChange={() => setSource("value")}
                         />{" "}
                         Value
                     </label>{" "}
                     <label>
                         <input
                             type="radio"
-                            name={name}
-                            checked={side === "token"}
-                            onChange={() => setSide("token")}
+                            name={radioName}
+                            checked={source === "token"}
+                            onChange={() => setSource("token")}
                         />{" "}
                         Token
                     </label>
                 </fieldset>
             )}
-            {references && side === "token" ? (
+            {references && source === "token" ? (
                 <TokenInput
                     type={type}
                     label={label}
-                    referred={field?.kind === "reference" ? field.path : undefined}
-                    onPath={(to) => write({ kind: "reference", path: to })}
+                    referencePath={field?.kind === "reference" ? field.path : undefined}
+                    onReferenceChange={(to) => write({ kind: "reference", path: to })}
                 />
             ) : field && hasParts(field) ? (
                 <CompositeInput field={field} label={label} onWrite={onWrite} />
@@ -95,7 +95,7 @@ export function TypedField({
                     write={write}
                 />
             ) : (
-                <JsonField written={undefined} label={label} onWrite={onWrite} />
+                <JsonField value={undefined} label={label} onWrite={onWrite} />
             )}
         </>
     );
@@ -104,37 +104,38 @@ export function TypedField({
 function TokenInput({
     type,
     label,
-    referred,
-    onPath,
+    referencePath,
+    onReferenceChange,
 }: {
     type: TokenType;
     label: string;
-    referred: string | undefined;
-    onPath(path: string): void;
+    referencePath: string | undefined;
+    onReferenceChange(path: string): void;
 }) {
     const tokens = useStudioState((state) => state.tokens);
-    const showing = useStudioState((state) => state.showing);
+    const showing = useStudioState((state) => state.shownPermutation);
     const path = useContext(EditedTokenContext);
-    const listed = useMemo(
-        () => referable(tokens, showing, type, path),
+    const referencePaths = useMemo(
+        () => getReferenceTargets(tokens, showing, type, path),
         [tokens, showing, type, path],
     );
-    const [text, setText] = useDraft(referred ?? "", referred ?? "");
-    const list = useId();
+    const [text, setText] = useDraft(referencePath ?? "", referencePath ?? "");
+    const listID = useId();
 
     return (
         <>
             <input
                 aria-label={`${label}, token`}
-                list={list}
+                list={listID}
                 value={text}
                 onChange={(event) => {
                     setText(event.target.value);
-                    if (listed.includes(event.target.value)) onPath(event.target.value);
+                    if (referencePaths.includes(event.target.value))
+                        onReferenceChange(event.target.value);
                 }}
             />
-            <datalist id={list}>
-                {listed.map((each) => (
+            <datalist id={listID}>
+                {referencePaths.map((each) => (
                     <option key={each} value={each}>
                         {each}
                     </option>
@@ -156,14 +157,14 @@ function ValueInput({
     write(field: Field, control?: string): void;
 }) {
     const [draft, setDraft] = useDraft(
-        draftFor(type, field),
+        toDraft(type, field),
         field ? JSON.stringify(field) : "",
-        (kept) => says(kept, field),
+        (currentDraft) => isSameValue(currentDraft, field),
     );
     const change = (next: Draft, control?: string) => {
         setDraft(next);
-        const made = fieldFrom(next);
-        if (made) write(made, control);
+        const nextField = parseDraft(next);
+        if (nextField) write(nextField, control);
     };
 
     switch (draft.kind) {
@@ -171,22 +172,22 @@ function ValueInput({
         case "duration":
             return (
                 <>
-                    <NumberBox
+                    <NumberInput
                         label={`${label}, amount`}
                         amount={draft.amount}
                         onAmount={(amount) => change({ ...draft, amount })}
                     />{" "}
-                    <Choice
+                    <Select
                         label={`${label}, unit`}
-                        chosen={draft.unit}
-                        choices={draft.kind === "dimension" ? dimensionUnits : durationUnits}
-                        onChoose={(unit) => change({ ...draft, unit })}
+                        value={draft.unit}
+                        options={draft.kind === "dimension" ? dimensionUnits : durationUnits}
+                        onChange={(unit) => change({ ...draft, unit })}
                     />
                 </>
             );
         case "number":
             return (
-                <NumberBox
+                <NumberInput
                     label={label}
                     amount={draft.amount}
                     onAmount={(amount) => change({ ...draft, amount })}
@@ -195,17 +196,17 @@ function ValueInput({
         case "fontWeight":
             return (
                 <>
-                    <Choice
+                    <Select
                         label={label}
-                        chosen={draft.choice}
-                        choices={[...weightKeywords, "number"]}
-                        names={{ number: "Number" }}
-                        onChoose={(choice) => change({ ...draft, choice })}
+                        value={draft.choice}
+                        options={[...weightKeywords, "number"]}
+                        optionLabels={{ number: "Number" }}
+                        onChange={(choice) => change({ ...draft, choice })}
                     />
                     {draft.choice === "number" && (
                         <>
                             {" "}
-                            <NumberBox
+                            <NumberInput
                                 label={`${label}, number`}
                                 amount={draft.amount}
                                 min={1}
@@ -228,9 +229,9 @@ function ValueInput({
             return (
                 <fieldset aria-label={label}>
                     {draft.points.map((amount, index) => (
-                        <NumberBox
-                            key={bezierPoints[index]}
-                            label={`${label}, ${bezierPoints[index]}`}
+                        <NumberInput
+                            key={bezierPointLabels[index]}
+                            label={`${label}, ${bezierPointLabels[index]}`}
                             amount={amount}
                             min={index % 2 === 0 ? 0 : undefined}
                             max={index % 2 === 0 ? 1 : undefined}
@@ -241,20 +242,20 @@ function ValueInput({
             );
         case "strokeStyle":
             return (
-                <Choice
+                <Select
                     label={label}
-                    chosen={draft.keyword}
-                    choices={strokeStyleKeywords}
-                    onChoose={(keyword) => change({ ...draft, keyword })}
+                    value={draft.keyword}
+                    options={strokeStyleKeywords}
+                    onChange={(keyword) => change({ ...draft, keyword })}
                 />
             );
         case "color":
         case "hexColor": {
-            const now = fieldFrom(draft) ?? field;
+            const currentField = parseDraft(draft) ?? field;
             return (
                 <ColorInput
                     draft={draft}
-                    shown={now?.kind === "color" ? now : undefined}
+                    color={currentField?.kind === "color" ? currentField : undefined}
                     label={label}
                     onDraft={change}
                 />
@@ -263,9 +264,9 @@ function ValueInput({
     }
 }
 
-const bezierPoints = ["P1x", "P1y", "P2x", "P2y"] as const;
+const bezierPointLabels = ["P1x", "P1y", "P2x", "P2y"] as const;
 
-function NumberBox({
+function NumberInput({
     label,
     amount,
     min,
@@ -300,16 +301,16 @@ function FontList({
     fonts: readonly string[];
     onFonts(fonts: readonly string[]): void;
 }) {
-    const items = useItemKeys(fonts.length);
+    const keys = useItemKeys(fonts.length);
     const reorder = (from: number, to: number) => {
-        items.moved(from, to);
-        onFonts(moved(fonts, from, to));
+        keys.move(from, to);
+        onFonts(moveListItem(fonts, from, to));
     };
 
     return (
         <ol aria-label={label}>
             {fonts.map((name, index) => (
-                <li key={items.keys[index]}>
+                <li key={keys.keys[index]}>
                     <input
                         aria-label={`${label}, font ${index + 1}`}
                         value={name}
@@ -337,8 +338,8 @@ function FontList({
                         type="button"
                         disabled={fonts.length === 1}
                         onClick={() => {
-                            items.removed(index);
-                            onFonts(without(fonts, index));
+                            keys.remove(index);
+                            onFonts(removeListItem(fonts, index));
                         }}
                     >
                         Remove
@@ -349,7 +350,7 @@ function FontList({
                 <button
                     type="button"
                     onClick={() => {
-                        items.added();
+                        keys.add();
                         onFonts([...fonts, ""]);
                     }}
                 >

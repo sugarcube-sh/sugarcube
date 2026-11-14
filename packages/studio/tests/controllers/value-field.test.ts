@@ -2,20 +2,20 @@ import type { JsonValue, TokenType } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import { hasParts } from "../../src/controllers/parts";
 import {
-    changes,
-    draftFor,
-    fieldFor,
-    fieldFrom,
-    fieldText,
+    isChanged,
+    toDraft,
+    parseField,
+    parseDraft,
+    formatValue,
     hasField,
-    says,
+    isSameValue,
     withPoint,
-    writtenFor,
+    toJsonValue,
 } from "../../src/controllers/value-field";
 
-describe("fieldFor", () => {
+describe("parseField", () => {
     it("shows a dimension as its number and unit", () => {
-        expect(fieldFor("dimension", { value: 2, unit: "rem" })).toEqual({
+        expect(parseField("dimension", { value: 2, unit: "rem" })).toEqual({
             kind: "dimension",
             value: 2,
             unit: "rem",
@@ -23,7 +23,7 @@ describe("fieldFor", () => {
     });
 
     it("shows a duration as its number and unit", () => {
-        expect(fieldFor("duration", { value: 150, unit: "ms" })).toEqual({
+        expect(parseField("duration", { value: 150, unit: "ms" })).toEqual({
             kind: "duration",
             value: 150,
             unit: "ms",
@@ -31,50 +31,53 @@ describe("fieldFor", () => {
     });
 
     it("shows a number", () => {
-        expect(fieldFor("number", 1.5)).toEqual({ kind: "number", value: 1.5 });
+        expect(parseField("number", 1.5)).toEqual({ kind: "number", value: 1.5 });
     });
 
     it("shows a font weight as the keyword or the number the file wrote", () => {
-        expect(fieldFor("fontWeight", "semi-bold")).toEqual({
+        expect(parseField("fontWeight", "semi-bold")).toEqual({
             kind: "fontWeight",
             value: "semi-bold",
         });
-        expect(fieldFor("fontWeight", 650)).toEqual({ kind: "fontWeight", value: 650 });
+        expect(parseField("fontWeight", 650)).toEqual({ kind: "fontWeight", value: 650 });
     });
 
     it("shows a font family as its list of fonts, remembering a single name written alone", () => {
-        expect(fieldFor("fontFamily", "system-ui")).toEqual({
+        expect(parseField("fontFamily", "system-ui")).toEqual({
             kind: "fontFamily",
             fonts: ["system-ui"],
-            alone: true,
+            single: true,
         });
-        expect(fieldFor("fontFamily", ["Inter", "sans-serif"])).toEqual({
+        expect(parseField("fontFamily", ["Inter", "sans-serif"])).toEqual({
             kind: "fontFamily",
             fonts: ["Inter", "sans-serif"],
-            alone: false,
+            single: false,
         });
     });
 
     it("shows a cubic Bézier as its four numbers", () => {
-        expect(fieldFor("cubicBezier", [0.4, 0, 0.2, 1])).toEqual({
+        expect(parseField("cubicBezier", [0.4, 0, 0.2, 1])).toEqual({
             kind: "cubicBezier",
             points: [0.4, 0, 0.2, 1],
         });
     });
 
     it("shows a stroke style keyword", () => {
-        expect(fieldFor("strokeStyle", "dashed")).toEqual({
+        expect(parseField("strokeStyle", "dashed")).toEqual({
             kind: "strokeStyle",
             keyword: "dashed",
         });
     });
 
     it("shows a reference to a whole token as the token's path, for every type", () => {
-        expect(fieldFor("dimension", "{size.step.0}")).toEqual({
+        expect(parseField("dimension", "{size.step.0}")).toEqual({
             kind: "reference",
             path: "size.step.0",
         });
-        expect(fieldFor("shadow", "{shadow.sm}")).toEqual({ kind: "reference", path: "shadow.sm" });
+        expect(parseField("shadow", "{shadow.sm}")).toEqual({
+            kind: "reference",
+            path: "shadow.sm",
+        });
     });
 
     it("falls back to JSON for what no field can show exactly", () => {
@@ -88,41 +91,41 @@ describe("fieldFor", () => {
         ];
 
         for (const [type, written] of fallbacks) {
-            expect(fieldFor(type, written)).toEqual({ kind: "json", value: written });
+            expect(parseField(type, written)).toEqual({ kind: "json", value: written });
         }
     });
 
     it("falls back to JSON for a token with no type", () => {
-        expect(fieldFor(undefined, 4)).toEqual({ kind: "json", value: 4 });
+        expect(parseField(undefined, 4)).toEqual({ kind: "json", value: 4 });
     });
 });
 
-describe("writtenFor", () => {
+describe("toJsonValue", () => {
     it("writes what the file would hold for each field", () => {
-        expect(writtenFor({ kind: "dimension", value: 1.5, unit: "rem" })).toEqual({
+        expect(toJsonValue({ kind: "dimension", value: 1.5, unit: "rem" })).toEqual({
             value: 1.5,
             unit: "rem",
         });
-        expect(writtenFor({ kind: "duration", value: 0.2, unit: "s" })).toEqual({
+        expect(toJsonValue({ kind: "duration", value: 0.2, unit: "s" })).toEqual({
             value: 0.2,
             unit: "s",
         });
-        expect(writtenFor({ kind: "number", value: 3 })).toBe(3);
-        expect(writtenFor({ kind: "fontWeight", value: "bold" })).toBe("bold");
-        expect(writtenFor({ kind: "cubicBezier", points: [0, 0, 1, 1] })).toEqual([0, 0, 1, 1]);
-        expect(writtenFor({ kind: "strokeStyle", keyword: "solid" })).toBe("solid");
-        expect(writtenFor({ kind: "reference", path: "color.neutral.900" })).toBe(
+        expect(toJsonValue({ kind: "number", value: 3 })).toBe(3);
+        expect(toJsonValue({ kind: "fontWeight", value: "bold" })).toBe("bold");
+        expect(toJsonValue({ kind: "cubicBezier", points: [0, 0, 1, 1] })).toEqual([0, 0, 1, 1]);
+        expect(toJsonValue({ kind: "strokeStyle", keyword: "solid" })).toBe("solid");
+        expect(toJsonValue({ kind: "reference", path: "color.neutral.900" })).toBe(
             "{color.neutral.900}",
         );
     });
 
     it("writes a single font alone only where the file wrote it alone", () => {
-        expect(writtenFor({ kind: "fontFamily", fonts: ["Inter"], alone: true })).toBe("Inter");
-        expect(writtenFor({ kind: "fontFamily", fonts: ["Inter"], alone: false })).toEqual([
+        expect(toJsonValue({ kind: "fontFamily", fonts: ["Inter"], single: true })).toBe("Inter");
+        expect(toJsonValue({ kind: "fontFamily", fonts: ["Inter"], single: false })).toEqual([
             "Inter",
         ]);
         expect(
-            writtenFor({ kind: "fontFamily", fonts: ["Inter", "sans-serif"], alone: true }),
+            toJsonValue({ kind: "fontFamily", fonts: ["Inter", "sans-serif"], single: true }),
         ).toEqual(["Inter", "sans-serif"]);
     });
 
@@ -139,7 +142,7 @@ describe("writtenFor", () => {
         ];
 
         for (const [type, value] of written) {
-            expect(writtenFor(fieldFor(type, value))).toEqual(value);
+            expect(toJsonValue(parseField(type, value))).toEqual(value);
         }
     });
 });
@@ -166,26 +169,26 @@ describe("hasField", () => {
     });
 });
 
-describe("draftFor", () => {
+describe("toDraft", () => {
     it("starts a field's draft from the value shown", () => {
-        expect(draftFor("dimension", { kind: "dimension", value: 2, unit: "rem" })).toEqual({
+        expect(toDraft("dimension", { kind: "dimension", value: 2, unit: "rem" })).toEqual({
             kind: "dimension",
             amount: "2",
             unit: "rem",
         });
-        expect(draftFor("cubicBezier", { kind: "cubicBezier", points: [0.4, 0, 0.2, 1] })).toEqual({
+        expect(toDraft("cubicBezier", { kind: "cubicBezier", points: [0.4, 0, 0.2, 1] })).toEqual({
             kind: "cubicBezier",
             points: ["0.4", "0", "0.2", "1"],
         });
         expect(
-            draftFor("fontFamily", { kind: "fontFamily", fonts: ["Inter"], alone: true }),
-        ).toEqual({ kind: "fontFamily", fonts: ["Inter"], alone: true });
+            toDraft("fontFamily", { kind: "fontFamily", fonts: ["Inter"], single: true }),
+        ).toEqual({ kind: "fontFamily", fonts: ["Inter"], single: true });
     });
 
     it("starts blank where nothing is written", () => {
-        expect(draftFor("duration", undefined)).toEqual({ kind: "duration", amount: "", unit: "" });
-        expect(draftFor("strokeStyle", undefined)).toEqual({ kind: "strokeStyle", keyword: "" });
-        expect(draftFor("fontWeight", undefined)).toEqual({
+        expect(toDraft("duration", undefined)).toEqual({ kind: "duration", amount: "", unit: "" });
+        expect(toDraft("strokeStyle", undefined)).toEqual({ kind: "strokeStyle", keyword: "" });
+        expect(toDraft("fontWeight", undefined)).toEqual({
             kind: "fontWeight",
             choice: "",
             amount: "",
@@ -193,12 +196,12 @@ describe("draftFor", () => {
     });
 
     it("gives a keyword weight its number, ready for switching to Number", () => {
-        expect(draftFor("fontWeight", { kind: "fontWeight", value: "bold" })).toEqual({
+        expect(toDraft("fontWeight", { kind: "fontWeight", value: "bold" })).toEqual({
             kind: "fontWeight",
             choice: "bold",
             amount: "700",
         });
-        expect(draftFor("fontWeight", { kind: "fontWeight", value: 650 })).toEqual({
+        expect(toDraft("fontWeight", { kind: "fontWeight", value: 650 })).toEqual({
             kind: "fontWeight",
             choice: "number",
             amount: "650",
@@ -206,33 +209,33 @@ describe("draftFor", () => {
     });
 });
 
-describe("fieldFrom", () => {
+describe("parseDraft", () => {
     it("makes a field once the draft holds a whole value", () => {
-        expect(fieldFrom({ kind: "dimension", amount: "1.5", unit: "rem" })).toEqual({
+        expect(parseDraft({ kind: "dimension", amount: "1.5", unit: "rem" })).toEqual({
             kind: "dimension",
             value: 1.5,
             unit: "rem",
         });
-        expect(fieldFrom({ kind: "number", amount: "1e2" })).toEqual({
+        expect(parseDraft({ kind: "number", amount: "1e2" })).toEqual({
             kind: "number",
             value: 100,
         });
-        expect(fieldFrom({ kind: "fontWeight", choice: "number", amount: "700" })).toEqual({
+        expect(parseDraft({ kind: "fontWeight", choice: "number", amount: "700" })).toEqual({
             kind: "fontWeight",
             value: 700,
         });
-        expect(fieldFrom({ kind: "fontWeight", choice: "bold", amount: "700" })).toEqual({
+        expect(parseDraft({ kind: "fontWeight", choice: "bold", amount: "700" })).toEqual({
             kind: "fontWeight",
             value: "bold",
         });
-        expect(fieldFrom({ kind: "cubicBezier", points: ["0", "0", "1", "1"] })).toEqual({
+        expect(parseDraft({ kind: "cubicBezier", points: ["0", "0", "1", "1"] })).toEqual({
             kind: "cubicBezier",
             points: [0, 0, 1, 1],
         });
         expect(
-            fieldFrom({ kind: "fontFamily", fonts: ["Inter", "sans-serif"], alone: false }),
-        ).toEqual({ kind: "fontFamily", fonts: ["Inter", "sans-serif"], alone: false });
-        expect(fieldFrom({ kind: "strokeStyle", keyword: "dotted" })).toEqual({
+            parseDraft({ kind: "fontFamily", fonts: ["Inter", "sans-serif"], single: false }),
+        ).toEqual({ kind: "fontFamily", fonts: ["Inter", "sans-serif"], single: false });
+        expect(parseDraft({ kind: "strokeStyle", keyword: "dotted" })).toEqual({
             kind: "strokeStyle",
             keyword: "dotted",
         });
@@ -248,22 +251,28 @@ describe("fieldFrom", () => {
             { kind: "fontWeight", choice: "", amount: "" },
             { kind: "fontWeight", choice: "number", amount: "" },
             { kind: "cubicBezier", points: ["0", "0", "1", ""] },
-            { kind: "fontFamily", fonts: ["Inter", ""], alone: false },
-            { kind: "fontFamily", fonts: [], alone: false },
+            { kind: "fontFamily", fonts: ["Inter", ""], single: false },
+            { kind: "fontFamily", fonts: [], single: false },
             { kind: "strokeStyle", keyword: "" },
         ] as const;
 
-        for (const draft of half) expect(fieldFrom(draft)).toBeUndefined();
+        for (const draft of half) expect(parseDraft(draft)).toBeUndefined();
     });
 });
 
-describe("says", () => {
+describe("isSameValue", () => {
     it("tells whether what is typed already means the value shown", () => {
-        expect(says({ kind: "number", amount: "1e2" }, { kind: "number", value: 100 })).toBe(true);
-        expect(says({ kind: "number", amount: "1.0" }, { kind: "number", value: 1 })).toBe(true);
-        expect(says({ kind: "number", amount: "2" }, { kind: "number", value: 3 })).toBe(false);
+        expect(isSameValue({ kind: "number", amount: "1e2" }, { kind: "number", value: 100 })).toBe(
+            true,
+        );
+        expect(isSameValue({ kind: "number", amount: "1.0" }, { kind: "number", value: 1 })).toBe(
+            true,
+        );
+        expect(isSameValue({ kind: "number", amount: "2" }, { kind: "number", value: 3 })).toBe(
+            false,
+        );
         expect(
-            says(
+            isSameValue(
                 { kind: "dimension", amount: "2", unit: "" },
                 { kind: "dimension", value: 2, unit: "px" },
             ),
@@ -271,14 +280,20 @@ describe("says", () => {
     });
 });
 
-describe("changes", () => {
+describe("isChanged", () => {
     it("is false when the field writes what the file already says", () => {
         expect(
-            changes({ kind: "dimension", value: 2, unit: "rem" }, { value: 2, unit: "rem" }),
+            isChanged({ kind: "dimension", value: 2, unit: "rem" }, { value: 2, unit: "rem" }),
         ).toBe(false);
-        expect(changes({ kind: "reference", path: "a.b" }, "{a.b}")).toBe(false);
-        expect(changes({ kind: "number", value: 2 }, 3)).toBe(true);
-        expect(changes({ kind: "number", value: 2 }, undefined)).toBe(true);
+        expect(isChanged({ kind: "reference", path: "a.b" }, "{a.b}")).toBe(false);
+        expect(isChanged({ kind: "number", value: 2 }, 3)).toBe(true);
+        expect(isChanged({ kind: "number", value: 2 }, undefined)).toBe(true);
+    });
+
+    it("is false when the file writes the same value with its keys in another order", () => {
+        expect(
+            isChanged({ kind: "dimension", value: 2, unit: "rem" }, { unit: "rem", value: 2 }),
+        ).toBe(false);
     });
 });
 
@@ -287,44 +302,48 @@ const layer = { color: "#0000001a", offsetX: px(0), offsetY: px(1), blur: px(2),
 
 describe("composite fields", () => {
     it("shows a border as its parts, in the spec's order, each with where it is", () => {
-        expect(fieldFor("border", { style: "solid", color: "{color.ink}", width: px(1) })).toEqual({
+        expect(
+            parseField("border", { style: "solid", color: "{color.ink}", width: px(1) }),
+        ).toEqual({
             kind: "parts",
             parts: [
-                { name: "color", at: ["color"], type: "color", written: "{color.ink}" },
-                { name: "width", at: ["width"], type: "dimension", written: px(1) },
-                { name: "style", at: ["style"], type: "strokeStyle", written: "solid" },
+                { name: "color", part: ["color"], type: "color", value: "{color.ink}" },
+                { name: "width", part: ["width"], type: "dimension", value: px(1) },
+                { name: "style", part: ["style"], type: "strokeStyle", value: "solid" },
             ],
         });
     });
 
     it("shows a part the value doesn't write, empty", () => {
-        const field = fieldFor("transition", {
+        const field = parseField("transition", {
             duration: { value: 200, unit: "ms" },
             delay: { value: 0, unit: "ms" },
         });
 
         expect(field.kind === "parts" && field.parts.at(-1)).toEqual({
             name: "timingFunction",
-            at: ["timingFunction"],
+            part: ["timingFunction"],
             type: "cubicBezier",
-            written: undefined,
+            value: undefined,
         });
     });
 
     it("shows a single shadow as a list of one, written where the value is", () => {
-        const field = fieldFor("shadow", layer);
+        const field = parseField("shadow", layer);
 
         expect(field).toMatchObject({ kind: "list", type: "shadow", single: true });
-        expect(field.kind === "list" && field.items.map(({ at, shown }) => [at, shown])).toEqual([
-            [[], "parts"],
-        ]);
+        expect(
+            field.kind === "list" && field.items.map(({ part: at, display }) => [at, display]),
+        ).toEqual([[[], "parts"]]);
     });
 
     it("shows each item of a list at its index, as parts, a reference, or JSON", () => {
-        const field = fieldFor("shadow", [layer, "{shadow.sm}", { ...layer, glow: true }]);
+        const field = parseField("shadow", [layer, "{shadow.sm}", { ...layer, glow: true }]);
 
         expect(field).toMatchObject({ kind: "list", type: "shadow", single: false });
-        expect(field.kind === "list" && field.items.map(({ at, shown }) => [at, shown])).toEqual([
+        expect(
+            field.kind === "list" && field.items.map(({ part: at, display }) => [at, display]),
+        ).toEqual([
             [[0], "parts"],
             [[1], "reference"],
             [[2], "json"],
@@ -332,37 +351,37 @@ describe("composite fields", () => {
     });
 
     it("gives a list item's parts, with where each is inside the item", () => {
-        const field = fieldFor("gradient", [{ color: "#000000", position: 0 }]);
+        const field = parseField("gradient", [{ color: "#000000", position: 0 }]);
         const [stop] = field.kind === "list" ? field.items : [];
 
         expect(field).toMatchObject({ kind: "list", type: "gradient" });
-        expect(stop?.shown === "parts" && stop.parts).toEqual([
-            { name: "color", at: ["color"], type: "color", written: "#000000" },
-            { name: "position", at: ["position"], type: "number", written: 0 },
+        expect(stop?.display === "parts" && stop.parts).toEqual([
+            { name: "color", part: ["color"], type: "color", value: "#000000" },
+            { name: "position", part: ["position"], type: "number", value: 0 },
         ]);
     });
 
     it("shows a stroke style's dashes, each at its place in the dash array", () => {
         expect(
-            fieldFor("strokeStyle", { dashArray: [px(4), "{size.dash}"], lineCap: "round" }),
+            parseField("strokeStyle", { dashArray: [px(4), "{size.dash}"], lineCap: "round" }),
         ).toEqual({
             kind: "dashes",
             dashes: [
-                { at: ["dashArray", 0], type: "dimension", written: px(4) },
-                { at: ["dashArray", 1], type: "dimension", written: "{size.dash}" },
+                { part: ["dashArray", 0], type: "dimension", value: px(4) },
+                { part: ["dashArray", 1], type: "dimension", value: "{size.dash}" },
             ],
             lineCap: "round",
         });
     });
 
     it("tells the fields drawn part by part from the rest", () => {
-        expect(hasParts(fieldFor("border", { color: "#000000" }))).toBe(true);
-        expect(hasParts(fieldFor("shadow", layer))).toBe(true);
-        expect(hasParts(fieldFor("strokeStyle", { dashArray: [px(4)], lineCap: "round" }))).toBe(
+        expect(hasParts(parseField("border", { color: "#000000" }))).toBe(true);
+        expect(hasParts(parseField("shadow", layer))).toBe(true);
+        expect(hasParts(parseField("strokeStyle", { dashArray: [px(4)], lineCap: "round" }))).toBe(
             true,
         );
-        expect(hasParts(fieldFor("strokeStyle", "solid"))).toBe(false);
-        expect(hasParts(fieldFor("border", "{border.thin}"))).toBe(false);
+        expect(hasParts(parseField("strokeStyle", "solid"))).toBe(false);
+        expect(hasParts(parseField("border", "{border.thin}"))).toBe(false);
     });
 
     it("falls back to JSON for a composite it can't show exactly", () => {
@@ -378,7 +397,7 @@ describe("composite fields", () => {
         ];
 
         for (const [type, written] of odd) {
-            expect(fieldFor(type, written)).toEqual({ kind: "json", value: written });
+            expect(parseField(type, written)).toEqual({ kind: "json", value: written });
         }
     });
 
@@ -391,29 +410,29 @@ describe("composite fields", () => {
         ];
 
         for (const [type, written] of shown) {
-            expect(writtenFor(fieldFor(type, written))).toEqual(written);
+            expect(toJsonValue(parseField(type, written))).toEqual(written);
         }
     });
 });
 
 describe("withPoint", () => {
     it("changes one point of a cubic Bézier's draft", () => {
-        const draft = draftFor("cubicBezier", { kind: "cubicBezier", points: [0.4, 0, 0.2, 1] });
+        const draft = toDraft("cubicBezier", { kind: "cubicBezier", points: [0.4, 0, 0.2, 1] });
         if (draft.kind !== "cubicBezier") throw new Error(draft.kind);
 
         expect(withPoint(draft, 2, "0.3").points).toEqual(["0.4", "0", "0.3", "1"]);
     });
 });
 
-describe("fieldText", () => {
+describe("formatValue", () => {
     it("words a value the way its field shows it, for a field that can't be edited", () => {
-        expect(fieldText("dimension", { value: 0.8333, unit: "rem" })).toBe("0.8333rem");
-        expect(fieldText("duration", { value: 200, unit: "ms" })).toBe("200ms");
-        expect(fieldText("number", 1.25)).toBe("1.25");
+        expect(formatValue("dimension", { value: 0.8333, unit: "rem" })).toBe("0.8333rem");
+        expect(formatValue("duration", { value: 200, unit: "ms" })).toBe("200ms");
+        expect(formatValue("number", 1.25)).toBe("1.25");
     });
 
     it("falls back to the JSON as written for a value with no field, or one a field can't show", () => {
-        expect(fieldText(undefined, "adjacent")).toBe('"adjacent"');
-        expect(fieldText("dimension", { value: 1, unit: "em" })).toBe('{"value":1,"unit":"em"}');
+        expect(formatValue(undefined, "adjacent")).toBe('"adjacent"');
+        expect(formatValue("dimension", { value: 1, unit: "em" })).toBe('{"value":1,"unit":"em"}');
     });
 });

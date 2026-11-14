@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { type Removal, nameOf, removal, renameEdit } from "../controllers/actions";
+import { tokenPath } from "@sugarcube-sh/dtcg";
+import { type Removal, createRemoval, createRenameEdit } from "../controllers/actions";
 import { useStudio } from "../providers/studio-context";
 import { useDraft } from "./use-draft";
 import { useEdit } from "./use-edit";
@@ -7,8 +8,8 @@ import { useEdit } from "./use-edit";
 export function NodeActions({ path }: { path: string }) {
     const studio = useStudio();
     const edit = useEdit();
-    const [name, setName] = useDraft(nameOf(path), path);
-    const [breaking, setBreaking] = useState<Extract<Removal, { kind: "asks" }>>();
+    const [name, setName] = useDraft(tokenPath.getName(path), path);
+    const [pendingRemoval, setPendingRemoval] = useState<Extract<Removal, { kind: "confirm" }>>();
 
     return (
         <>
@@ -16,7 +17,7 @@ export function NodeActions({ path }: { path: string }) {
                 aria-label="Rename"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    const { result, options } = renameEdit(studio.state.tokens, path, name);
+                    const { result, options } = createRenameEdit(studio.state.tokens, path, name);
                     edit.run(result, options);
                 }}
             >
@@ -25,10 +26,10 @@ export function NodeActions({ path }: { path: string }) {
                 </label>{" "}
                 <button type="submit">Rename</button>
             </form>
-            {breaking ? (
+            {pendingRemoval ? (
                 <p>
                     Breaks{" "}
-                    {breaking.breaks.map((each, index) => (
+                    {pendingRemoval.pathsWithBrokenReferences.map((each, index) => (
                         <span key={each}>
                             {index > 0 && ", "}
                             <code>{each}</code>
@@ -37,11 +38,13 @@ export function NodeActions({ path }: { path: string }) {
                     .{" "}
                     <button
                         type="button"
-                        onClick={() => edit.run(breaking.edit.result, breaking.edit.options)}
+                        onClick={() =>
+                            edit.run(pendingRemoval.edit.result, pendingRemoval.edit.options)
+                        }
                     >
                         Remove anyway
                     </button>{" "}
-                    <button type="button" onClick={() => setBreaking(undefined)}>
+                    <button type="button" onClick={() => setPendingRemoval(undefined)}>
                         Cancel
                     </button>
                 </p>
@@ -49,9 +52,9 @@ export function NodeActions({ path }: { path: string }) {
                 <button
                     type="button"
                     onClick={() => {
-                        const asked = removal(studio.state.tokens, path);
-                        if (asked.kind === "asks") setBreaking(asked);
-                        else edit.run(asked.edit.result, asked.edit.options);
+                        const removalResult = createRemoval(studio.state.tokens, path);
+                        if (removalResult.kind === "confirm") setPendingRemoval(removalResult);
+                        else edit.run(removalResult.edit.result, removalResult.edit.options);
                     }}
                 >
                     Remove

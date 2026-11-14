@@ -1,3 +1,5 @@
+export const STUDIO_NAME = "sugarcube studio";
+
 export const STUDIO_SIGN_IN_BASE = "/api/sugarcube-studio";
 
 export const STUDIO_COOKIES = {
@@ -8,7 +10,7 @@ export const STUDIO_COOKIES = {
 } as const;
 
 export const STUDIO_SETTINGS = {
-    clientId: "SUGARCUBE_STUDIO_GITHUB_CLIENT_ID",
+    clientID: "SUGARCUBE_STUDIO_GITHUB_CLIENT_ID",
     clientSecret: "SUGARCUBE_STUDIO_GITHUB_CLIENT_SECRET",
     secret: "SUGARCUBE_STUDIO_SECRET",
 } as const;
@@ -17,7 +19,7 @@ export const STUDIO_BRANCH_PREFIX = "sugarcube-studio";
 
 export const STUDIO_STORAGE = {
     unsaved: "sugarcube:studio:unsaved:",
-    saveWaiting: "sugarcube:studio:save-waiting:",
+    pendingSave: "sugarcube:studio:save-waiting:",
 } as const;
 
 export const STUDIO_PAGE_CHANNEL = "sugarcube:studio:page";

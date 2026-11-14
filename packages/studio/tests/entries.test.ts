@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { packagesReachedFrom } from "./reached-packages";
+import { getImportedPackages } from "./imported-packages";
 
 const source = (path: string) => fileURLToPath(new URL(`../src/${path}`, import.meta.url));
 
@@ -28,11 +28,11 @@ describe("what studio offers", () => {
 
 describe("what each entry loads", () => {
     it("for the sign-in function on a company's server, is nothing but its own code", () => {
-        expect(packagesReachedFrom(source("sign-in.ts"))).toStrictEqual([]);
+        expect(getImportedPackages(source("sign-in.ts"))).toStrictEqual([]);
     });
 
     it("for a host without Vite, is never Vite", () => {
-        const reached = packagesReachedFrom(source("node.ts"));
+        const reached = getImportedPackages(source("node.ts"));
 
         expect(reached).not.toContain("vite");
         expect(reached).not.toContain("@sugarcube-sh/vite");

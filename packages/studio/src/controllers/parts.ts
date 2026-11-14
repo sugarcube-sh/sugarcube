@@ -1,23 +1,23 @@
 import type { JsonPath, JsonValue, TokenType } from "@sugarcube-sh/dtcg";
 import { compositeParts, isJsonObject, parseReference } from "@sugarcube-sh/dtcg/values";
-import { without } from "./lists";
+import { removeListItem } from "./lists";
 import type { Field } from "./value-field";
 
 export type CompositeType = keyof typeof compositeParts;
 
 export interface Slot {
-    readonly at: JsonPath;
+    readonly part: JsonPath;
     readonly type: TokenType | "boolean";
-    readonly written: JsonValue | undefined;
+    readonly value: JsonValue | undefined;
 }
 
 export interface FieldPart extends Slot {
     readonly name: string;
 }
 
-export type ListItem = { readonly at: JsonPath; readonly written: JsonValue } & (
-    | { readonly shown: "parts"; readonly parts: readonly FieldPart[] }
-    | { readonly shown: "reference" | "json" }
+export type ListItem = { readonly part: JsonPath; readonly value: JsonValue } & (
+    | { readonly display: "parts"; readonly parts: readonly FieldPart[] }
+    | { readonly display: "reference" | "json" }
 );
 
 export type FieldWithParts =
@@ -30,7 +30,7 @@ export type FieldWithParts =
       }
     | { readonly kind: "dashes"; readonly dashes: readonly Slot[]; readonly lineCap: string };
 
-type Listed = Extract<FieldWithParts, { kind: "list" | "dashes" }>;
+type ListField = Extract<FieldWithParts, { kind: "list" | "dashes" }>;
 
 export function isComposite(type: TokenType): type is CompositeType {
     return Object.hasOwn(compositeParts, type);
@@ -40,92 +40,92 @@ export function hasParts(field: Field): field is FieldWithParts {
     return field.kind === "parts" || field.kind === "list" || field.kind === "dashes";
 }
 
-export function compositeField(
+export function parseCompositeField(
     type: CompositeType,
-    written: JsonValue,
+    value: JsonValue,
 ): FieldWithParts | undefined {
     if (type === "shadow" || type === "gradient") {
-        if (Array.isArray(written) && written.length > 0) {
-            const items = written.map((each, index) => itemAt(type, each, [index]));
+        if (Array.isArray(value) && value.length > 0) {
+            const items = value.map((each, index) => parseListItem(type, each, [index]));
             return { kind: "list", type, items, single: false };
         }
-        return type === "shadow" && isJsonObject(written)
-            ? { kind: "list", type, items: [itemAt(type, written, [])], single: true }
+        return type === "shadow" && isJsonObject(value)
+            ? { kind: "list", type, items: [parseListItem(type, value, [])], single: true }
             : undefined;
     }
-    const parts = partsOf(type, written);
+    const parts = parseParts(type, value);
     return parts && { kind: "parts", parts };
 }
 
-export function dashesField(written: JsonValue): FieldWithParts | undefined {
-    if (!isJsonObject(written)) return undefined;
-    const { dashArray, lineCap, ...rest } = written;
+export function parseDashesField(value: JsonValue): FieldWithParts | undefined {
+    if (!isJsonObject(value)) return undefined;
+    const { dashArray, lineCap, ...rest } = value;
     if (Object.keys(rest).length > 0 || !Array.isArray(dashArray) || dashArray.length === 0) {
         return undefined;
     }
     return {
         kind: "dashes",
         dashes: dashArray.map((dash, index) => ({
-            at: ["dashArray", index],
+            part: ["dashArray", index],
             type: "dimension",
-            written: dash,
+            value: dash,
         })),
         lineCap: typeof lineCap === "string" ? lineCap : "",
     };
 }
 
-export function partsOf(type: CompositeType, written: JsonValue): FieldPart[] | undefined {
-    if (!isJsonObject(written)) return undefined;
+export function parseParts(type: CompositeType, value: JsonValue): FieldPart[] | undefined {
+    if (!isJsonObject(value)) return undefined;
     const parts: Readonly<Record<string, TokenType | "boolean">> = compositeParts[type];
-    if (Object.keys(written).some((name) => !Object.hasOwn(parts, name))) return undefined;
+    if (Object.keys(value).some((name) => !Object.hasOwn(parts, name))) return undefined;
     return Object.entries(parts).map(([name, partType]) => ({
         name,
-        at: [name],
+        part: [name],
         type: partType,
-        written: written[name],
+        value: value[name],
     }));
 }
 
-export function writtenWithParts(field: FieldWithParts): JsonValue {
+export function toCompositeValue(field: FieldWithParts): JsonValue {
     switch (field.kind) {
         case "parts":
             return Object.fromEntries(
-                field.parts.flatMap(({ name, written }) =>
+                field.parts.flatMap(({ name, value: written }) =>
                     written === undefined ? [] : [[name, written]],
                 ),
             );
         case "list": {
-            const items = writtenItems(field);
+            const items = getItemValues(field);
             const [only] = items;
             return field.single && items.length === 1 && only !== undefined ? only : items;
         }
         case "dashes":
-            return listedAs(field, writtenItems(field));
+            return toListValue(field, getItemValues(field));
     }
 }
 
-export function withAdded(field: Listed): JsonValue {
-    const items = writtenItems(field);
+export function addFieldItem(field: ListField): JsonValue {
+    const items = getItemValues(field);
     const last = items.at(-1);
-    return listedAs(field, last === undefined ? items : [...items, last]);
+    return toListValue(field, last === undefined ? items : [...items, last]);
 }
 
-export function withRemoved(field: Listed, at: number): JsonValue {
-    return listedAs(field, without(writtenItems(field), at));
+export function removeFieldItem(field: ListField, at: number): JsonValue {
+    return toListValue(field, removeListItem(getItemValues(field), at));
 }
 
-function itemAt(type: "shadow" | "gradient", written: JsonValue, at: JsonPath): ListItem {
-    if (parseReference(written)) return { at, written, shown: "reference" };
-    const parts = partsOf(type, written);
-    return parts ? { at, written, shown: "parts", parts } : { at, written, shown: "json" };
+function parseListItem(type: "shadow" | "gradient", value: JsonValue, part: JsonPath): ListItem {
+    if (parseReference(value)) return { part, value, display: "reference" };
+    const parts = parseParts(type, value);
+    return parts ? { part, value, display: "parts", parts } : { part, value, display: "json" };
 }
 
-function writtenItems(field: Listed): JsonValue[] {
+function getItemValues(field: ListField): JsonValue[] {
     const items = field.kind === "list" ? field.items : field.dashes;
-    return items.flatMap(({ written }) => (written === undefined ? [] : [written]));
+    return items.flatMap(({ value: written }) => (written === undefined ? [] : [written]));
 }
 
-function listedAs(field: Listed, items: JsonValue[]): JsonValue {
+function toListValue(field: ListField, items: JsonValue[]): JsonValue {
     if (field.kind === "list") return items;
     return field.lineCap === ""
         ? { dashArray: items }

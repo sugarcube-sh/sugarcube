@@ -4,7 +4,7 @@ import { defineDiagnostics } from "devframe/utils/nostics";
 import { afterEach, expect, it, vi } from "vitest";
 import { createDevframeBridge } from "../src/server/devframe-bridge";
 
-function devframeContext(): DevframeNodeContext {
+function fakeDevframeContext(): DevframeNodeContext {
     const registry: Record<string, unknown> = {};
     const diagnostics = {
         logger: new Proxy({}, { get: (_, code) => registry[String(code)] }),
@@ -19,7 +19,7 @@ afterEach(() => vi.restoreAllMocks());
 it("prints a warning the way devframe reports one", () => {
     const printed = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    createDevframeBridge(devframeContext()).warn("nothing to show");
+    createDevframeBridge(fakeDevframeContext()).warn("nothing to show");
 
     expect(printed).toHaveBeenCalledOnce();
     const shown = stripVTControlCharacters(String(printed.mock.calls[0]?.[0]));

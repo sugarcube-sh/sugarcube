@@ -10,40 +10,51 @@ import {
     repoRef,
 } from "forges";
 import { github } from "forges/github";
-import { type ForgeHostOptions, forgeHost, inPlainWords } from "./forge-host";
+import { type ForgeHostOptions, createForgeHost, createErrorWrapper } from "./forge-host";
 import type { Access, GitHost } from "./git-host";
 
 export type GitHubHostOptions = Omit<ForgeHostOptions, "name"> & {
     readonly key: GitHubTokenAuth["token"];
-    readonly install?: string | undefined;
+    readonly installURL?: string | undefined;
     readonly fetch?: FetchLike;
 };
 
-export function githubHost({ key, install, fetch, ...options }: GitHubHostOptions): GitHost {
+export function createGitHubHost({
+    key,
+    installURL,
+    fetch,
+    ...options
+}: GitHubHostOptions): GitHost {
     const forge = github({
         auth: { type: "token", token: key, kind: "app-user" },
         ...(fetch && { fetch }),
     });
-    const host = forgeHost(forge, { name: "GitHub", ...options });
-    const plainly = inPlainWords(host.name, repoRef(forge, host.repository));
+    const host = createForgeHost(forge, { name: "GitHub", ...options });
+    const withUserFacingErrors = createErrorWrapper(host.name, repoRef(forge, host.repository));
     return {
         ...host,
-        access: () =>
-            plainly(async () =>
-                accessFrom(await accessFacts(forge, repoRef(forge, host.repository)), install),
+        getAccess: () =>
+            withUserFacingErrors(async () =>
+                toAccess(
+                    await getInstallationAccess(forge, repoRef(forge, host.repository)),
+                    installURL,
+                ),
             ),
     };
 }
 
-export type AccessFacts = {
+export type InstallationAccess = {
     readonly installed: boolean;
     readonly permissions: RepoPermissions | undefined;
 };
 
-export function accessFrom({ installed, permissions }: AccessFacts, install?: string): Access {
+export function toAccess(
+    { installed, permissions }: InstallationAccess,
+    installURL?: string,
+): Access {
     if (!installed)
-        return install
-            ? { can: "nothing", reason: "not-installed", install }
+        return installURL
+            ? { can: "nothing", reason: "not-installed", installURL }
             : { can: "nothing", reason: "not-installed" };
     if (permissions?.push) return { can: "write" };
     if (permissions?.pull) return { can: "read" };
@@ -63,7 +74,10 @@ type InstallationRepository = {
 
 const PER_PAGE = 100;
 
-async function accessFacts(forge: ForgeProvider, repo: RepoRef): Promise<AccessFacts> {
+async function getInstallationAccess(
+    forge: ForgeProvider,
+    repo: RepoRef,
+): Promise<InstallationAccess> {
     const { data } = await forge.request<{ installations: Installation[] }>(
         "GET",
         "/user/installations",
@@ -72,8 +86,15 @@ async function accessFacts(forge: ForgeProvider, repo: RepoRef): Promise<AccessF
     const installation = data.installations.find(({ account }) => sameOwner(repo, account.login));
     if (!installation) return { installed: false, permissions: undefined };
     if (installation.repository_selection === "selected") {
-        const listed = await listedRepository(forge, installation.id, repo);
-        return { installed: listed !== undefined, permissions: listed?.permissions };
+        const installationRepository = await findInstallationRepository(
+            forge,
+            installation.id,
+            repo,
+        );
+        return {
+            installed: installationRepository !== undefined,
+            permissions: installationRepository?.permissions,
+        };
     }
     try {
         const { permissions } = await forge.repos.get(repo);
@@ -84,7 +105,7 @@ async function accessFacts(forge: ForgeProvider, repo: RepoRef): Promise<AccessF
     }
 }
 
-async function listedRepository(
+async function findInstallationRepository(
     forge: ForgeProvider,
     installation: number,
     repo: RepoRef,
@@ -95,10 +116,10 @@ async function listedRepository(
             `/user/installations/${installation}/repositories`,
             { query: { per_page: PER_PAGE, page } },
         );
-        const found = data.repositories.find(
+        const repository = data.repositories.find(
             ({ full_name }) => repoKey(repoRef(forge, full_name)) === repoKey(repo),
         );
-        if (found || data.repositories.length < PER_PAGE) return found;
+        if (repository || data.repositories.length < PER_PAGE) return repository;
     }
 }
 

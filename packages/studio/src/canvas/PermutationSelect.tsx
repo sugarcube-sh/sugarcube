@@ -1,9 +1,9 @@
 import { useStudio, useStudioState } from "../providers/studio-context";
 
-export function Showing() {
+export function PermutationSelect() {
     const studio = useStudio();
     const tokens = useStudioState((state) => state.tokens);
-    const showing = useStudioState((state) => state.showing);
+    const showing = useStudioState((state) => state.shownPermutation);
 
     if (tokens.permutations.length < 2) return null;
 
@@ -14,8 +14,8 @@ export function Showing() {
                 <select
                     value={tokens.permutations.indexOf(showing)}
                     onChange={(event) => {
-                        const chosen = tokens.permutations[Number(event.target.value)];
-                        if (chosen) studio.show(chosen.input);
+                        const permutation = tokens.permutations[Number(event.target.value)];
+                        if (permutation) studio.show(permutation.input);
                     }}
                 >
                     {tokens.permutations.map((permutation, index) => (

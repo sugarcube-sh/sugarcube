@@ -10,54 +10,49 @@ export type GitSaveSettings = {
     readonly branch: string;
     readonly entry: string;
     readonly signIn: string;
-    readonly install?: string;
+    readonly installURL?: string;
 };
 
-/** Settings the host publishes in the handshake for clients to read. */
 export type StudioConnectionConfig = {
     gitSave?: GitSaveSettings;
 };
 
 type Files = Readonly<Record<string, string>>;
 
-/**
- * What a save gives back. A save to a pull request also gives `files`, the files as they are now
- * where it went, for studio to show; a save to disk doesn't, since the host's next message does.
- */
-export type SaveOutcome =
+export type SaveResult =
     | {
-          written: string[];
+          savedFiles: string[];
           deleted: string[];
           pullRequest?: undefined;
           conflicts?: undefined;
           files?: undefined;
-          changedOn?: undefined;
+          changedHost?: undefined;
       }
     | {
           pullRequest: PullRequest;
           files: Files;
-          written?: undefined;
+          savedFiles?: undefined;
           conflicts?: undefined;
-          changedOn?: undefined;
+          changedHost?: undefined;
       }
     | {
           conflicts: Conflict[];
           files?: Files;
-          changedOn?: string | undefined;
-          written?: undefined;
+          changedHost?: string | undefined;
+          savedFiles?: undefined;
           pullRequest?: undefined;
       };
 
 export type PullRequest = { readonly number: number; readonly url?: string | undefined };
 
-export type StudioSave = (edits: Edits, changes: readonly Change[]) => Promise<SaveOutcome>;
+export type StudioSave = (edits: Edits, changes: readonly Change[]) => Promise<SaveResult>;
 
 export type StudioMessage = TokensInMemory & {
     readonly entryFile: string;
-    readonly adapter: SentAdapter;
+    readonly adapter: MessageAdapter;
 };
 
-export type SentAdapter =
+export type MessageAdapter =
     | {
           readonly name: "sugarcube";
           readonly settings: InternalConfig;
