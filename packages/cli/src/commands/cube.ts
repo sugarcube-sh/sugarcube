@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
 import { CLIError } from "../cli-error.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { installCUBE } from "../installation/cube.js";
 import {
@@ -32,8 +33,7 @@ export async function runCube(options: RunCubeOptions = {}): Promise<void> {
     try {
         await mkdir(cssOutputDirectory, { recursive: true });
     } catch (error) {
-        const errorMessage = error instanceof Error ? `: ${error.message}` : "";
-        throw new CLIError(`Failed to create output directory${errorMessage}`);
+        throw new CLIError(ErrorMessages.OUTPUT_DIR_CREATE_FAILED(error));
     }
 
     const filesToOverwrite = await findCubeFilesToOverwrite(cssOutputDirectory);

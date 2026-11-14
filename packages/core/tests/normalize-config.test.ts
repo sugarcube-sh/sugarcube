@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { validateConfig } from "../src/node/config/normalize.js";
 import { fillDefaults } from "../src/node/config/normalize.js";
+import { validateSugarcubeConfig } from "../src/shared/config.js";
 import { DEFAULT_CONFIG } from "../src/shared/constants/config.js";
 import type { SugarcubeConfig } from "../src/types/config.js";
+
+function checkAndFillDefaults(config: Partial<SugarcubeConfig>) {
+    return fillDefaults(validateSugarcubeConfig(config));
+}
 
 const minimalConfig = (overrides: Partial<SugarcubeConfig> = {}): SugarcubeConfig => ({
     resolver: "./tokens.resolver.json",
@@ -198,10 +202,10 @@ describe("fillDefaults", () => {
     });
 });
 
-describe("validateConfig — variables.variableName", () => {
+describe("checking and filling in defaults — variables.variableName", () => {
     it("accepts a function and preserves reference identity", () => {
         const userFn = (path: string) => `custom-${path}`;
-        const result = validateConfig({
+        const result = checkAndFillDefaults({
             resolver: "./tokens.resolver.json",
             variables: { variableName: userFn },
         });
@@ -212,7 +216,7 @@ describe("validateConfig — variables.variableName", () => {
     });
 
     it("leaves variableName undefined when omitted", () => {
-        const result = validateConfig({
+        const result = checkAndFillDefaults({
             resolver: "./tokens.resolver.json",
         });
 
@@ -227,7 +231,7 @@ describe("validateConfig — variables.variableName", () => {
         ["null", null],
     ])("rejects %s", (_label, value) => {
         expect(() =>
-            validateConfig({
+            checkAndFillDefaults({
                 resolver: "./tokens.resolver.json",
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 variables: { variableName: value as any },
@@ -236,9 +240,9 @@ describe("validateConfig — variables.variableName", () => {
     });
 });
 
-describe("validateConfig — variables.case and variables.delimiter", () => {
+describe("checking and filling in defaults — variables.case and variables.delimiter", () => {
     it("carries the naming settings onto the internal config", () => {
-        const result = validateConfig({
+        const result = checkAndFillDefaults({
             resolver: "./tokens.resolver.json",
             variables: { prefix: "ds", case: "kebab", delimiter: "_" },
         });
@@ -247,24 +251,24 @@ describe("validateConfig — variables.case and variables.delimiter", () => {
     });
 
     it("leaves them undefined when omitted", () => {
-        const result = validateConfig({ resolver: "./tokens.resolver.json" });
+        const result = checkAndFillDefaults({ resolver: "./tokens.resolver.json" });
 
         expect(result.variables.case).toBeUndefined();
         expect(result.variables.delimiter).toBeUndefined();
     });
 });
 
-describe("validateConfig — content", () => {
+describe("checking and filling in defaults — content", () => {
     it("carries user-specified content globs onto the internal config", () => {
         const content = ["./**/*.heex", "../../lib/**/*.ex"];
 
-        const result = validateConfig(minimalConfig({ content }));
+        const result = checkAndFillDefaults(minimalConfig({ content }));
 
         expect(result.content).toEqual(content);
     });
 
     it("leaves content undefined when omitted", () => {
-        const result = validateConfig(minimalConfig());
+        const result = checkAndFillDefaults(minimalConfig());
 
         expect(result.content).toBeUndefined();
     });

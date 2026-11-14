@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join } from "pathe";
 import { CLIError } from "../cli-error.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { getItemFiles } from "../registry/client.js";
 import type { Framework, RegistryItem } from "../types/registry.js";
 
@@ -28,7 +29,6 @@ export async function writeComponentFiles(
             await writeFile(path, file.content);
         }
     } catch (error) {
-        const errorMessage = error instanceof Error ? `: ${error.message}` : "";
-        throw new CLIError(`Failed to write component file for "${component.name}"${errorMessage}`);
+        throw new CLIError(ErrorMessages.COMPONENT_WRITE_FAILED(component.name, error));
     }
 }

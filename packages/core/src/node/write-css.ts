@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "pathe";
+import { ErrorMessages } from "../shared/constants/error-messages.js";
 import type { CSSFileOutput } from "../types/generate.js";
 
 /**
@@ -15,12 +16,9 @@ export async function writeCSSFiles(output: CSSFileOutput): Promise<CSSFileOutpu
             await mkdir(dirname(file.path), { recursive: true });
             await writeFile(file.path, file.css, "utf-8");
         } catch (error) {
-            throw new Error(
-                `Failed to write CSS file ${file.path}: ${
-                    error instanceof Error ? error.message : "Unknown error"
-                }`,
-                { cause: error },
-            );
+            throw new Error(ErrorMessages.CSS_FILE_WRITE_FAILED(file.path, error), {
+                cause: error,
+            });
         }
     }
 

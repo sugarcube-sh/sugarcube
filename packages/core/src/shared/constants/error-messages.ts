@@ -183,6 +183,9 @@ function formatList(items: string[], conjunction = "and"): string {
 }
 
 export const ErrorMessages = {
+    CSS_FILE_WRITE_FAILED: (path: string, error: unknown) =>
+        `Failed to write CSS file ${path}: ${error instanceof Error ? error.message : "Unknown error"}`,
+
     CONFIG: {
         MULTIPLE_RESOLVERS_FOUND: (paths: string[]) =>
             `Several resolver files were found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nName the one to use as \`resolver\` in sugarcube.config.ts.`,

@@ -4,7 +4,6 @@
  * In a browser, use `@sugarcube-sh/core/client`.
  */
 
-// Full browser/pure surface (orchestrators, pure config helpers, types, guards, etc.)
 export * from "./client.js";
 
 export { fillDefaults } from "./node/config/normalize.js";

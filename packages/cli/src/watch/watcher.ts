@@ -5,7 +5,9 @@ import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import { type LiveTokens, type ReadEvent, onFileChanged } from "@sugarcube-sh/dtcg/node";
 import { type FSWatcher, watch as chokidarWatch } from "chokidar";
 import { resolve } from "pathe";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
+import { MAX_MARKUP_FILES } from "../scan-markup.js";
 
 export type WatchChange =
     | { kind: "config"; path: string }
@@ -29,9 +31,6 @@ export type WatcherHandle = {
 
 const CHANGE_ORDER: WatchChange["kind"][] = ["config", "token", "markup"];
 
-// Mirrors scan-markup's MAX_FILES
-const WATCH_TARGET_LIMIT = 10_000;
-
 const GLOB_MAGIC = /[*?{}[\]!]/;
 
 function getGlobBase(glob: string): string {
@@ -43,7 +42,6 @@ function getGlobBase(glob: string): string {
     return staticSegments.join("/") || "/";
 }
 
-// Derive the directories to watch for markup changes from `content` globs. (Chokidar v5 no longer expands globs)
 export function resolveMarkupWatchTargets(content: readonly string[] | undefined): string[] {
     if (!content || content.length === 0) return ["."];
     const dirs = content.filter((glob) => !glob.startsWith("!")).map(getGlobBase);
@@ -82,9 +80,9 @@ export async function startWatcher(
         markup.on("error", callbacks.onError);
         await markupReady;
         const watchedCount = countWatchedFiles(markup.getWatched());
-        if (watchedCount > WATCH_TARGET_LIMIT) {
+        if (watchedCount > MAX_MARKUP_FILES) {
             callbacks.onWarning(
-                `Watching ${watchedCount} files for markup changes (limit: ${WATCH_TARGET_LIMIT}). This can make watch mode slow. Set \`content\` in your config to narrow the directories that are scanned.`,
+                ErrorMessages.WATCH_MANY_MARKUP_FILES(watchedCount, MAX_MARKUP_FILES),
             );
         }
         return {
@@ -152,8 +150,6 @@ function getExtension(path: string): string {
     return path.slice(lastDot + 1).toLowerCase();
 }
 
-// chokidar's getWatched() returns dir -> basenames; sum the basenames for a
-// count of watched files.
 function countWatchedFiles(watched: Record<string, string[]>): number {
     let total = 0;
     for (const entries of Object.values(watched)) {

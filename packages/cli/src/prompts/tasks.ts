@@ -14,7 +14,7 @@ export interface Task {
 }
 
 function getRandomTaskDuration(): number {
-    return Math.floor(Math.random() * (750 - 200 + 1)) + 200; // Random between 200-750ms
+    return Math.floor(Math.random() * (750 - 200 + 1)) + 200;
 }
 
 export async function executeTasksInSidebar(
@@ -136,12 +136,10 @@ export async function executeTasksInSidebar(
             const footer = `${sidebarSymbol}  ${color.green(successMessage)}`;
             logUpdate([...spacingLines, ...successText, `${sidebarSymbol}`, footer].join("\n"));
         } else {
-            // Success message with sidebar formatting (like outro)
             const footer = `${color.gray(S_BAR_END)}${color.gray(S_BAR_H)} ${color.green(successMessage)}`;
             logUpdate([...spacingLines, ...successText, `${sidebarSymbol}`, footer].join("\n"));
         }
     } else {
-        // No success message - just show completed tasks
         logUpdate([...spacingLines, ...successText].join("\n"));
     }
 
