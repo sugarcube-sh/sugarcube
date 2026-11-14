@@ -1,7 +1,7 @@
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import { bench, describe } from "vitest";
 import {
-    type OpResult,
+    type OperationResult,
     commit,
     create,
     createSession,
@@ -15,7 +15,7 @@ import { designTokens } from "./design-tokens.js";
 const red = { colorSpace: "srgb", components: [1, 0, 0] };
 const dark = { input: { theme: "dark" } };
 
-const operations: [string, (tokens: DesignTokens) => OpResult][] = [
+const operations: [string, (tokens: DesignTokens) => OperationResult][] = [
     ["setValue, the shared value", (p) => setValue(p, "color.c0", red)],
     ["setValue, dark's override", (p) => setValue(p, "color.c0", red, dark)],
     ["setValue, a new override for dark", (p) => setValue(p, "color.c1", red, dark)],
@@ -45,16 +45,16 @@ function edits(name: string, opened: DesignTokens) {
         kept.do(setValue(kept.tokens, "color.c0", red));
         kept.do(setValue(kept.tokens, "space.s0", { value: 3, unit: "rem" }));
         bench("restore two edits after a reload", () => {
-            createSession(opened).restore(kept.unsaved);
+            createSession(opened).restore(kept.unsavedEdits);
         });
         bench("restore two edits, then rebase onto the files changed on disk", () => {
             const editing = createSession(opened);
-            editing.restore(kept.unsaved);
+            editing.restore(kept.unsavedEdits);
             editing.rebase(opened);
         });
         bench("restore two edits, rebase, then undo the last", () => {
             const editing = createSession(opened);
-            editing.restore(kept.unsaved);
+            editing.restore(kept.unsavedEdits);
             editing.rebase(opened);
             editing.undo();
         });

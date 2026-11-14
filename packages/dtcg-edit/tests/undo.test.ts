@@ -17,13 +17,13 @@ describe("undo", () => {
         const session = createSession(demo);
         session.do(setValue(session.tokens, "color.brand.500", red));
         const before = session.tokens;
-        const first = session.unsaved.steps[0];
+        const first = session.unsavedEdits.steps[0];
         session.do(setDescription(session.tokens, "color.brand.500", "The anchor."));
 
         session.undo();
 
         expect(session.tokens).toBe(before);
-        expect(session.unsaved.steps).toEqual([first]);
+        expect(session.unsavedEdits.steps).toEqual([first]);
         expect(session.canUndo).toBe(true);
         expect(session.canRedo).toBe(true);
     });
@@ -37,8 +37,8 @@ describe("undo", () => {
         session.undo();
 
         expect(session.tokens).toBe(demo);
-        expect(session.unsaved).toEqual({ steps: [] });
-        expect(session.changes()).toEqual([]);
+        expect(session.unsavedEdits).toEqual({ steps: [] });
+        expect(session.getChanges()).toEqual([]);
         expect(session.canUndo).toBe(false);
     });
 
@@ -49,8 +49,8 @@ describe("undo", () => {
         session.undo();
 
         expect(session.tokens.toMemory().files).toEqual(demo.toMemory().files);
-        expect(session.idOf("color.brand.50")).toBe("color.brand.50");
-        expect(session.pathOf("color.brand.50")).toBe("color.brand.50");
+        expect(session.getID("color.brand.50")).toBe("color.brand.50");
+        expect(session.getPath("color.brand.50")).toBe("color.brand.50");
     });
 
     it("puts a renamed token's id back on its old path", () => {
@@ -59,18 +59,18 @@ describe("undo", () => {
 
         session.undo();
 
-        expect(session.pathOf("color.brand.500")).toBe("color.brand.500");
-        expect(session.idOf("color.brand.550")).toBeUndefined();
+        expect(session.getPath("color.brand.500")).toBe("color.brand.500");
+        expect(session.getID("color.brand.550")).toBeUndefined();
     });
 
     it("forgets the id of a token made in the step undone", () => {
         const session = createSession(demo);
         session.do(create(session.tokens, "color.highlight", { $type: "color", $value: red }));
-        const id = session.idOf("color.highlight") ?? "";
+        const id = session.getID("color.highlight") ?? "";
 
         session.undo();
 
-        expect(session.pathOf(id)).toBeUndefined();
+        expect(session.getPath(id)).toBeUndefined();
     });
 
     it("does nothing, and tells no one, with nothing to undo", () => {
@@ -102,15 +102,15 @@ describe("redo", () => {
         const session = createSession(demo);
         session.do(rename(session.tokens, "color.brand.500", "550"));
         const after = session.tokens;
-        const step = session.unsaved.steps[0];
+        const step = session.unsavedEdits.steps[0];
 
         session.undo();
         session.redo();
 
         expect(session.tokens).toBe(after);
-        expect(session.unsaved.steps).toEqual([step]);
-        expect(session.unsaved.steps[0]).toBe(step);
-        expect(session.pathOf("color.brand.500")).toBe("color.brand.550");
+        expect(session.unsavedEdits.steps).toEqual([step]);
+        expect(session.unsavedEdits.steps[0]).toBe(step);
+        expect(session.getPath("color.brand.500")).toBe("color.brand.550");
         expect(session.canRedo).toBe(false);
     });
 
@@ -138,7 +138,7 @@ describe("redo", () => {
 
         expect(session.canRedo).toBe(false);
         session.redo();
-        expect(session.unsaved.steps).toHaveLength(1);
+        expect(session.unsavedEdits.steps).toHaveLength(1);
     });
 
     it("has nothing to do again after a discard", () => {
@@ -165,7 +165,7 @@ describe("undo and a save", () => {
 
         expect(session.canUndo).toBe(false);
         expect(session.tokens).toBe(saved);
-        expect(session.opened).toBe(saved);
+        expect(session.savedTokens).toBe(saved);
     });
 
     it("can't do again what was undone before a save", () => {
@@ -182,7 +182,7 @@ describe("undo and a save", () => {
     it("undoes a step done while a save was on its way, and stops at the saved ones", () => {
         const session = createSession(demo);
         session.do(setValue(session.tokens, "color.brand.500", red));
-        const sent = session.unsaved;
+        const sent = session.unsavedEdits;
         const saved = session.tokens;
         session.do(setDescription(session.tokens, "color.brand.500", "The anchor."));
 
@@ -190,7 +190,7 @@ describe("undo and a save", () => {
         session.undo();
 
         expect(session.tokens.toMemory().files).toEqual(saved.toMemory().files);
-        expect(session.unsaved).toEqual({ steps: [] });
+        expect(session.unsavedEdits).toEqual({ steps: [] });
         expect(session.canUndo).toBe(false);
     });
 });
@@ -208,29 +208,29 @@ describe("undo after the files change", () => {
 
         session.undo();
 
-        expect(session.unsaved.steps).toHaveLength(1);
+        expect(session.unsavedEdits.steps).toHaveLength(1);
         expect(session.tokens.getText("radius.json")).toBe(fresh.getText("radius.json"));
         expect(
             session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
         expect(session.tokens.getPermutation().getToken("color.brand.300")).toBeDefined();
-        expect(session.pathOf("color.brand.300")).toBe("color.brand.300");
+        expect(session.getPath("color.brand.300")).toBe("color.brand.300");
 
         session.undo();
         expect(session.tokens.toMemory().files).toEqual(fresh.toMemory().files);
-        expect(session.changes()).toEqual([]);
+        expect(session.getChanges()).toEqual([]);
     });
 
     it("keeps the id of a token made in the session through undoing its rename after a change on disk", () => {
         const session = createSession(demo);
         session.do(create(session.tokens, "color.highlight", { $type: "color", $value: red }));
-        const id = session.idOf("color.highlight") ?? "";
+        const id = session.getID("color.highlight") ?? "";
         session.do(rename(session.tokens, "color.highlight", "glow"));
         session.rebase(theirs());
 
         session.undo();
 
-        expect(session.pathOf(id)).toBe("color.highlight");
+        expect(session.getPath(id)).toBe("color.highlight");
     });
 
     it("can't do again what was undone before a change on disk", () => {
@@ -248,7 +248,7 @@ describe("undo after the files change", () => {
         before.do(setValue(before.tokens, "color.brand.500", red));
         before.do(remove(before.tokens, "radius.full"));
         const session = createSession(demo);
-        session.restore(before.unsaved);
+        session.restore(before.unsavedEdits);
 
         session.undo();
 
@@ -256,7 +256,7 @@ describe("undo after the files change", () => {
         expect(
             session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
-        expect(session.idOf("radius.full")).toBe("radius.full");
+        expect(session.getID("radius.full")).toBe("radius.full");
 
         session.undo();
         expect(session.tokens.toMemory().files).toEqual(demo.toMemory().files);

@@ -11,7 +11,7 @@ describe("isEdits", () => {
         session.do(remove(session.tokens, "radius.full"));
         session.do(rename(session.tokens, "radius.md", "medium"));
 
-        expect(isEdits(JSON.parse(JSON.stringify(session.unsaved)))).toBe(true);
+        expect(isEdits(JSON.parse(JSON.stringify(session.unsavedEdits)))).toBe(true);
         expect(isEdits({ steps: [] })).toBe(true);
     });
 
@@ -28,8 +28,8 @@ describe("isEdits", () => {
             step([{ kind: "set", file: "color.json", jsonPath: ["color"], value: 1 }]),
             step([{ kind: "add", file: 7, jsonPath: ["color"], value: 1 }]),
             step([{ kind: "add", file: "color.json", jsonPath: [{}], value: 1 }]),
-            step([{ kind: "renameKey", file: "color.json", jsonPath: ["a"], was: 1 }]),
-            step([{ kind: "deleteFile", file: "color.json", was: 1 }]),
+            step([{ kind: "rename-key", file: "color.json", jsonPath: ["a"], was: 1 }]),
+            step([{ kind: "delete-file", file: "color.json", was: 1 }]),
             step([], [{ from: "a" }]),
         ];
         for (const value of crafted) expect(isEdits(value), JSON.stringify(value)).toBe(false);

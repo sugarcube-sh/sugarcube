@@ -1,28 +1,28 @@
 import { type JsonPath, type JsonValue, isEqualJson } from "@sugarcube-sh/dtcg";
 import type { EditStep, FileOp } from "./index.js";
 
-type PlaceOp = Extract<FileOp, { kind: "set" | "add" | "remove" }>;
+type ValueOp = Extract<FileOp, { kind: "set" | "add" | "remove" }>;
 
-export function merged(last: EditStep, next: EditStep): EditStep {
+export function mergeSteps(last: EditStep, next: EditStep): EditStep {
     let ops = [...last.ops];
-    for (const op of next.ops) ops = withOp(ops, op);
+    for (const op of next.ops) ops = addOp(ops, op);
     return { ops, moves: [...last.moves, ...next.moves] };
 }
 
-function withOp(ops: FileOp[], op: FileOp): FileOp[] {
-    if (!isPlaceOp(op)) return [...ops, op];
-    const index = lastOverlapping(ops, op);
+function addOp(ops: FileOp[], op: FileOp): FileOp[] {
+    if (!isValueOp(op)) return [...ops, op];
+    const index = findLastOverlapping(ops, op);
     const earlier = ops[index];
-    if (!earlier || !isPlaceOp(earlier) || !samePath(earlier.jsonPath, op.jsonPath)) {
+    if (!earlier || !isValueOp(earlier) || !samePath(earlier.jsonPath, op.jsonPath)) {
         return [...ops, op];
     }
-    const folded = foldedOp(earlier, op);
+    const folded = foldOps(earlier, op);
     return folded
         ? ops.map((each, at) => (at === index ? folded : each))
         : ops.filter((_, at) => at !== index);
 }
 
-function foldedOp(earlier: PlaceOp, later: PlaceOp): PlaceOp | undefined {
+function foldOps(earlier: ValueOp, later: ValueOp): ValueOp | undefined {
     const { file, jsonPath } = earlier;
     const was: JsonValue | undefined = earlier.kind === "add" ? undefined : earlier.was;
     if (later.kind === "remove") {
@@ -33,15 +33,15 @@ function foldedOp(earlier: PlaceOp, later: PlaceOp): PlaceOp | undefined {
     return isEqualJson(was, value) ? undefined : { kind: "set", file, jsonPath, value, was };
 }
 
-function lastOverlapping(ops: readonly FileOp[], op: PlaceOp): number {
+function findLastOverlapping(ops: readonly FileOp[], op: ValueOp): number {
     return ops.findLastIndex((each) => overlaps(each, op));
 }
 
-function isPlaceOp(op: FileOp): op is PlaceOp {
+function isValueOp(op: FileOp): op is ValueOp {
     return op.kind === "set" || op.kind === "add" || op.kind === "remove";
 }
 
-function overlaps(op: FileOp, other: PlaceOp): boolean {
+function overlaps(op: FileOp, other: ValueOp): boolean {
     if (op.file !== other.file) return false;
     if (!("jsonPath" in op)) return true;
     const shorter = Math.min(op.jsonPath.length, other.jsonPath.length);

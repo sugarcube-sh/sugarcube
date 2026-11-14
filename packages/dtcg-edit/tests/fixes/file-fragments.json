@@ -9,7 +9,7 @@
       "fixes": [
         {
           "title": "write it as `all.json#/color`",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.resolver.json",

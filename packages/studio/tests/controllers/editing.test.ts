@@ -43,7 +43,7 @@ describe("editing in studio", () => {
 
         const done = studio.do(rename(studio.state.tokens, "color.text.default", "muted"));
 
-        expect(done.refused?.kind).toBe("taken");
+        expect(done.refusal?.kind).toBe("taken");
         expect(studio.state).toBe(before);
         expect(listener).not.toHaveBeenCalled();
     });
@@ -88,20 +88,20 @@ describe("editing in studio", () => {
 
     it("follows a token through a rename by its id", () => {
         const studio = studioOn();
-        const id = studio.idOf("color.text.default");
+        const id = studio.getID("color.text.default");
 
         studio.do(rename(studio.state.tokens, "color.text.default", "body"));
 
-        expect(id && studio.pathOf(id)).toBe("color.text.body");
+        expect(id && studio.getPath(id)).toBe("color.text.body");
     });
 
     it("forgets a removed token's id", () => {
         const studio = studioOn();
-        const id = studio.idOf("color.text.muted");
+        const id = studio.getID("color.text.muted");
 
         studio.do(remove(studio.state.tokens, "color.text.muted"));
 
-        expect(id && studio.pathOf(id)).toBeUndefined();
+        expect(id && studio.getPath(id)).toBeUndefined();
     });
 
     it("creates a token, listed as added", () => {

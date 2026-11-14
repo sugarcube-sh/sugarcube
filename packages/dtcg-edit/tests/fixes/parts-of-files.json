@@ -10,7 +10,7 @@
       "fixes": [
         {
           "title": "delete the earlier `sm`, which is never used",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "base.json",

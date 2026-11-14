@@ -21,7 +21,7 @@ function takenFrom(group: Group): string | undefined {
 export function descriptionEdit(tokens: DesignTokens, path: string, text: string): Edit {
     return {
         result: setDescription(tokens, path, text === "" ? null : text),
-        options: { merge: fieldKey({ path, writes: "description" }) },
+        options: { mergeKey: fieldKey({ path, writes: "description" }) },
     };
 }
 
@@ -71,7 +71,7 @@ export function deprecationEdit(
 ): Edit {
     return {
         result: deprecate(tokens, path, written(box, checked, reason)),
-        options: { merge: fieldKey({ path, writes: "deprecated" }) },
+        options: { mergeKey: fieldKey({ path, writes: "deprecated" }) },
     };
 }
 

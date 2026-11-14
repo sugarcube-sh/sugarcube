@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { type FileOp, createSession, create, rename, setValue } from "../src/index.js";
 import { at, committed, demo, opsIn, opsOf } from "./helpers.js";
 
-const refused = (kind: string, facts: object) => ({
-    refused: { kind, ...facts, reason: expect.any(String) },
+const refusal = (kind: string, facts: object) => ({
+    refusal: { kind, ...facts, reason: expect.any(String) },
 });
 
 const one = (tree: object) =>
@@ -21,7 +21,7 @@ function changedLines(before: DesignTokens, after: DesignTokens, file: string): 
 describe("rename, on the demo", () => {
     it('is refused for the top level, "", which has no name', () => {
         expect(rename(demo, "", "everything")).toEqual({
-            refused: { kind: "top-level", reason: expect.any(String) },
+            refusal: { kind: "top-level", reason: expect.any(String) },
         });
     });
 
@@ -31,7 +31,7 @@ describe("rename, on the demo", () => {
     it("renames the group's key and rewrites the 11 references to the tokens inside it", () => {
         const ops = opsOf(result);
         expect(ops[0]).toEqual({
-            kind: "renameKey",
+            kind: "rename-key",
             file: "color.json",
             jsonPath: ["color", "brand"],
             name: "primary",
@@ -80,7 +80,7 @@ describe("rename, on the demo", () => {
     it("renames a single token and only the references to it", () => {
         const ops = opsOf(rename(demo, "color.brand.500", "550"));
         expect(ops.map((op) => [op.kind, op.file])).toEqual([
-            ["renameKey", "color.json"],
+            ["rename-key", "color.json"],
             ["set", "color.json"],
             ["set", "border.json"],
         ]);
@@ -90,20 +90,20 @@ describe("rename, on the demo", () => {
 describe("rename, refused", () => {
     it("is refused for a name already taken", () => {
         expect(rename(demo, "color.brand", "neutral")).toEqual(
-            refused("taken", { path: "color.neutral" }),
+            refusal("taken", { path: "color.neutral" }),
         );
     });
 
     it("is refused for a name the spec forbids, or none", () => {
-        expect(rename(demo, "color.brand", "")).toEqual(refused("invalid-name", { name: "" }));
+        expect(rename(demo, "color.brand", "")).toEqual(refusal("invalid-name", { name: "" }));
         expect(rename(demo, "color.brand", "brand.new")).toEqual(
-            refused("invalid-name", { name: "brand.new", character: "." }),
+            refusal("invalid-name", { name: "brand.new", character: "." }),
         );
     });
 
     it("is refused for a path that is neither a token nor a group", () => {
         expect(rename(demo, "color.nope", "x")).toEqual(
-            refused("not-found", { path: "color.nope" }),
+            refusal("not-found", { path: "color.nope" }),
         );
     });
 
@@ -123,7 +123,7 @@ describe("rename, refused", () => {
             { generators: [steps] },
         );
         expect(rename(generated, "space.1", "one")).toMatchObject({
-            refused: { kind: "generated" },
+            refusal: { kind: "generated" },
         });
 
         const extended = one({
@@ -134,7 +134,7 @@ describe("rename, refused", () => {
             },
         });
         expect(rename(extended, "button.primary.pad", "gap")).toMatchObject({
-            refused: { kind: "inherited" },
+            refusal: { kind: "inherited" },
         });
     });
 
@@ -161,8 +161,8 @@ describe("rename, refused", () => {
             { generators: [steps] },
         );
         const result = rename(generated, "base", "core");
-        expect(opsOf(result).map(({ kind }) => kind)).toEqual(["renameKey"]);
-        expect(result.ops && result.broken).toEqual(["g.a", "g.b"]);
+        expect(opsOf(result).map(({ kind }) => kind)).toEqual(["rename-key"]);
+        expect(result.ops && result.pathsWithBrokenReferences).toEqual(["g.a", "g.b"]);
     });
 
     it("changes nothing when the name is the one it has", () => {
@@ -330,11 +330,11 @@ describe("rename, a file several contexts list", () => {
 describe("rename, in a session", () => {
     it("keeps a token's id, lists one rename per token, and none for what points at them", () => {
         const session = createSession(demo);
-        const id = session.idOf("color.brand.500");
+        const id = session.getID("color.brand.500");
         session.do(rename(session.tokens, "color.brand", "primary"));
 
-        expect(session.pathOf(id ?? "")).toBe("color.primary.500");
-        const kinds = new Set(session.changes().map(({ kind }) => kind));
+        expect(session.getPath(id ?? "")).toBe("color.primary.500");
+        const kinds = new Set(session.getChanges().map(({ kind }) => kind));
         expect(kinds).toEqual(new Set(["group-renamed", "renamed"]));
     });
 
@@ -343,8 +343,8 @@ describe("rename, in a session", () => {
         session.do(rename(session.tokens, "color.brand", "primary"));
         session.do(create(session.tokens, "color.brand", { $value: red }));
 
-        expect(session.idOf("color.brand")).toMatch(/^new:/);
-        expect(session.pathOf("color.brand")).toBe("color.primary");
+        expect(session.getID("color.brand")).toMatch(/^new:/);
+        expect(session.getPath("color.brand")).toBe("color.primary");
     });
 
     it("keeps ids through renames put back after a reload", () => {
@@ -353,8 +353,8 @@ describe("rename, in a session", () => {
         before.do(rename(before.tokens, "radius.medium", "mid"));
 
         const session = createSession(demo);
-        expect(session.restore(before.unsaved)).toEqual([]);
-        expect(session.pathOf("radius.md")).toBe("radius.mid");
+        expect(session.restore(before.unsavedEdits)).toEqual([]);
+        expect(session.getPath("radius.md")).toBe("radius.mid");
     });
 
     it("saves a rename and other edits that apply to the opened files to the same design tokens", () => {
@@ -362,12 +362,12 @@ describe("rename, in a session", () => {
         session.do(setValue(session.tokens, "color.brand.500", red));
         session.do(rename(session.tokens, "color.brand", "primary"));
         session.do(setValue(session.tokens, "color.primary.600", red));
-        const ops: readonly FileOp[] = opsIn(session.unsaved);
+        const ops: readonly FileOp[] = opsIn(session.unsavedEdits);
 
         expect(
             committed(demo, {
                 ops,
-                alsoAffects: demo.permutations.select(() => false),
+                affectedPermutations: demo.permutations.select(() => false),
                 moves: [],
             }).toMemory().files,
         ).toEqual(session.tokens.toMemory().files);

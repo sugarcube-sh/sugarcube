@@ -26,7 +26,7 @@ describe("editing for a context that reads a file another context also lists", (
             ops: [
                 { kind: "set", file: "night.json", jsonPath: ["gap", "$value"], value: 3, was: 2 },
             ],
-            alsoAffects: [{ mode: "dark" }],
+            affectedPermutations: [{ mode: "dark" }],
             moves: [],
         });
     });
@@ -44,14 +44,14 @@ describe("editing for a context that reads a file another context also lists", (
                     was: 2,
                 },
             ],
-            alsoAffects: [{ mode: "dark" }],
+            affectedPermutations: [{ mode: "dark" }],
             moves: [],
         });
     });
 
     it("refuses to create a token the shared file already writes for this context", () => {
         expect(create(tokens, "gap", { $value: 3 }, dim)).toEqual({
-            refused: { kind: "taken", path: "gap", reason: expect.any(String) },
+            refusal: { kind: "taken", path: "gap", reason: expect.any(String) },
         });
     });
 });

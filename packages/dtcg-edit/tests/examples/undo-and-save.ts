@@ -13,5 +13,5 @@ session.do(rename(session.tokens, "color.danger", "error"));
 session.undo();
 
 session.endStep();
-const sent = session.unsaved;
+const sent = session.unsavedEdits;
 if (await sendSave(JSON.stringify(sent))) session.markSaved(sent);

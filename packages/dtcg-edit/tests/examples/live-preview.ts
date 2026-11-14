@@ -17,5 +17,5 @@ session.subscribe(async () => {
 });
 
 export function onType(path: string, text: string): void {
-    session.do(setValue(session.tokens, path, text), { merge: `value ${path}` });
+    session.do(setValue(session.tokens, path, text), { mergeKey: `value ${path}` });
 }

@@ -39,5 +39,5 @@ export async function save(sent: unknown): Promise<string> {
     const result = await applyToDisk(onDisk, sent);
     if (result.conflicts) return result.conflicts.map((c) => c.reason).join("\n");
     await live.reread();
-    return `Saved ${Object.keys(result.written).length} files`;
+    return `Saved ${Object.keys(result.textByFile).length} files`;
 }

@@ -107,7 +107,7 @@ describe("clashRows", () => {
                 label: "mode: dark",
                 yours: "{color.neutral.100}",
                 theirs: "{color.neutral.200}",
-                keepable: true,
+                canKeepYours: true,
             },
         ]);
     });
@@ -125,7 +125,7 @@ describe("clashRows", () => {
                 kind: "renamed",
                 from: "color.text.default",
                 to: "color.text.defaultttttt",
-                keepable: false,
+                canKeepYours: false,
             },
         ]);
     });
@@ -148,7 +148,7 @@ describe("clashRows", () => {
                 kind: "gone",
                 path: "color.text.default",
                 yours: "{color.neutral.100}",
-                keepable: false,
+                canKeepYours: false,
             },
         ]);
     });
@@ -169,7 +169,7 @@ describe("clashRows", () => {
                 kind: "removed",
                 path: "radius.full",
                 theirs: { value: 1000, unit: "px" },
-                keepable: true,
+                canKeepYours: true,
             },
         ]);
     });
@@ -197,7 +197,7 @@ describe("a step with several parts", () => {
 
         const [row] = clashRows(studio.state.tokens, studio.state.clashes);
 
-        expect(row?.keepable).toBe(false);
+        expect(row?.canKeepYours).toBe(false);
         expect(row?.kind).toBe("gone");
     });
 });
@@ -212,7 +212,7 @@ describe("keeping yours where it can't be kept", () => {
 
         const done = studio.keep(clash!, "yours");
 
-        expect(done?.refused?.kind).toBe("gone-elsewhere");
+        expect(done?.refusal?.kind).toBe("removed-since");
         expect(studio.state.clashes).toHaveLength(1);
     });
 });

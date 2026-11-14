@@ -166,7 +166,7 @@ describe("defineStudio", () => {
             }),
         );
 
-        const saved = await s.save(JSON.parse(JSON.stringify(session.unsaved)));
+        const saved = await s.save(JSON.parse(JSON.stringify(session.unsavedEdits)));
 
         expect(saved).toEqual({ written: ["color.json"], deleted: [] });
         expect(readFileSync(join(s.dir, "color.json"), "utf8")).toContain("0.9");

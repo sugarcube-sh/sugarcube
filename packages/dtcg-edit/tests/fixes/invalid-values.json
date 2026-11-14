@@ -9,7 +9,7 @@
       "fixes": [
         {
           "title": "write the dimension as an object",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",

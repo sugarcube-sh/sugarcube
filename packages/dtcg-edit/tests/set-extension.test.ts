@@ -107,7 +107,7 @@ describe("setExtension on a token", () => {
                     },
                 },
             ],
-            alsoAffects: [],
+            affectedPermutations: [],
             moves: [],
         });
     });
@@ -127,10 +127,10 @@ describe("setExtension on a token", () => {
             { generators: [steps] },
         );
 
-        expect(setExtension(generated, "space.1", ["org.other"], 1).refused?.kind).toBe(
+        expect(setExtension(generated, "space.1", ["org.other"], 1).refusal?.kind).toBe(
             "generated",
         );
-        expect(setExtension(demo, "size.nothing", ["org.other"], 1).refused?.kind).toBe(
+        expect(setExtension(demo, "size.nothing", ["org.other"], 1).refusal?.kind).toBe(
             "not-found",
         );
     });
@@ -155,7 +155,7 @@ describe("setExtension on a group", () => {
                     was: 1.25,
                 },
             ],
-            alsoAffects: [{ mode: "light" }, { mode: "dark" }],
+            affectedPermutations: [{ mode: "light" }, { mode: "dark" }],
             moves: [],
         });
         const after = at(committed(demo, result), "size.json", [
@@ -254,7 +254,7 @@ describe("setExtension on a group", () => {
             "dark.json": JSON.stringify({ space: { $extensions: { "com.x": { a: 1, b: 2 } } } }),
         });
 
-        expect(setExtension(darkOnly, "inset", ["com.x", "a"], 5).refused?.kind).toBe(
+        expect(setExtension(darkOnly, "inset", ["com.x", "a"], 5).refusal?.kind).toBe(
             "no-shared-value",
         );
     });
@@ -272,7 +272,7 @@ describe("setExtension on a group", () => {
             "dark.json": JSON.stringify({ space: { $extensions: { "com.x": { a: 9, b: 9 } } } }),
         });
 
-        expect(setExtension(themed, "inset", ["com.x", "a"], 5).refused?.kind).toBe(
+        expect(setExtension(themed, "inset", ["com.x", "a"], 5).refusal?.kind).toBe(
             "no-shared-value",
         );
     });
@@ -301,7 +301,7 @@ describe("setExtension on a group", () => {
             "b.json": "{}",
         });
 
-        expect(setExtension(darkOnly, "space", ["org.other", "kept"], true).refused?.kind).toBe(
+        expect(setExtension(darkOnly, "space", ["org.other", "kept"], true).refusal?.kind).toBe(
             "no-shared-value",
         );
     });
@@ -320,7 +320,7 @@ describe("setExtension on a group", () => {
                     value: { steps: 4, from: "b" },
                 },
             ],
-            alsoAffects: [],
+            affectedPermutations: [],
             moves: [],
         });
     });
@@ -380,11 +380,11 @@ describe("setExtension on a group", () => {
 
         expect(
             setExtension(spread, "space", ["com.example", "steps"], 4, { input: { mode: "dim" } })
-                .refused?.kind,
+                .refusal?.kind,
         ).toBe("no-file-for-context");
         expect(
             setExtension(later, "space", ["com.example", "steps"], 4, { input: { mode: "dark" } })
-                .refused,
+                .refusal,
         ).toMatchObject({ kind: "hidden-by-later-file", file: "last.json" });
     });
 

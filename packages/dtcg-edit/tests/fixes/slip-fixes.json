@@ -9,7 +9,7 @@
       "fixes": [
         {
           "title": "delete this `$type`, so the token takes its group's type",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",
@@ -29,7 +29,7 @@
       "fixes": [
         {
           "title": "delete this `$type`, so the token takes its group's type",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",
@@ -50,7 +50,7 @@
       "fixes": [
         {
           "title": "write it as the reference `{base}`",
-          "safe": false,
+          "isSafe": false,
           "edits": [
             {
               "file": "tokens.json",

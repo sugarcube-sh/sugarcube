@@ -1,37 +1,38 @@
 import type { DesignTokens, JsonValue } from "@sugarcube-sh/dtcg";
-import { refused } from "./error-messages.js";
-import type { Clash, ClashPart, FileOp, OpResult } from "./index.js";
+import { refuse } from "./error-messages.js";
+import type { Clash, ClashPart, FileOp, OperationResult } from "./index.js";
 import { isGone } from "./clashes.js";
-import { seenReading } from "./placement.js";
+import { findAffectedPermutations } from "./placement.js";
 
 /**
- * Settles a {@link Clash} by keeping your side: what your step wrote is written over theirs at
- * every part it changes, expecting theirs, as an edit like any other to commit with
- * {@link Session.do}; a part you removed is removed. Refused (`gone-elsewhere`) when the clash
- * isn't {@link Clash.keepable}: a part was removed or renamed since, and in a file a rename looks
- * the same as a removal, so yours isn't written over something else. Keeping theirs needs no edit:
- * the files already show it.
+ * Settles a {@link Clash} by keeping your side.
+ *
+ * It returns edits that write yours over theirs, for {@link Session.do}. Keeping theirs needs no
+ * edit.
+ *
+ * @param tokens - The session's design tokens, such as `session.tokens`.
+ * @param clash - A clash from {@link Session.rebase} or {@link Session.restore}.
  *
  * @example
- * for (const clash of session.rebase(fresh)) {
- *     if (clash.keepable && (await askKeepYours(clash))) {
- *         session.do(keepYours(session.tokens, clash));
- *     }
- * }
+ * // You set color.primary to {color.blue.300}. A pull changed it in color.json.
+ * keepYours(session.tokens, clash).ops
+ * // => [{ kind: "set", file: "color.json", jsonPath: ["color", "primary"],
+ * //       value: { $type: "color", $value: "{color.blue.300}" },
+ * //       was: { $type: "color", $value: { colorSpace: "srgb", components: [0.2, 0.4, 1] } } }]
  */
-export function keepYours(tokens: DesignTokens, clash: Clash): OpResult {
-    const gone = clash.parts.find(isGone);
-    if (gone) {
-        return refused({
-            kind: "gone-elsewhere",
-            file: gone.file,
-            ...(gone.path !== undefined && { path: gone.path }),
+export function keepYours(tokens: DesignTokens, clash: Clash): OperationResult {
+    const gonePart = clash.parts.find(isGone);
+    if (gonePart) {
+        return refuse({
+            kind: "removed-since",
+            file: gonePart.file,
+            ...(gonePart.path !== undefined && { path: gonePart.path }),
         });
     }
     const parts = clash.parts.filter(hasTheirs);
     return {
-        ops: parts.map((part) => opFor(tokens, part)),
-        alsoAffects: seenReading(
+        ops: parts.map((part) => toYourOp(tokens, part)),
+        affectedPermutations: findAffectedPermutations(
             tokens,
             parts.map((part) => part.file),
         ),
@@ -43,12 +44,12 @@ function hasTheirs(part: ClashPart): part is ClashPart & { theirs: JsonValue } {
     return !isGone(part);
 }
 
-function opFor(
+function toYourOp(
     tokens: DesignTokens,
     { file, jsonPath, yours, theirs }: ClashPart & { theirs: JsonValue },
 ): FileOp {
     if (yours === undefined && jsonPath.length === 0) {
-        return { kind: "deleteFile", file, was: tokens.getText(file) as string };
+        return { kind: "delete-file", file, was: tokens.getText(file) as string };
     }
     if (yours === undefined) return { kind: "remove", file, jsonPath, was: theirs };
     return { kind: "set", file, jsonPath, value: yours, was: theirs };

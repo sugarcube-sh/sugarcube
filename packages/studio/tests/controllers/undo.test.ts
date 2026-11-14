@@ -31,8 +31,8 @@ describe("undo and redo in studio", () => {
 
     it("makes edits to one field one after another one step", () => {
         const studio = studioOn(demoMessage());
-        studio.do(setValue(studio.state.tokens, "color.brand.500", red), { merge: brand });
-        studio.do(setValue(studio.state.tokens, "color.brand.500", blue), { merge: brand });
+        studio.do(setValue(studio.state.tokens, "color.brand.500", red), { mergeKey: brand });
+        studio.do(setValue(studio.state.tokens, "color.brand.500", blue), { mergeKey: brand });
 
         expect(studio.unsaved.steps).toHaveLength(1);
     });
@@ -44,9 +44,9 @@ describe("undo and redo in studio", () => {
             adapterFor,
             () => new Promise<SaveOutcome>((resolve) => (finish = resolve)),
         );
-        studio.do(setValue(studio.state.tokens, "color.brand.500", red), { merge: brand });
+        studio.do(setValue(studio.state.tokens, "color.brand.500", red), { mergeKey: brand });
         const saving = studio.save?.();
-        studio.do(setValue(studio.state.tokens, "color.brand.500", blue), { merge: brand });
+        studio.do(setValue(studio.state.tokens, "color.brand.500", blue), { mergeKey: brand });
 
         expect(studio.unsaved.steps).toHaveLength(2);
         finish({ written: ["color.json"], deleted: [] });

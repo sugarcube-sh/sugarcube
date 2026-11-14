@@ -190,9 +190,9 @@ describe("apply, remove", () => {
     });
 });
 
-describe("apply, renameKey", () => {
+describe("apply, rename-key", () => {
     const rename = (name: string): FileOp => ({
-        kind: "renameKey",
+        kind: "rename-key",
         file: "radius.json",
         jsonPath: sm,
         name,
@@ -275,7 +275,7 @@ describe("apply, several edits", () => {
     it("applies edits to one file in order", () => {
         const after = applied(demo, [
             {
-                kind: "renameKey",
+                kind: "rename-key",
                 file: "radius.json",
                 jsonPath: sm,
                 name: "small",
@@ -306,7 +306,7 @@ describe("apply, several edits", () => {
             was: at(demo, "radius.json", ["radius", "sm", "$value"]) as JsonValue,
         };
         const takenName: FileOp = {
-            kind: "renameKey",
+            kind: "rename-key",
             file: "color.json",
             jsonPath: ["color", "brand"],
             name: "neutral",
@@ -349,7 +349,7 @@ describe("apply, files", () => {
         },
     });
     const created: FileOp = {
-        kind: "createFile",
+        kind: "create-file",
         file: "more.json",
         value: { b: { $type: "number", $value: 2 } },
     };
@@ -376,7 +376,7 @@ describe("apply, files", () => {
     });
 
     it("is a conflict when nothing would read the new file", () => {
-        const op: FileOp = { kind: "createFile", file: "unread.json", value: {} };
+        const op: FileOp = { kind: "create-file", file: "unread.json", value: {} };
 
         expect(apply(demo, [op])).toEqual({
             conflicts: [
@@ -392,7 +392,7 @@ describe("apply, files", () => {
     it("deletes a file only as it was, and does nothing when it is already gone", () => {
         const both = applied(named, [created]);
         const deleted: FileOp = {
-            kind: "deleteFile",
+            kind: "delete-file",
             file: "more.json",
             was: both.getText("more.json") ?? "",
         };
@@ -414,7 +414,7 @@ describe("commit", () => {
         const ops = [setBrand500(demo)];
         const done = commit(demo, {
             ops,
-            alsoAffects: demo.permutations.select(() => false),
+            affectedPermutations: demo.permutations.select(() => false),
             moves: [],
         });
 
@@ -428,12 +428,12 @@ describe("commit", () => {
             kind: "placement",
             path: "a",
             files: ["x.json"],
-            answer: () => ({ refused: { kind: "not-found", path: "a", reason: "no" } }),
+            answer: () => ({ refusal: { kind: "not-found", path: "a", reason: "no" } }),
         };
 
         expect(commit(demo, { question })).toEqual({ question });
-        expect(commit(demo, { refused: { kind: "not-found", path: "a", reason: "no" } })).toEqual({
-            refused: { kind: "not-found", path: "a", reason: "no" },
+        expect(commit(demo, { refusal: { kind: "not-found", path: "a", reason: "no" } })).toEqual({
+            refusal: { kind: "not-found", path: "a", reason: "no" },
         });
     });
 
@@ -444,7 +444,7 @@ describe("commit", () => {
         expect(
             commit(theirs, {
                 ops: [op],
-                alsoAffects: demo.permutations.select(() => false),
+                affectedPermutations: demo.permutations.select(() => false),
                 moves: [],
             }),
         ).toEqual({

@@ -20,6 +20,6 @@ export function settingEdit(
 ): Edit {
     return {
         result: write(key, value),
-        options: { merge: fieldKey({ path, writes: `${form} ${key}`, place: row }) },
+        options: { mergeKey: fieldKey({ path, writes: `${form} ${key}`, place: row }) },
     };
 }

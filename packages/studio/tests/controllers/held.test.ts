@@ -17,12 +17,12 @@ describe("heldFor", () => {
 describe("reasonsFor", () => {
     it("gives a refusal's reason, or each conflict's, or none for an edit made", () => {
         const conflict = {
-            op: { kind: "deleteFile", file: "x.json", was: "" },
+            op: { kind: "delete-file", file: "x.json", was: "" },
             kind: "gone",
             reason: "x.json is gone",
         } as const;
 
-        expect(reasonsFor({ refused: { kind: "not-found", path: "x", reason: "No x." } })).toEqual([
+        expect(reasonsFor({ refusal: { kind: "not-found", path: "x", reason: "No x." } })).toEqual([
             "No x.",
         ]);
         expect(reasonsFor({ conflicts: [conflict] })).toEqual(["x.json is gone"]);

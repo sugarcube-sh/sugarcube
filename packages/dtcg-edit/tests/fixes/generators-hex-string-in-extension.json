@@ -9,7 +9,7 @@
       "fixes": [
         {
           "title": "write the color as an object, keeping the hex",
-          "safe": true,
+          "isSafe": true,
           "edits": [
             {
               "file": "tokens.json",

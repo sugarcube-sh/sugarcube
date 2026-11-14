@@ -5,7 +5,7 @@ import type { Session } from "@sugarcube-sh/dtcg-edit";
 
 declare const session: Session;
 
-for (const change of session.changes()) {
+for (const change of session.getChanges()) {
     const where = change.permutations.label;
     switch (change.kind) {
         case "added":

@@ -54,8 +54,10 @@ describe("a description", () => {
             expect.objectContaining({ kind: "set", value: "Words.", was: "Plain." }),
         ]);
         expect(emptied.result.ops).toEqual([expect.objectContaining({ kind: "remove" })]);
-        expect(typed.options.merge).toBe(emptied.options.merge);
-        expect(typed.options.merge).not.toBe(descriptionEdit(tokens, "own", "x").options.merge);
+        expect(typed.options.mergeKey).toBe(emptied.options.mergeKey);
+        expect(typed.options.mergeKey).not.toBe(
+            descriptionEdit(tokens, "own", "x").options.mergeKey,
+        );
     });
 });
 
@@ -111,9 +113,9 @@ describe("a deprecation", () => {
         expect(reasoned.result.ops).toEqual([
             expect.objectContaining({ kind: "add", value: "Use gap" }),
         ]);
-        expect(ticked.options.merge).toBe(reasoned.options.merge);
-        expect(ticked.options.merge).not.toBe(
-            descriptionEdit(tokens, "plain.n", "x").options.merge,
+        expect(ticked.options.mergeKey).toBe(reasoned.options.mergeKey);
+        expect(ticked.options.mergeKey).not.toBe(
+            descriptionEdit(tokens, "plain.n", "x").options.mergeKey,
         );
         expect(deprecationEdit(tokens, "own.n", own, false, "").result.ops).toEqual([
             expect.objectContaining({ kind: "remove" }),

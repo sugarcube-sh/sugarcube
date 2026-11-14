@@ -9,7 +9,7 @@
       "fixes": [
         {
           "title": "use `color.brand`, which has a similar name",
-          "safe": false,
+          "isSafe": false,
           "edits": [
             {
               "file": "tokens.json",

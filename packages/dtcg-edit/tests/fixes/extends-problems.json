@@ -10,7 +10,7 @@
       "fixes": [
         {
           "title": "write it as the reference `{button}`",
-          "safe": false,
+          "isSafe": false,
           "edits": [
             {
               "file": "tokens.json",

@@ -1,122 +1,132 @@
 import type { DesignTokens, JsonPath, JsonValue, Permutations } from "@sugarcube-sh/dtcg";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
-import { opsAt } from "./file-text.js";
-import type { FileOp, OpResult, PlaceOptions } from "./index.js";
-import { asked, extensionPlace, ownProperties, placement } from "./placement.js";
+import { createWriteOps } from "./file-text.js";
+import type { FileOp, OperationResult, EditOptions } from "./index.js";
+import {
+    createQuestion,
+    findExtensionPlacement,
+    getOwnProperties,
+    findPlacement,
+} from "./placement.js";
 
 /**
- * Changes one setting inside a token's or group's `$extensions`, leaving the rest as written, so
- * other tools' settings are kept: "Tools that process design token files MUST preserve any
- * extension data they do not themselves understand" (Format 5.2.3). `jsonPath` starts with the
- * extension's key; give only the key to replace the whole extension. `null` removes the setting.
+ * Changes one setting in a token's or group's `$extensions`.
  *
- * A token's extensions are written per place, as its value is: without options the shared place
- * changes, with `input` that context's own (a new override is the token's own properties with the
- * setting changed, as {@link setValue} makes one), with `at` the place given. A group's setting is
- * written where its extension is used, since a later file's extension replaces an earlier one's
- * whole; with `input`, a context is given the extension it uses, whole, with the setting changed.
+ * A token's goes where {@link setValue} writes its value. A group's goes where its extension is
+ * written. One inherited through `$extends` becomes the group's own copy.
  *
- * The value is written exactly as given. Whether the setting is right is for the read to say, as
- * with any edit. Removing a setting that isn't there changes nothing.
+ * @param tokens - The design tokens to edit.
+ * @param path - The token or group, such as `"color.primary"`.
+ * @param jsonPath - The setting, starting with the extension's key, such as
+ *   `["com.example", "contrast"]`. The key alone replaces the whole extension.
+ * @param value - The new value, written as passed, such as `"AA"`, or `null` to remove it.
+ * @param options - Where the change goes.
  *
- * A group that takes the extension from the group it extends is given its own copy, whole, with the
- * setting changed, so its other settings are kept: "Replace any inherited tokens/properties where
- * local ones exist" (Format 6.4.2) replaces a key whole, so writing the one setting alone would
- * lose the rest.
- *
- * Refused, with the reason: a path that is neither a token nor a group, a token a generator makes,
- * a token or group there only because of `$extends`, and the refusals {@link setValue} gives for
- * where a value goes.
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#extensions | Format 5.2.3, Extensions}
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#extending-groups | Format 6.4, Extending Groups}
  *
  * @example
- * setExtension(tokens, "space", ["com.example", "scale", "ratio"], 1.333)
- * const [place] = tokens.getDefinitions("space.gutter");
- * if (place) {
- *   const min = { value: 1.5, unit: "rem" };
- *   setExtension(tokens, "space.gutter", ["com.example", "fluid", "min"], min, { at: place.span });
- * }
+ * // A setting of your own on color.primary
+ * setExtension(tokens, "color.primary", ["com.example", "contrast"], "AA").ops
+ * // => [{ kind: "add", file: "color.json",
+ * //       jsonPath: ["color", "primary", "$extensions", "com.example", "contrast"], value: "AA" }]
  */
 export function setExtension(
     tokens: DesignTokens,
     path: string,
     jsonPath: readonly [string, ...JsonPath],
     value: JsonValue | null,
-    options: PlaceOptions = {},
-): OpResult {
-    return setExtensionIn(tokens, path, jsonPath, value, options);
+    options: EditOptions = {},
+): OperationResult {
+    return setExtensionInFile(tokens, path, jsonPath, value, options);
 }
 
-function setExtensionIn(
+function setExtensionInFile(
     tokens: DesignTokens,
     path: string,
     jsonPath: readonly [string, ...JsonPath],
     value: JsonValue | null,
-    options: PlaceOptions,
-    place?: string,
-): OpResult {
-    const placed = placeOf(tokens, path, jsonPath, options, place);
-    if ("choose" in placed) {
-        return asked(placed.choose, (file) =>
-            setExtensionIn(tokens, path, jsonPath, value, options, file),
+    options: EditOptions,
+    chosenFile?: string,
+): OperationResult {
+    const placement = findSettingPlacement(tokens, path, jsonPath, options, chosenFile);
+    if ("choice" in placement) {
+        return createQuestion(placement.choice, (file) =>
+            setExtensionInFile(tokens, path, jsonPath, value, options, file),
         );
     }
-    if ("refused" in placed) return placed;
-    const { alsoAffects } = placed;
-    if ("at" in placed) {
-        const { at, inForce } = placed;
-        if (inForce === undefined) {
+    if ("refusal" in placement) return placement;
+    const { affectedPermutations } = placement;
+    if ("at" in placement) {
+        const { at, currentExtension } = placement;
+        if (currentExtension === undefined) {
             return {
-                ops: opsAt(tokens, at, ["$extensions", ...jsonPath], value),
-                alsoAffects,
+                ops: createWriteOps(tokens, at, ["$extensions", ...jsonPath], value),
+                affectedPermutations,
                 moves: [],
             };
         }
-        const [key, ...within] = jsonPath;
-        const made = withSetting(inForce, within, value);
-        const ops = made === inForce ? [] : opsAt(tokens, at, ["$extensions", key], made ?? null);
-        return { ops, alsoAffects, moves: [] };
+        const [key, ...settingPath] = jsonPath;
+        const newExtension = replaceSetting(currentExtension, settingPath, value);
+        const ops =
+            newExtension === currentExtension
+                ? []
+                : createWriteOps(tokens, at, ["$extensions", key], newExtension ?? null);
+        return { ops, affectedPermutations, moves: [] };
     }
-    const { into, inside, was } = placed;
-    const made = withSetting(was, placed.within, value);
+    const { into, current, settingPath } = placement;
+    const newExtension = replaceSetting(current, settingPath, value);
     const ops: FileOp[] =
-        made === was || made === undefined
+        newExtension === current || newExtension === undefined
             ? []
-            : [{ kind: "add", file: into, jsonPath: inside, value: made }];
-    return { ops, alsoAffects, moves: [] };
+            : [{ kind: "add", file: into, jsonPath: placement.jsonPath, value: newExtension }];
+    return { ops, affectedPermutations, moves: [] };
 }
 
-type Placed =
-    | Exclude<ReturnType<typeof extensionPlace>, { into: string }>
+type SettingPlacement =
+    | Exclude<ReturnType<typeof findExtensionPlacement>, { into: string }>
     | {
           into: string;
-          inside: JsonPath;
-          was: JsonValue | undefined;
-          within: JsonPath;
-          alsoAffects: Permutations;
+          jsonPath: JsonPath;
+          current: JsonValue | undefined;
+          settingPath: JsonPath;
+          affectedPermutations: Permutations;
       };
 
-function placeOf(
+function findSettingPlacement(
     tokens: DesignTokens,
     path: string,
-    [key, ...within]: readonly [string, ...JsonPath],
-    options: PlaceOptions,
-    place: string | undefined,
-): Placed {
-    const steps = path.split(".");
+    [key, ...settingPath]: readonly [string, ...JsonPath],
+    options: EditOptions,
+    chosenFile: string | undefined,
+): SettingPlacement {
+    const pathKeys = path.split(".");
     if (!tokens.permutations.some((perm) => perm.getToken(path))) {
-        const placed = extensionPlace(tokens, path, key, options, place);
-        if (!("into" in placed)) return placed;
-        const { into, inForce, alsoAffects } = placed;
-        return { into, inside: [...steps, "$extensions", key], was: inForce, within, alsoAffects };
+        const placement = findExtensionPlacement(tokens, path, key, options, chosenFile);
+        if (!("into" in placement)) return placement;
+        const { into, currentExtension, affectedPermutations } = placement;
+        return {
+            into,
+            jsonPath: [...pathKeys, "$extensions", key],
+            current: currentExtension,
+            settingPath,
+            affectedPermutations,
+        };
     }
-    const placed = placement(tokens, path, options, place);
-    if (!("token" in placed)) return placed;
-    const { into, token, alsoAffects } = placed;
-    const own = ownProperties(token);
-    return { into, inside: steps, was: own, within: ["$extensions", key, ...within], alsoAffects };
+    const placement = findPlacement(tokens, path, options, chosenFile);
+    if (!("token" in placement)) return placement;
+    const { into, token, affectedPermutations } = placement;
+    const own = getOwnProperties(token);
+    return {
+        into,
+        jsonPath: pathKeys,
+        current: own,
+        settingPath: ["$extensions", key, ...settingPath],
+        affectedPermutations,
+    };
 }
 
-function withSetting(
+function replaceSetting(
     whole: JsonValue | undefined,
     jsonPath: JsonPath,
     value: JsonValue | null,
@@ -125,7 +135,7 @@ function withSetting(
     if (step === undefined) return value ?? undefined;
     if (Array.isArray(whole) && typeof step === "number") {
         if (!Number.isInteger(step) || step < 0 || step >= whole.length) return whole;
-        const changed = withSetting(whole[step], rest, value);
+        const changed = replaceSetting(whole[step], rest, value);
         if (changed === whole[step]) return whole;
         return changed === undefined
             ? whole.filter((_, index) => index !== step)
@@ -135,7 +145,7 @@ function withSetting(
     const object = isJsonObject(whole) ? whole : undefined;
     const now = object?.[key];
     if (value === null && now === undefined) return whole;
-    const changed = withSetting(now, rest, value);
+    const changed = replaceSetting(now, rest, value);
     if (changed === now) return whole;
     if (changed !== undefined) return { ...object, [key]: changed };
     return Object.fromEntries(Object.entries(object ?? {}).filter(([each]) => each !== key));

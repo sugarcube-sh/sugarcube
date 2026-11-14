@@ -7,7 +7,7 @@ import type {
     Token,
     TokenType,
 } from "@sugarcube-sh/dtcg";
-import type { OpResult, PlaceAt } from "@sugarcube-sh/dtcg-edit";
+import type { OperationResult, DefinitionOptions } from "@sugarcube-sh/dtcg-edit";
 import type { TypographyCSS } from "@sugarcube-sh/dtcg/css";
 
 export type BuildProblem = DiagnosticOf<Record<string, unknown>>;
@@ -28,7 +28,7 @@ export interface FormField {
 export interface ExtensionForm {
     readonly label: string;
     readonly fields: readonly FormField[];
-    write?(key: string, value: JsonValue): OpResult;
+    write?(key: string, value: JsonValue): OperationResult;
 }
 
 export interface BuildAdapter {
@@ -37,6 +37,6 @@ export interface BuildAdapter {
     formFor?(
         tokens: DesignTokens,
         node: Token | Group,
-        at?: PlaceAt["at"],
+        at?: DefinitionOptions["at"],
     ): ExtensionForm | undefined;
 }

@@ -17,9 +17,9 @@ describe("createSession", () => {
         const session = createSession(demo);
 
         expect(session.tokens).toBe(demo);
-        expect(session.opened).toBe(demo);
-        expect(session.unsaved).toEqual({ steps: [] });
-        expect(session.changes()).toEqual([]);
+        expect(session.savedTokens).toBe(demo);
+        expect(session.unsavedEdits).toEqual({ steps: [] });
+        expect(session.getChanges()).toEqual([]);
     });
 
     it("keeps an edit as the edit to its file, and moves the design tokens on", () => {
@@ -27,14 +27,14 @@ describe("createSession", () => {
         const done = session.do(setValue(session.tokens, "color.brand.500", red));
 
         expect(done.tokens).toBe(session.tokens);
-        expect(opsIn(session.unsaved)).toEqual([
+        expect(opsIn(session.unsavedEdits)).toEqual([
             expect.objectContaining({ kind: "set", file: "color.json" }),
         ]);
-        expect(session.unsaved).not.toHaveProperty("files");
+        expect(session.unsavedEdits).not.toHaveProperty("files");
         expect(
             session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
-        expect(session.opened).toBe(demo);
+        expect(session.savedTokens).toBe(demo);
     });
 
     it("keeps the edits in the order they were made", () => {
@@ -42,11 +42,10 @@ describe("createSession", () => {
         session.do(setValue(session.tokens, "color.brand.500", red));
         session.do(setDescription(session.tokens, "color.brand.500", "The anchor."));
 
-        expect(opsIn(session.unsaved).map((op) => op.kind)).toEqual(["set", "set"]);
-        expect(opsIn(session.unsaved).map((op) => "jsonPath" in op && op.jsonPath.at(-1))).toEqual([
-            "$value",
-            "$description",
-        ]);
+        expect(opsIn(session.unsavedEdits).map((op) => op.kind)).toEqual(["set", "set"]);
+        expect(
+            opsIn(session.unsavedEdits).map((op) => "jsonPath" in op && op.jsonPath.at(-1)),
+        ).toEqual(["$value", "$description"]);
     });
 
     it("keeps each operation as one step, with every file it changes and the moves it made", () => {
@@ -54,12 +53,12 @@ describe("createSession", () => {
 
         session.do(rename(session.tokens, "color.text.default", "body"));
 
-        expect(session.unsaved.steps).toHaveLength(1);
-        expect(session.unsaved.steps[0]?.ops.map((op) => op.file)).toEqual([
+        expect(session.unsavedEdits.steps).toHaveLength(1);
+        expect(session.unsavedEdits.steps[0]?.ops.map((op) => op.file)).toEqual([
             "color.json",
             "dark.json",
         ]);
-        expect(session.unsaved.steps[0]?.moves).toEqual([
+        expect(session.unsavedEdits.steps[0]?.moves).toEqual([
             { from: "color.text.default", to: "color.text.body" },
         ]);
     });
@@ -69,9 +68,9 @@ describe("createSession", () => {
         session.do(setValue(session.tokens, "radius.md", { value: 1, unit: "rem" }));
         session.do(rename(session.tokens, "radius.md", "medium"));
 
-        expect(session.unsaved.steps.map((step) => step.ops.map((op) => op.kind))).toEqual([
+        expect(session.unsavedEdits.steps.map((step) => step.ops.map((op) => op.kind))).toEqual([
             ["set"],
-            ["renameKey"],
+            ["rename-key"],
         ]);
     });
 
@@ -81,9 +80,9 @@ describe("createSession", () => {
         session.subscribe(heard);
         const answer = session.do(setValue(session.tokens, "color.nope", red));
 
-        expect(answer).toMatchObject({ refused: { kind: "not-found" } });
+        expect(answer).toMatchObject({ refusal: { kind: "not-found" } });
         expect(session.tokens).toBe(demo);
-        expect(opsIn(session.unsaved)).toEqual([]);
+        expect(opsIn(session.unsavedEdits)).toEqual([]);
         expect(heard).not.toHaveBeenCalled();
     });
 
@@ -92,12 +91,12 @@ describe("createSession", () => {
         session.do(setValue(session.tokens, "color.brand.500", red));
         session.do(rename(session.tokens, "color.brand.300", "350"));
 
-        expect(session.changes()).toEqual(
+        expect(session.getChanges()).toEqual(
             session.tokens.getChangesSince(demo, {
-                moves: session.unsaved.steps.flatMap((step) => step.moves),
+                moves: session.unsavedEdits.steps.flatMap((step) => step.moves),
             }),
         );
-        expect(session.changes().map((change) => [change.kind, change.path])).toContainEqual([
+        expect(session.getChanges().map((change) => [change.kind, change.path])).toContainEqual([
             "renamed",
             "color.brand.350",
         ]);
@@ -111,8 +110,8 @@ describe("createSession", () => {
 
         expect(session.tokens).toBe(demo);
         expect(session.tokens.toMemory().files).toEqual(demo.toMemory().files);
-        expect(session.unsaved).toEqual({ steps: [] });
-        expect(session.changes()).toEqual([]);
+        expect(session.unsavedEdits).toEqual({ steps: [] });
+        expect(session.getChanges()).toEqual([]);
     });
 
     it("measures from the saved version once saved, and discards back to it", () => {
@@ -121,9 +120,9 @@ describe("createSession", () => {
         const saved = session.tokens;
         session.markSaved();
 
-        expect(session.opened).toBe(saved);
-        expect(session.unsaved).toEqual({ steps: [] });
-        expect(session.changes()).toEqual([]);
+        expect(session.savedTokens).toBe(saved);
+        expect(session.unsavedEdits).toEqual({ steps: [] });
+        expect(session.getChanges()).toEqual([]);
 
         session.do(setDescription(session.tokens, "color.brand.500", "The anchor."));
         session.discard();
@@ -133,16 +132,16 @@ describe("createSession", () => {
     it("marks only the edits that were saved, keeping one done while they were saving", () => {
         const session = createSession(demo);
         session.do(setValue(session.tokens, "color.brand.500", red));
-        const sent = session.unsaved;
+        const sent = session.unsavedEdits;
         const saved = session.tokens;
         session.do(setDescription(session.tokens, "color.brand.500", "The anchor."));
-        const later = session.unsaved.steps[1];
+        const later = session.unsavedEdits.steps[1];
 
         session.markSaved(sent);
 
-        expect(session.opened.toMemory().files).toEqual(saved.toMemory().files);
-        expect(session.unsaved.steps).toEqual([later]);
-        expect(session.changes().map(({ kind, path }) => [kind, path])).toEqual([
+        expect(session.savedTokens.toMemory().files).toEqual(saved.toMemory().files);
+        expect(session.unsavedEdits.steps).toEqual([later]);
+        expect(session.getChanges().map(({ kind, path }) => [kind, path])).toEqual([
             ["changed", "color.brand.500"],
         ]);
         session.discard();
@@ -152,27 +151,27 @@ describe("createSession", () => {
     it("marks nothing saved when the edits saved are no longer the ones it holds", () => {
         const session = createSession(demo);
         session.do(setValue(session.tokens, "color.brand.500", red));
-        const sent = session.unsaved;
+        const sent = session.unsavedEdits;
         session.discard();
         session.do(setDescription(session.tokens, "color.brand.500", "The anchor."));
-        const held = session.unsaved;
+        const held = session.unsavedEdits;
 
         session.markSaved(sent);
 
-        expect(session.unsaved).toBe(held);
-        expect(session.opened).toBe(demo);
+        expect(session.unsavedEdits).toBe(held);
+        expect(session.savedTokens).toBe(demo);
     });
 
     it("keeps ids through a save of some of the edits", () => {
         const session = createSession(demo);
         session.do(rename(session.tokens, "color.brand.500", "550"));
-        const sent = session.unsaved;
+        const sent = session.unsavedEdits;
         session.do(rename(session.tokens, "color.brand.550", "555"));
 
         session.markSaved(sent);
         session.discard();
 
-        expect(session.pathOf("color.brand.500")).toBe("color.brand.550");
+        expect(session.getPath("color.brand.500")).toBe("color.brand.550");
     });
 
     it("tells listeners about every change until they stop listening", () => {
@@ -207,7 +206,7 @@ describe("createSession", () => {
         session.do(create(session.tokens, "motion2", { group: true }));
         session.do(remove(session.tokens, "color.brand.50"));
         session.do(rename(session.tokens, "color.brand", "primary"));
-        const replayed = apply(demo, opsIn(session.unsaved));
+        const replayed = apply(demo, opsIn(session.unsavedEdits));
         if (replayed.conflicts) throw new Error(JSON.stringify(replayed.conflicts));
         expect(replayed.tokens.toMemory().files).toEqual(session.tokens.toMemory().files);
         const plain = (tokens: DesignTokens) => JSON.parse(JSON.stringify(tokens));
@@ -219,46 +218,46 @@ describe("ids", () => {
     it("gives a token or group its path when opened as its id", () => {
         const session = createSession(demo);
 
-        expect(session.idOf("color.brand.500")).toBe("color.brand.500");
-        expect(session.pathOf("color.brand.500")).toBe("color.brand.500");
-        expect(session.idOf("color.brand")).toBe("color.brand");
-        expect(session.idOf("color.nope")).toBeUndefined();
-        expect(session.pathOf("color.nope")).toBeUndefined();
+        expect(session.getID("color.brand.500")).toBe("color.brand.500");
+        expect(session.getPath("color.brand.500")).toBe("color.brand.500");
+        expect(session.getID("color.brand")).toBe("color.brand");
+        expect(session.getID("color.nope")).toBeUndefined();
+        expect(session.getPath("color.nope")).toBeUndefined();
     });
 
     it("keeps a token's id through a rename, and the ids inside a renamed group", () => {
         const session = createSession(demo);
         session.do(rename(session.tokens, "color.brand.500", "550"));
 
-        expect(session.pathOf("color.brand.500")).toBe("color.brand.550");
-        expect(session.idOf("color.brand.550")).toBe("color.brand.500");
-        expect(session.idOf("color.brand.500")).toBeUndefined();
+        expect(session.getPath("color.brand.500")).toBe("color.brand.550");
+        expect(session.getID("color.brand.550")).toBe("color.brand.500");
+        expect(session.getID("color.brand.500")).toBeUndefined();
 
         session.do(rename(session.tokens, "color.brand", "house"));
-        expect(session.pathOf("color.brand.500")).toBe("color.house.550");
-        expect(session.pathOf("color.brand.300")).toBe("color.house.300");
-        expect(session.pathOf("color.brand")).toBe("color.house");
+        expect(session.getPath("color.brand.500")).toBe("color.house.550");
+        expect(session.getPath("color.brand.300")).toBe("color.house.300");
+        expect(session.getPath("color.brand")).toBe("color.house");
     });
 
     it("gives a token made in the session an id of its own", () => {
         const session = createSession(demo);
         session.do(create(session.tokens, "color.highlight", { $type: "color", $value: red }));
-        const id = session.idOf("color.highlight");
+        const id = session.getID("color.highlight");
 
         expect(id).toMatch(/^new:/);
-        expect(session.pathOf(id ?? "")).toBe("color.highlight");
+        expect(session.getPath(id ?? "")).toBe("color.highlight");
     });
 
     it("forgets a removed token's id, and gives a token made again at its path a new one", () => {
         const session = createSession(demo);
         session.do(remove(session.tokens, "color.brand.50"));
 
-        expect(session.pathOf("color.brand.50")).toBeUndefined();
-        expect(session.idOf("color.brand.50")).toBeUndefined();
+        expect(session.getPath("color.brand.50")).toBeUndefined();
+        expect(session.getID("color.brand.50")).toBeUndefined();
 
         session.do(create(session.tokens, "color.brand.50", { $value: red }));
-        expect(session.idOf("color.brand.50")).toMatch(/^new:/);
-        expect(session.pathOf("color.brand.50")).toBeUndefined();
+        expect(session.getID("color.brand.50")).toMatch(/^new:/);
+        expect(session.getPath("color.brand.50")).toBeUndefined();
     });
 
     it("doesn't give a renamed-away path's id to what is made there next", () => {
@@ -266,19 +265,19 @@ describe("ids", () => {
         session.do(rename(session.tokens, "color.brand.500", "550"));
         session.do(create(session.tokens, "color.brand.500", { $value: red }));
 
-        expect(session.idOf("color.brand.500")).toMatch(/^new:/);
-        expect(session.pathOf("color.brand.500")).toBe("color.brand.550");
+        expect(session.getID("color.brand.500")).toMatch(/^new:/);
+        expect(session.getPath("color.brand.500")).toBe("color.brand.550");
     });
 
     it("puts ids back on discard, and keeps them through a save", () => {
         const session = createSession(demo);
         session.do(rename(session.tokens, "color.brand.500", "550"));
         session.markSaved();
-        expect(session.pathOf("color.brand.500")).toBe("color.brand.550");
+        expect(session.getPath("color.brand.500")).toBe("color.brand.550");
 
         session.do(rename(session.tokens, "color.brand.550", "555"));
         session.discard();
-        expect(session.pathOf("color.brand.500")).toBe("color.brand.550");
+        expect(session.getPath("color.brand.500")).toBe("color.brand.550");
     });
 
     it("never gives a made token the id of one whose name looks like a new id", () => {
@@ -286,18 +285,18 @@ describe("ids", () => {
         const session = createSession(readFromMemory({ files }));
         session.do(create(session.tokens, "made", { $type: "number", $value: 2 }));
 
-        expect(session.idOf("made")).not.toBe("new:1");
-        expect(session.pathOf("new:1")).toBe("new:1");
+        expect(session.getID("made")).not.toBe("new:1");
+        expect(session.getPath("new:1")).toBe("new:1");
     });
 
     it("never gives two tokens the same new id, even after a discard", () => {
         const session = createSession(demo);
         session.do(create(session.tokens, "color.a", { $type: "color", $value: red }));
-        const first = session.idOf("color.a");
+        const first = session.getID("color.a");
         session.discard();
         session.do(create(session.tokens, "color.b", { $type: "color", $value: red }));
 
-        expect(session.idOf("color.b")).not.toBe(first);
-        expect(session.pathOf(first ?? "")).toBeUndefined();
+        expect(session.getID("color.b")).not.toBe(first);
+        expect(session.getPath(first ?? "")).toBeUndefined();
     });
 });

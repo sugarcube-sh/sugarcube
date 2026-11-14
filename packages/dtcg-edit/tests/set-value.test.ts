@@ -28,8 +28,8 @@ describe("setValue, the shared value", () => {
         const brand = setValue(demo, "color.text.brand", "{color.brand.800}");
         const radius = setValue(demo, "radius.md", { value: 0.3, unit: "rem" });
 
-        expect(brand.ops && brand.alsoAffects.inputs).toEqual([{ mode: "light" }]);
-        expect(radius.ops && radius.alsoAffects.inputs).toEqual([
+        expect(brand.ops && brand.affectedPermutations.inputs).toEqual([{ mode: "light" }]);
+        expect(radius.ops && radius.affectedPermutations.inputs).toEqual([
             { mode: "light" },
             { mode: "dark" },
         ]);
@@ -71,7 +71,7 @@ describe("setValue, the shared value", () => {
                     was: "#ffffff",
                 },
             ],
-            alsoAffects: [],
+            affectedPermutations: [],
             moves: [],
         });
     });
@@ -105,7 +105,7 @@ describe("setValue, the shared value", () => {
         };
 
         expect(setValue(opened(files), "glow", "#111111")).toEqual({
-            refused: { kind: "no-shared-value", path: "glow", reason: expect.any(String) },
+            refusal: { kind: "no-shared-value", path: "glow", reason: expect.any(String) },
         });
     });
 
@@ -116,12 +116,12 @@ describe("setValue, the shared value", () => {
         };
         const result = setValue(opened(files), "bg", "#eeeeee");
 
-        expect(result.ops && result.alsoAffects.inputs).toEqual([]);
+        expect(result.ops && result.affectedPermutations.inputs).toEqual([]);
     });
 
     it("is refused for a token that doesn't exist", () => {
         expect(setValue(demo, "color.nope", "#000")).toEqual({
-            refused: { kind: "not-found", path: "color.nope", reason: expect.any(String) },
+            refusal: { kind: "not-found", path: "color.nope", reason: expect.any(String) },
         });
     });
 });
@@ -137,7 +137,7 @@ describe("setValue, for one context", () => {
             "dark.json": "{}",
         };
         const edit = setValue(opened(files), "bg", "#000000", { input: { mode: "dark" } });
-        expect(edit.ops && edit.alsoAffects.inputs).toEqual([]);
+        expect(edit.ops && edit.affectedPermutations.inputs).toEqual([]);
     });
 
     it("names a context that reads the same file only where that file's value wins", () => {
@@ -157,8 +157,8 @@ describe("setValue, for one context", () => {
         const bg = setValue(tokens, "bg", "#111111", { input: { mode: "dark" } });
         const text = setValue(tokens, "text", "#eeeeee", { input: { mode: "dark" } });
         expect(opsOf(bg)[0]?.file).toBe("night.json");
-        expect(bg.ops && bg.alsoAffects.inputs).toEqual([]);
-        expect(text.ops && text.alsoAffects.inputs).toEqual([{ mode: "dim" }]);
+        expect(bg.ops && bg.affectedPermutations.inputs).toEqual([]);
+        expect(text.ops && text.affectedPermutations.inputs).toEqual([{ mode: "dim" }]);
     });
 
     const dark = { input: { mode: "dark" } };
@@ -166,7 +166,7 @@ describe("setValue, for one context", () => {
     it("changes dark's own override, in dark's file only", () => {
         const result = setValue(demo, "color.text.brand", "{color.brand.200}", dark);
 
-        expect(result.ops && result.alsoAffects.inputs).toEqual([]);
+        expect(result.ops && result.affectedPermutations.inputs).toEqual([]);
         expect(opsOf(result)).toEqual([
             {
                 kind: "set",
@@ -363,7 +363,7 @@ describe("setValue, for one context", () => {
         };
 
         expect(setValue(opened(files), "bg", "#000000", dark)).toEqual({
-            refused: {
+            refusal: {
                 kind: "hidden-by-later-file",
                 path: "bg",
                 input: { mode: "dark" },
@@ -375,10 +375,10 @@ describe("setValue, for one context", () => {
 
     it("is refused for a context the resolver doesn't have", () => {
         expect(setValue(demo, "radius.md", 1, { input: { mode: "dim" } })).toEqual({
-            refused: {
+            refusal: {
                 kind: "no-permutation",
                 input: { mode: "dim" },
-                why: "unknown-context",
+                cause: "unknown-context",
                 reason: expect.any(String),
             },
         });
@@ -386,10 +386,10 @@ describe("setValue, for one context", () => {
 
     it("is refused for a context that isn't a string", () => {
         expect(setValue(demo, "radius.md", 1, { input: { mode: 1 } as unknown as Input })).toEqual({
-            refused: {
+            refusal: {
                 kind: "no-permutation",
                 input: { mode: 1 },
-                why: "not-a-string",
+                cause: "not-a-string",
                 reason: expect.stringContaining(
                     ": a context was given as something other than a string",
                 ),
@@ -418,7 +418,7 @@ describe("setValue, for one context", () => {
         expect(
             setValue(opened(files), "bg", "#000000", { input: { mode: "dark", brand: "b" } }),
         ).toEqual({
-            refused: {
+            refusal: {
                 kind: "several-contexts",
                 input: { mode: "dark", brand: "b" },
                 reason: "an override for `mode: dark, brand: b` at once can't be written: no file is read by that combination alone",
@@ -433,7 +433,7 @@ describe("setValue, for one context", () => {
         };
 
         expect(setValue(opened(files), "bg", "#000000", dark)).toEqual({
-            refused: {
+            refusal: {
                 kind: "no-file-for-context",
                 path: "bg",
                 input: { mode: "dark" },
@@ -472,7 +472,7 @@ describe("setValue, what it can't change", () => {
         };
 
         expect(setValue(opened(files), "bg", "#000000", { input: { mode: "dark" } })).toEqual({
-            refused: {
+            refusal: {
                 kind: "no-file-for-context",
                 path: "bg",
                 input: { mode: "dark" },
@@ -500,7 +500,7 @@ describe("setValue, what it can't change", () => {
         };
 
         expect(setValue(opened(files, { generators: [steps] }), "space.1", 4)).toEqual({
-            refused: {
+            refusal: {
                 kind: "generated",
                 path: "space.1",
                 from: "space",
@@ -546,7 +546,7 @@ describe("setValue, what it can't change", () => {
                 },
                 { generators: [steps] },
             );
-            expect(setValue(tokens, "space.1", { value: 3, unit: "rem" }).refused).toMatchObject({
+            expect(setValue(tokens, "space.1", { value: 3, unit: "rem" }).refusal).toMatchObject({
                 kind: "generated",
                 path: "space.1",
             });
@@ -568,7 +568,7 @@ describe("setValue, what it can't change", () => {
 
         const result = setValue(opened(files, { generators: [steps] }), "one", 2);
         expect(result).toEqual({
-            refused: {
+            refusal: {
                 kind: "generated",
                 path: "one",
                 from: "",
@@ -588,7 +588,7 @@ describe("setValue, what it can't change", () => {
         };
 
         expect(setValue(opened(files), "danger.bg", "#ff0000")).toEqual({
-            refused: {
+            refusal: {
                 kind: "inherited",
                 path: "danger.bg",
                 from: "button",
@@ -645,7 +645,7 @@ describe("setValue, at a place it is written", () => {
                     was: "{color.brand.300}",
                 },
             ],
-            alsoAffects: place.winningPermutations.inputs,
+            affectedPermutations: place.winningPermutations.inputs,
             moves: [],
         });
         expect(place.winningPermutations.inputs).toEqual([{ mode: "dark" }]);
@@ -665,9 +665,11 @@ describe("setValue, at a place it is written", () => {
                 was: "#000000",
             },
         ]);
-        expect(result.ops && result.alsoAffects.inputs).toEqual([{ mode: "dark", size: "small" }]);
+        expect(result.ops && result.affectedPermutations.inputs).toEqual([
+            { mode: "dark", size: "small" },
+        ]);
         expect(
-            setValue(tokens, "bg", "#111111", { input: { mode: "dark", size: "large" } }).refused
+            setValue(tokens, "bg", "#111111", { input: { mode: "dark", size: "large" } }).refusal
                 ?.kind,
         ).toBe("several-contexts");
     });
@@ -703,7 +705,7 @@ describe("setValue, at a place it is written", () => {
                     was: "#ffffff",
                 },
             ],
-            alsoAffects: [],
+            affectedPermutations: [],
             moves: [],
         });
     });
@@ -712,8 +714,8 @@ describe("setValue, at a place it is written", () => {
         const other = placeIn(demo, "color.text.brand", "dark.json").span;
 
         expect(setValue(demo, "radius.md", 1, { at: other })).toEqual({
-            refused: {
-                kind: "not-written-there",
+            refusal: {
+                kind: "not-a-definition",
                 path: "radius.md",
                 at: other,
                 reason: "`radius.md` isn't written at that place in `dark.json`; take the place from `getDefinitions`",
@@ -730,9 +732,9 @@ describe("setValue, at a place it is written", () => {
         });
 
         expect(
-            setValue(moved, "color.text.brand", "{color.brand.200}", { at: before }).refused,
+            setValue(moved, "color.text.brand", "{color.brand.200}", { at: before }).refusal,
         ).toMatchObject({
-            kind: "not-written-there",
+            kind: "not-a-definition",
             path: "color.text.brand",
         });
     });
@@ -740,7 +742,7 @@ describe("setValue, at a place it is written", () => {
     it("is refused for a token that doesn't exist", () => {
         const other = placeIn(demo, "radius.md", "radius.json").span;
 
-        expect(setValue(demo, "radius.nope", 1, { at: other }).refused?.kind).toBe("not-found");
+        expect(setValue(demo, "radius.nope", 1, { at: other }).refusal?.kind).toBe("not-found");
     });
 
     it("is refused for a token a generator makes, though its extension is a place", () => {
@@ -763,7 +765,7 @@ describe("setValue, at a place it is written", () => {
         const [place] = tokens.getDefinitions("space.1");
 
         expect(place).toBeDefined();
-        expect(setValue(tokens, "space.1", 4, { at: place!.span }).refused?.kind).toBe("generated");
+        expect(setValue(tokens, "space.1", 4, { at: place!.span }).refusal?.kind).toBe("generated");
     });
 
     it("is refused for a token a group inherits, though the token it inherits is a place", () => {
@@ -777,7 +779,7 @@ describe("setValue, at a place it is written", () => {
         const [place] = tokens.getDefinitions("danger.bg");
 
         expect(place?.span).toEqual(tokens.getDefinitions("button.bg")[0]?.span);
-        expect(setValue(tokens, "danger.bg", "#ff0000", { at: place!.span }).refused).toMatchObject(
+        expect(setValue(tokens, "danger.bg", "#ff0000", { at: place!.span }).refusal).toMatchObject(
             {
                 kind: "inherited",
                 from: "button",
@@ -1033,7 +1035,7 @@ describe("setDescription", () => {
                     was: "Old.",
                 },
             ],
-            alsoAffects: [],
+            affectedPermutations: [],
             moves: [],
         });
     });
@@ -1047,7 +1049,7 @@ describe("setDescription", () => {
 
     it("is refused for a path that is neither a token nor a group", () => {
         expect(setDescription(demo, "color.nope", "x")).toEqual({
-            refused: { kind: "not-found", path: "color.nope", reason: expect.any(String) },
+            refusal: { kind: "not-found", path: "color.nope", reason: expect.any(String) },
         });
     });
 });
@@ -1174,10 +1176,10 @@ describe("setValue, a part", () => {
         const tokens = opened(files);
 
         expect(setValue(tokens, "shadow.alias", "#ffffff", { part: ["color"] })).toMatchObject({
-            refused: { kind: "part-in-reference", path: "shadow.alias", part: ["color"] },
+            refusal: { kind: "part-in-reference", path: "shadow.alias", part: ["color"] },
         });
         expect(setValue(tokens, "shadow.layers", "#ffffff", { part: [0, "color"] })).toMatchObject({
-            refused: { kind: "part-in-reference", path: "shadow.layers", part: [0, "color"] },
+            refusal: { kind: "part-in-reference", path: "shadow.layers", part: [0, "color"] },
         });
     });
 
@@ -1190,16 +1192,16 @@ describe("setValue, a part", () => {
             ["offsetX", 0],
         ]) {
             expect(setValue(demo, "shadow.raised", 1, { part })).toMatchObject({
-                refused: { kind: "no-such-part", path: "shadow.raised", part },
+                refusal: { kind: "no-such-part", path: "shadow.raised", part },
             });
         }
         expect(setValue(demo, "shadow.sm", 1, { part: [0] })).toMatchObject({
-            refused: { kind: "no-such-part" },
+            refusal: { kind: "no-such-part" },
         });
     });
 
     it("words each refusal", () => {
-        const refusal = setValue(demo, "shadow.raised", 1, { part: [5, "color"] }).refused;
+        const refusal = setValue(demo, "shadow.raised", 1, { part: [5, "color"] }).refusal;
 
         expect(refusal?.reason).toBe("`shadow.raised` has no part `5.color`");
     });

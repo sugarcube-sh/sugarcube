@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { overridable, setValue } from "../src/index.js";
+import { getOverridableContexts, setValue } from "../src/index.js";
 import { committed, demo, opened, resolver } from "./helpers.js";
 
-describe("overridable", () => {
+describe("getOverridableContexts", () => {
     it("lists each context a token can be given its own value for, with its input and label", () => {
-        expect(overridable(demo, "color.brand.500")).toEqual([
+        expect(getOverridableContexts(demo, "color.brand.500")).toEqual([
             { input: { mode: "dark" }, label: "mode: dark" },
         ]);
     });
 
     it("leaves out a context that already writes the token, and a modifier's default", () => {
-        expect(overridable(demo, "color.text.default")).toEqual([]);
+        expect(getOverridableContexts(demo, "color.text.default")).toEqual([]);
     });
 
     it("gives the input setValue writes the override with", () => {
-        const [dark] = overridable(demo, "color.brand.500");
+        const [dark] = getOverridableContexts(demo, "color.brand.500");
         const after = committed(
             demo,
             setValue(demo, "color.brand.500", "{color.brand.400}", { input: dark!.input }),
@@ -24,7 +24,7 @@ describe("overridable", () => {
             after.getPermutation({ mode: "dark" }).getToken("color.brand.500")?.winningDefinition
                 .source.file,
         ).toBe("dark.json");
-        expect(overridable(after, "color.brand.500")).toEqual([]);
+        expect(getOverridableContexts(after, "color.brand.500")).toEqual([]);
     });
 
     it("leaves out a context with no file of its own to hold the override", () => {
@@ -33,7 +33,7 @@ describe("overridable", () => {
             "base.json": '{ "bg": { "$type": "color", "$value": "#ffffff" } }',
         };
 
-        expect(overridable(opened(files), "bg")).toEqual([]);
+        expect(getOverridableContexts(opened(files), "bg")).toEqual([]);
     });
 
     it("leaves out a context whose override a later file would hide", () => {
@@ -62,13 +62,13 @@ describe("overridable", () => {
         };
         const tokens = opened(files);
 
-        expect(setValue(tokens, "bg", "#000000", { input: { mode: "dark" } }).refused?.kind).toBe(
+        expect(setValue(tokens, "bg", "#000000", { input: { mode: "dark" } }).refusal?.kind).toBe(
             "hidden-by-later-file",
         );
-        expect(overridable(tokens, "bg")).toEqual([]);
+        expect(getOverridableContexts(tokens, "bg")).toEqual([]);
     });
 
     it("lists nothing for a path with no token", () => {
-        expect(overridable(demo, "color.nothing")).toEqual([]);
+        expect(getOverridableContexts(demo, "color.nothing")).toEqual([]);
     });
 });

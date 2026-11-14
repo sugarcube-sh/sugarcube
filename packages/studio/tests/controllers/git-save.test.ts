@@ -63,7 +63,7 @@ function edited(...values: [path: string, value: string][]) {
         readFromMemory({ files: FILES, entryFile: "tokens.resolver.json" }),
     );
     for (const [path, value] of values) session.do(setValue(session.tokens, path, value, darkText));
-    return { edits: session.unsaved, changes: session.changes() };
+    return { edits: session.unsavedEdits, changes: session.getChanges() };
 }
 
 function saving(github: ReturnType<typeof onGitHub>) {
@@ -157,7 +157,7 @@ describe("a save to GitHub", () => {
                             value: [],
                             was: [{ $ref: "dark.json" }],
                         },
-                        { kind: "deleteFile", file: "dark.json", was: DARK },
+                        { kind: "delete-file", file: "dark.json", was: DARK },
                     ],
                     moves: [],
                 },

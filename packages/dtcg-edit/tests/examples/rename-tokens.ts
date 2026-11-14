@@ -8,4 +8,4 @@ const source = { entryFile: "tokens/tokens.resolver.json" };
 const tokens = await read(source.entryFile);
 const done = commit(tokens, rename(tokens, "color.brand", "primary"));
 if (done.tokens) await applyToDisk(source, { steps: [done] });
-else if (done.refused) showMessage(done.refused.reason);
+else if (done.refusal) showMessage(done.refusal.reason);

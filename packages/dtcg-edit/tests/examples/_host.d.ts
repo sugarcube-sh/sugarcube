@@ -4,7 +4,7 @@ declare function askPerson(candidates: readonly string[]): Promise<string>;
 declare function showMessage(message: string): void;
 declare function showBroken(original: unknown, problems: readonly { message: string }[]): void;
 declare function openPullRequest(
-    changes: { written: Record<string, string>; deleted: string[] },
+    changes: { textByFile: Record<string, string>; deleted: string[] },
     pr: { title: string; body: string },
 ): Promise<void>;
 declare function commentOnFigma(message: string): Promise<void>;

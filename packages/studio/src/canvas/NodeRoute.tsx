@@ -29,8 +29,8 @@ export function NodeRoute() {
 function useFollowed(path: string | undefined) {
     const studio = useStudio();
     const navigate = useNavigate();
-    const id = useMemo(() => (path === undefined ? undefined : studio.idOf(path)), [studio, path]);
-    const now = useStudioState(() => (id === undefined ? path : studio.pathOf(id)));
+    const id = useMemo(() => (path === undefined ? undefined : studio.getID(path)), [studio, path]);
+    const now = useStudioState(() => (id === undefined ? path : studio.getPath(id)));
 
     useEffect(() => {
         if (path === undefined || now === path) return;

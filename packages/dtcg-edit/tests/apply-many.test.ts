@@ -3,7 +3,7 @@ import * as jsonc from "jsonc-parser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     type FileOp,
-    type OpResult,
+    type OperationResult,
     apply,
     combine,
     commit,
@@ -36,7 +36,7 @@ describe("applying many edits to one file", () => {
 
     it("gives what applying them one at a time gives when they touch or sit inside each other", () => {
         const red = { colorSpace: "srgb", components: [1, 0, 0] };
-        const steps: OpResult[] = [];
+        const steps: OperationResult[] = [];
         let tokens = demo;
         for (const operation of [
             (p: typeof demo) => setValue(p, "color.brand.500", red),
@@ -154,7 +154,7 @@ describe("applying many edits to one file", () => {
             },
         });
         const renamedTo = (key: string): FileOp => ({
-            kind: "renameKey",
+            kind: "rename-key",
             file: "tokens.json",
             jsonPath: [key],
             name: "x",
@@ -172,7 +172,7 @@ describe("applying many edits to one file", () => {
         });
         const ops: FileOp[] = [
             {
-                kind: "renameKey",
+                kind: "rename-key",
                 file: "tokens.json",
                 jsonPath: ["a"],
                 name: "b",
@@ -201,7 +201,7 @@ describe("applying many edits to one file", () => {
         const edited = '{\n  "a": { "$type": "number", "$value": 2 }\n}\n';
         const ops: FileOp[] = [
             { kind: "set", file: "base.json", jsonPath: ["a", "$value"], value: 2, was: 1 },
-            { kind: "deleteFile", file: "base.json", was: edited },
+            { kind: "delete-file", file: "base.json", was: edited },
         ];
         const after = apply(tokens, ops);
         if (after.conflicts) throw new Error(JSON.stringify(after.conflicts));

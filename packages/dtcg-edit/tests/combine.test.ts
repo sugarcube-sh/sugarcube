@@ -55,7 +55,7 @@ describe("combine", () => {
         ];
         for (const operation of operations) {
             expect(plainly(combine(demo, [operation]))).toEqual({
-                broken: [],
+                pathsWithBrokenReferences: [],
                 ...plainly(operation(demo)),
             });
         }
@@ -64,8 +64,8 @@ describe("combine", () => {
     it("changes nothing for no operations", () => {
         expect(plainly(combine(demo, []))).toEqual({
             ops: [],
-            alsoAffects: [],
-            broken: [],
+            affectedPermutations: [],
+            pathsWithBrokenReferences: [],
             moves: [],
         });
     });
@@ -76,12 +76,13 @@ describe("combine", () => {
             (current) => setValue(current, "color.text.brand", "{color.brand.800}"),
         ]);
 
-        expect(result.ops && result.alsoAffects.inputs).toEqual([
+        expect(result.ops && result.affectedPermutations.inputs).toEqual([
             { mode: "light" },
             { mode: "dark" },
         ]);
         expect(
-            result.ops && result.alsoAffects.every((each) => demo.permutations.includes(each)),
+            result.ops &&
+                result.affectedPermutations.every((each) => demo.permutations.includes(each)),
         ).toBe(true);
     });
 
@@ -163,7 +164,7 @@ describe("combine", () => {
         ]);
         session.do(edit);
 
-        expect(opsIn(session.unsaved)).toEqual(edit.ops);
+        expect(opsIn(session.unsavedEdits)).toEqual(edit.ops);
         expect(session.tokens.toMemory().files).toEqual(committed(demo, edit).toMemory().files);
     });
 });
@@ -172,7 +173,7 @@ describe("combine, what is left referring to nothing", () => {
     it("lists what an operation leaves broken", () => {
         const result = combine(chain(), [(current) => remove(current, "red")]);
 
-        expect(result.ops && result.broken).toEqual(["brand"]);
+        expect(result.ops && result.pathsWithBrokenReferences).toEqual(["brand"]);
     });
 
     it("follows a broken token through a later operation's rename", () => {
@@ -181,7 +182,7 @@ describe("combine, what is left referring to nothing", () => {
             (current) => rename(current, "brand", "house"),
         ]);
 
-        expect(result.ops && result.broken).toEqual(["house"]);
+        expect(result.ops && result.pathsWithBrokenReferences).toEqual(["house"]);
     });
 
     it("leaves out a broken token a later operation removes, and lists what that leaves broken", () => {
@@ -190,7 +191,7 @@ describe("combine, what is left referring to nothing", () => {
             (current) => remove(current, "brand"),
         ]);
 
-        expect(result.ops && result.broken).toEqual(["text"]);
+        expect(result.ops && result.pathsWithBrokenReferences).toEqual(["text"]);
     });
 
     it("leaves out a broken token a later operation mends", () => {
@@ -199,7 +200,7 @@ describe("combine, what is left referring to nothing", () => {
             (current) => create(current, "red", { $type: "color", $value: red }),
         ]);
 
-        expect(result.ops && result.broken).toEqual([]);
+        expect(result.ops && result.pathsWithBrokenReferences).toEqual([]);
     });
 
     it("lists a token once when two operations leave it broken", () => {
@@ -222,6 +223,6 @@ describe("combine, what is left referring to nothing", () => {
             (current) => remove(current, "blue"),
         ]);
 
-        expect(result.ops && result.broken).toEqual(["fade"]);
+        expect(result.ops && result.pathsWithBrokenReferences).toEqual(["fade"]);
     });
 });
