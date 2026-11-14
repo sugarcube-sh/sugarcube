@@ -18,7 +18,7 @@ import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import { onFileChanged } from "@sugarcube-sh/dtcg/node";
 import dtcg, { type ReadEvent } from "@sugarcube-sh/dtcg-vite";
 import UnoCSS from "@unocss/vite";
-import type { Logger, Plugin, UserConfig } from "vite";
+import type { FSWatcher, Logger, Plugin, UserConfig } from "vite";
 
 /** UnoCSS outputToCssLayers configuration */
 type OutputToCssLayersOptions =
@@ -89,7 +89,200 @@ interface LastGoodCSS {
     utilities: UtilityCSS;
 }
 
+const VIRTUAL_CSS_ID = "virtual:sugarcube.css";
+
 const NO_UTILITIES: UtilityCSS = { rules: [], prefixes: [], safelist: [], customProperties: [] };
+
+class PluginState {
+    readonly dtcgPlugin: ReturnType<typeof dtcg>;
+    readonly unoPlugins: Plugin[];
+    readonly context: SugarcubePluginContext;
+    #unocss: UnoContext | undefined;
+    #isDebugging = isDebugEnabled(process.env.DEBUG);
+    #root!: string;
+    #loaded!: LoadedConfig;
+    #tokens!: DesignTokens;
+    #configProblems: AnyDiagnostic[] = [];
+    #tokenProblems: AnyDiagnostic[] = [];
+    #lastGoodCSS: LastGoodCSS = { css: "", utilities: NO_UTILITIES };
+    #logger: Logger | undefined;
+    #listeners = new Set<() => void>();
+    #started: Promise<void> | undefined;
+    #configChanges = createChangeQueue<{ kind: "config" }>(["config"], {
+        onChange: () => this.#reloadConfig(),
+        onError: (error) => this.#logUnexpectedError(error),
+    });
+
+    constructor(unoOptions: UnoOptions) {
+        this.dtcgPlugin = dtcg(() => getTokensOnDisk(this.#loaded.config, this.#root));
+        this.unoPlugins = UnoCSS({
+            configFile: false,
+            ...unoOptions,
+            presets: [...(unoOptions.presets || []), this.#createPreset()],
+        } as any);
+        this.#unocss = this.unoPlugins.find((p) => p.name === "unocss:api")?.api?.getContext();
+        this.context = this.#createContext();
+    }
+
+    start(userConfig: UserConfig): Promise<void> {
+        this.#started ??= this.#load(userConfig);
+        return this.#started;
+    }
+
+    async #load(userConfig: UserConfig): Promise<void> {
+        this.#root = realpathSync(resolve(userConfig.root ?? "."));
+        this.#loaded = await loadInternalConfig({}, { root: this.#root });
+        this.#updateCSS(await this.dtcgPlugin.api.getTokens());
+        this.dtcgPlugin.api.onRead((next, read) => {
+            this.#handleRead(next, read).catch((error) => this.#logUnexpectedError(error));
+        });
+        await this.#unocss?.ready;
+        await this.#unocss?.reloadConfig();
+    }
+
+    useLogger(logger: Logger, isServing: boolean): void {
+        this.#logger = logger;
+        if (isServing) this.#reportProblems();
+    }
+
+    watchConfig(watcher: FSWatcher): void {
+        if (this.#loaded.configFile) watcher.add(this.#loaded.configFile);
+        const onConfig = (file: string) => {
+            if (isConfigFile(file, this.#root)) this.#configChanges({ kind: "config" });
+        };
+        onFileChanged(watcher, onConfig);
+        watcher.on("add", onConfig);
+        watcher.on("unlink", onConfig);
+    }
+
+    formatBuildProblems(): { text: string; hasErrors: boolean } | undefined {
+        const problems = this.#getProblems();
+        if (problems.length === 0) return undefined;
+        const text = this.#formatBlocks(problems)
+            .map((block) => block.text)
+            .join("\n\n");
+        return { text, hasErrors: hasErrors(problems) };
+    }
+
+    #createPreset(): unknown {
+        const lastGoodCSS = () => this.#lastGoodCSS;
+        return {
+            name: "sugarcube",
+            get rules() {
+                return lastGoodCSS().utilities.rules;
+            },
+            get safelist() {
+                return lastGoodCSS().utilities.safelist;
+            },
+            preflights: [{ getCSS: () => lastGoodCSS().css }],
+        };
+    }
+
+    #createContext(): SugarcubePluginContext {
+        const read = {
+            config: () => this.#loaded.config,
+            configProblems: () => this.#configProblems,
+            tokens: () => this.#tokens,
+        };
+        return {
+            get config() {
+                return read.config();
+            },
+            get configProblems() {
+                return read.configProblems();
+            },
+            get tokens() {
+                return read.tokens();
+            },
+            onReload: (fn) => {
+                this.#listeners.add(fn);
+                return () => this.#listeners.delete(fn);
+            },
+        };
+    }
+
+    #getProblems(): AnyDiagnostic[] {
+        return [...this.#configProblems, ...this.#tokenProblems];
+    }
+
+    #formatBlocks(problems: AnyDiagnostic[]) {
+        return formatProblemBlocks(problems, {
+            cwd: this.#root,
+            entryFile: getTokensOnDisk(this.#loaded.config, this.#root).entryFile,
+            configFile: this.#loaded.configFile,
+            tokens: this.#tokens,
+        });
+    }
+
+    #reportProblems(): void {
+        for (const { severity, text } of this.#formatBlocks(this.#getProblems())) {
+            if (severity === "error") this.#logger?.error(text);
+            else this.#logger?.warn(text);
+        }
+    }
+
+    #logUnexpectedError(error: unknown): void {
+        this.#logger?.error(
+            `[sugarcube] ${error instanceof Error ? error.message : String(error)}`,
+        );
+    }
+
+    #updateCSS(next: DesignTokens): boolean {
+        this.#tokens = next;
+        const generated = generateCSS(next, this.#loaded.config);
+        this.#tokenProblems = generated.diagnostics;
+        if (hasErrors(this.#getProblems())) return false;
+        const utilities = generated.utilities ?? NO_UTILITIES;
+        const sameUtilities = isDeepStrictEqual(
+            [this.#lastGoodCSS.utilities.prefixes, this.#lastGoodCSS.utilities.safelist],
+            [utilities.prefixes, utilities.safelist],
+        );
+        this.#lastGoodCSS = {
+            css: generated.variables.map((file) => file.css).join("\n"),
+            utilities,
+        };
+        return !sameUtilities;
+    }
+
+    async #reloadConfig(): Promise<void> {
+        try {
+            this.#loaded = await loadInternalConfig(
+                {},
+                { root: this.#root, lastConfigFile: this.#loaded.configFile },
+            );
+            this.#configProblems = [];
+        } catch (error) {
+            if (!(error instanceof ConfigError)) throw error;
+            this.#configProblems = toConfigDiagnostics(error);
+            this.#reportProblems();
+            return;
+        }
+        await this.dtcgPlugin.api.reread();
+    }
+
+    async #handleRead(next: DesignTokens, read: ReadEvent): Promise<void> {
+        const started = performance.now();
+        const utilitiesChanged = this.#updateCSS(next);
+        const css = performance.now() - started;
+        this.#reportProblems();
+        let reloaded: number | undefined;
+        if (!hasErrors(this.#getProblems())) {
+            if (utilitiesChanged) {
+                const reloading = performance.now();
+                await this.#unocss?.reloadConfig();
+                reloaded = performance.now() - reloading;
+            } else {
+                this.#unocss?.invalidate();
+            }
+        }
+        if (this.#isDebugging) {
+            this.#logger?.info(
+                formatTiming(read, { css, unocss: reloaded, rest: performance.now() - started }),
+            );
+        }
+        for (const fn of this.#listeners) fn();
+    }
+}
 
 // Returns Promise<any> rather than Promise<Plugin[]> to avoid exposing Vite's
 // Plugin type in the public API. Vite's Plugin type changes across major versions,
@@ -113,153 +306,18 @@ const NO_UTILITIES: UtilityCSS = { rules: [], prefixes: [], safelist: [], custom
  * export default defineConfig({ plugins: [sugarcube()] });
  */
 export default async function sugarcubePlugin(options: SugarcubePluginOptions = {}): Promise<any> {
-    const { unoOptions = {} } = options;
-    const isDebugging = isDebugEnabled(process.env.DEBUG);
-    let root!: string;
-    let loaded!: LoadedConfig;
-    let tokens!: DesignTokens;
-    const dtcgPlugin = dtcg(() => getTokensOnDisk(loaded.config, root));
-    let configProblems: AnyDiagnostic[] = [];
-    let tokenProblems: AnyDiagnostic[] = [];
-    const getProblems = () => [...configProblems, ...tokenProblems];
-    let lastGood: LastGoodCSS = { css: "", utilities: NO_UTILITIES };
-    let logger: Logger | undefined;
-    const listeners = new Set<() => void>();
-    const logUnexpected = (error: unknown) =>
-        logger?.error(`[sugarcube] ${error instanceof Error ? error.message : String(error)}`);
-
-    const formatBlocks = (problems: AnyDiagnostic[]) =>
-        formatProblemBlocks(problems, {
-            cwd: root,
-            entryFile: getTokensOnDisk(loaded.config, root).entryFile,
-            configFile: loaded.configFile,
-            tokens,
-        });
-
-    const reportProblems = () => {
-        for (const { severity, text } of formatBlocks(getProblems())) {
-            if (severity === "error") logger?.error(text);
-            else logger?.warn(text);
-        }
-    };
-
-    const updateCSS = (next: DesignTokens): boolean => {
-        tokens = next;
-        const generated = generateCSS(next, loaded.config);
-        tokenProblems = generated.diagnostics;
-        if (hasErrors(getProblems())) return false;
-        const utilities = generated.utilities ?? NO_UTILITIES;
-        const sameUtilities = isDeepStrictEqual(
-            [lastGood.utilities.prefixes, lastGood.utilities.safelist],
-            [utilities.prefixes, utilities.safelist],
-        );
-        lastGood = { css: generated.variables.map((file) => file.css).join("\n"), utilities };
-        return !sameUtilities;
-    };
-
-    const reloadConfig = createChangeQueue<{ kind: "config" }>(["config"], {
-        onChange: async () => {
-            try {
-                loaded = await loadInternalConfig({}, { root, lastConfigFile: loaded.configFile });
-                configProblems = [];
-            } catch (error) {
-                if (!(error instanceof ConfigError)) throw error;
-                configProblems = toConfigDiagnostics(error);
-                reportProblems();
-                return;
-            }
-            await dtcgPlugin.api.reread();
-        },
-        onError: logUnexpected,
-    });
-
-    const context: SugarcubePluginContext = {
-        get config() {
-            return loaded.config;
-        },
-        get configProblems() {
-            return configProblems;
-        },
-        get tokens() {
-            return tokens;
-        },
-        onReload(fn) {
-            listeners.add(fn);
-            return () => listeners.delete(fn);
-        },
-    };
-
-    const sugarcubePreset: any = {
-        name: "sugarcube",
-        get rules() {
-            return lastGood.utilities.rules;
-        },
-        get safelist() {
-            return lastGood.utilities.safelist;
-        },
-        preflights: [{ getCSS: () => lastGood.css }],
-    };
-
-    const unoPlugins: Plugin[] = UnoCSS({
-        configFile: false,
-        ...unoOptions,
-        presets: [...(unoOptions.presets || []), sugarcubePreset],
-    } as any);
-    const unocss: UnoContext | undefined = unoPlugins
-        .find((p) => p.name === "unocss:api")
-        ?.api?.getContext();
-
-    const handleRead = async (next: DesignTokens, read: ReadEvent) => {
-        const started = performance.now();
-        const utilitiesChanged = updateCSS(next);
-        const css = performance.now() - started;
-        reportProblems();
-        let reloaded: number | undefined;
-        if (!hasErrors(getProblems())) {
-            if (utilitiesChanged) {
-                const reloading = performance.now();
-                await unocss?.reloadConfig();
-                reloaded = performance.now() - reloading;
-            } else {
-                unocss?.invalidate();
-            }
-        }
-        if (isDebugging) {
-            logger?.info(
-                formatTiming(read, { css, unocss: reloaded, rest: performance.now() - started }),
-            );
-        }
-        for (const fn of listeners) fn();
-    };
-    let started: Promise<void> | undefined;
-    const start = async (userConfig: UserConfig) => {
-        root = realpathSync(resolve(userConfig.root ?? "."));
-        loaded = await loadInternalConfig({}, { root });
-        updateCSS(await dtcgPlugin.api.getTokens());
-        dtcgPlugin.api.onRead((next, read) => {
-            handleRead(next, read).catch(logUnexpected);
-        });
-        await unocss?.ready;
-        await unocss?.reloadConfig();
-    };
+    const state = new PluginState(options.unoOptions ?? {});
 
     const plugins: Plugin[] = [
-        dtcgPlugin,
+        state.dtcgPlugin,
         {
             name: "sugarcube",
-            config: (user) => (started ??= start(user)),
+            config: (user) => state.start(user),
             configResolved(config) {
-                logger = config.logger;
-                if (config.command === "serve") reportProblems();
+                state.useLogger(config.logger, config.command === "serve");
             },
             configureServer(dev) {
-                if (loaded.configFile) dev.watcher.add(loaded.configFile);
-                const onConfig = (file: string) => {
-                    if (isConfigFile(file, root)) reloadConfig({ kind: "config" });
-                };
-                onFileChanged(dev.watcher, onConfig);
-                dev.watcher.on("add", onConfig);
-                dev.watcher.on("unlink", onConfig);
+                state.watchConfig(dev.watcher);
             },
         } satisfies Plugin,
 
@@ -267,17 +325,14 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             name: "sugarcube:build",
             apply: "build",
             buildStart() {
-                const problems = getProblems();
-                if (problems.length === 0) return;
-                const text = formatBlocks(problems)
-                    .map((block) => block.text)
-                    .join("\n\n");
-                if (hasErrors(problems)) this.error(text);
-                this.warn(text);
+                const problems = state.formatBuildProblems();
+                if (!problems) return;
+                if (problems.hasErrors) this.error(problems.text);
+                this.warn(problems.text);
             },
         } satisfies Plugin,
 
-        ...unoPlugins,
+        ...state.unoPlugins,
         {
             name: "sugarcube:virtual-css",
             enforce: "pre",
@@ -285,14 +340,14 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             config() {
                 return {
                     optimizeDeps: {
-                        exclude: ["virtual:sugarcube.css"],
+                        exclude: [VIRTUAL_CSS_ID],
                     },
                 };
             },
 
             async resolveId(id) {
                 // Variables included via preflight, utilities via rules
-                if (id === "virtual:sugarcube.css") {
+                if (id === VIRTUAL_CSS_ID) {
                     // Resolve through UnoCSS's virtual module system
                     const resolved = await this.resolve("virtual:uno.css", undefined, {
                         skipSelf: true,
@@ -305,7 +360,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         {
             name: SUGARCUBE_API_PLUGIN_NAME,
             api: {
-                getContext: () => context,
+                getContext: () => state.context,
             },
         } satisfies Plugin,
     ];
