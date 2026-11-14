@@ -10,6 +10,7 @@ import type {
     Span,
     TokenType,
 } from "@sugarcube-sh/dtcg";
+import { exceptionMessages } from "./error-messages.js";
 
 /**
  * A replacement of text in one file.
@@ -303,7 +304,7 @@ export function setValues(
     tokens: DesignTokens,
     values: readonly ({ path: string; value: JsonValue } & ValueOptions)[],
 ): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 export { create } from "./create.js";
@@ -320,7 +321,7 @@ export function reorder(
     path: string,
     options: { after: string } | { before: string },
 ): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**
@@ -344,7 +345,7 @@ export function move(
         name?: string;
     },
 ): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 export { remove } from "./remove.js";
@@ -362,7 +363,7 @@ export { setExtension } from "./set-extension.js";
  * @param fixes - Fixes from {@link getFixes} for these design tokens.
  */
 export function fix(tokens: DesignTokens, fixes: readonly Fix[]): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**
@@ -375,7 +376,7 @@ export function fix(tokens: DesignTokens, fixes: readonly Fix[]): OperationResul
  * @param type - The new `$type`, such as `"color"`.
  */
 export function setType(tokens: DesignTokens, path: string, type: TokenType): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**
@@ -385,7 +386,7 @@ export function setType(tokens: DesignTokens, path: string, type: TokenType): Op
  * @param path - The token a generator makes, such as `"color.blue.500"`.
  */
 export function detach(tokens: DesignTokens, path: string): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**
@@ -408,7 +409,7 @@ export function addFile(
         after?: string;
     },
 ): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**
@@ -432,7 +433,7 @@ export function addContext(
         basedOn?: string;
     },
 ): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**
@@ -452,7 +453,7 @@ export function addModifier(
         default?: string;
     },
 ): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**
@@ -469,7 +470,7 @@ export function renameContext(
     from: string,
     to: string,
 ): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**
@@ -495,7 +496,7 @@ export function removeContext(
         deleteFiles?: boolean;
     },
 ): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**
@@ -510,7 +511,7 @@ export function setDefaultContext(
     modifier: string,
     context: string,
 ): OperationResult {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }
 
 /**

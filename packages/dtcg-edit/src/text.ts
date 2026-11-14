@@ -1,4 +1,5 @@
 import type { JsonPath } from "@sugarcube-sh/dtcg";
+import { exceptionMessages } from "./error-messages.js";
 
 export { removeAt, renameKeyAt, setAt } from "./text-edits.js";
 
@@ -10,5 +11,5 @@ export { removeAt, renameKeyAt, setAt } from "./text-edits.js";
  * @param index - Its new position, from `0`.
  */
 export function reorderKeyAt(text: string, jsonPath: JsonPath, index: number): string {
-    throw new Error("not implemented yet");
+    throw new Error(exceptionMessages.notImplemented);
 }

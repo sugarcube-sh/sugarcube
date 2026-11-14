@@ -1,5 +1,5 @@
 import { type DesignTokens, type JsonValue, tokenPath } from "@sugarcube-sh/dtcg";
-import { refuse } from "./error-messages.js";
+import { exceptionMessages, refuse } from "./error-messages.js";
 import type { FileOp, NewToken, OperationResult, ContextOptions } from "./index.js";
 import { createQuestion, findNewPlacement } from "./placement.js";
 
@@ -37,7 +37,7 @@ function createInFile(
     options: ContextOptions & { after?: string },
     chosenFile?: string,
 ): OperationResult {
-    if (options.after !== undefined) throw new Error("not implemented yet");
+    if (options.after !== undefined) throw new Error(exceptionMessages.notImplemented);
     for (const name of path.split(".")) {
         const problem = tokenPath.findNameProblem(name);
         if (problem) return refuse({ kind: "invalid-name", name, ...problem });

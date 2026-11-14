@@ -2,6 +2,7 @@ import { type Input, type PermutationErrorDetail, toInputLabel } from "@sugarcub
 import type { Conflict, FileOp, Refusal } from "./index.js";
 
 export const exceptionMessages = {
+    notImplemented: "not implemented yet",
     operationDoesNotFit:
         "an operation's edits don't fit the design tokens it was given; make them from the tokens the operation is passed",
     stepsNoLongerFit:

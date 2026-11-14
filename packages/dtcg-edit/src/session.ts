@@ -84,7 +84,7 @@ export function createSession(tokens: DesignTokens): Session {
             mergeKey = undefined;
         },
         preview() {
-            throw new Error("not implemented yet");
+            throw new Error(exceptionMessages.notImplemented);
         },
         undo() {
             const last = undoStack.at(-1);
