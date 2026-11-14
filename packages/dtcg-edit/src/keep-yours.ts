@@ -1,8 +1,8 @@
 import type { DesignTokens, JsonValue } from "@sugarcube-sh/dtcg";
-import { refused } from "./error-messages.js";
+import { refuse } from "./error-messages.js";
 import type { Clash, ClashPart, FileOp, OpResult } from "./index.js";
 import { isGone } from "./clashes.js";
-import { seenReading } from "./placement.js";
+import { findAffectedPermutations } from "./placement.js";
 
 /**
  * Settles a {@link Clash} by keeping your side: what your step wrote is written over theirs at
@@ -20,18 +20,18 @@ import { seenReading } from "./placement.js";
  * }
  */
 export function keepYours(tokens: DesignTokens, clash: Clash): OpResult {
-    const gone = clash.parts.find(isGone);
-    if (gone) {
-        return refused({
+    const gonePart = clash.parts.find(isGone);
+    if (gonePart) {
+        return refuse({
             kind: "gone-elsewhere",
-            file: gone.file,
-            ...(gone.path !== undefined && { path: gone.path }),
+            file: gonePart.file,
+            ...(gonePart.path !== undefined && { path: gonePart.path }),
         });
     }
     const parts = clash.parts.filter(hasTheirs);
     return {
-        ops: parts.map((part) => opFor(tokens, part)),
-        alsoAffects: seenReading(
+        ops: parts.map((part) => toYourOp(tokens, part)),
+        alsoAffects: findAffectedPermutations(
             tokens,
             parts.map((part) => part.file),
         ),
@@ -43,7 +43,7 @@ function hasTheirs(part: ClashPart): part is ClashPart & { theirs: JsonValue } {
     return !isGone(part);
 }
 
-function opFor(
+function toYourOp(
     tokens: DesignTokens,
     { file, jsonPath, yours, theirs }: ClashPart & { theirs: JsonValue },
 ): FileOp {

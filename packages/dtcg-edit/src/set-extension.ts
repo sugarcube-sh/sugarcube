@@ -1,8 +1,13 @@
 import type { DesignTokens, JsonPath, JsonValue, Permutations } from "@sugarcube-sh/dtcg";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
-import { opsAt } from "./file-text.js";
+import { createWriteOps } from "./file-text.js";
 import type { FileOp, OpResult, PlaceOptions } from "./index.js";
-import { asked, extensionPlace, ownProperties, placement } from "./placement.js";
+import {
+    createQuestion,
+    findExtensionPlacement,
+    getOwnProperties,
+    findPlacement,
+} from "./placement.js";
 
 /**
  * Changes one setting inside a token's or group's `$extensions`, leaving the rest as written, so
@@ -43,80 +48,95 @@ export function setExtension(
     value: JsonValue | null,
     options: PlaceOptions = {},
 ): OpResult {
-    return setExtensionIn(tokens, path, jsonPath, value, options);
+    return setExtensionInFile(tokens, path, jsonPath, value, options);
 }
 
-function setExtensionIn(
+function setExtensionInFile(
     tokens: DesignTokens,
     path: string,
     jsonPath: readonly [string, ...JsonPath],
     value: JsonValue | null,
     options: PlaceOptions,
-    place?: string,
+    chosenFile?: string,
 ): OpResult {
-    const placed = placeOf(tokens, path, jsonPath, options, place);
-    if ("choose" in placed) {
-        return asked(placed.choose, (file) =>
-            setExtensionIn(tokens, path, jsonPath, value, options, file),
+    const placement = findSettingPlacement(tokens, path, jsonPath, options, chosenFile);
+    if ("choice" in placement) {
+        return createQuestion(placement.choice, (file) =>
+            setExtensionInFile(tokens, path, jsonPath, value, options, file),
         );
     }
-    if ("refused" in placed) return placed;
-    const { alsoAffects } = placed;
-    if ("at" in placed) {
-        const { at, inForce } = placed;
-        if (inForce === undefined) {
+    if ("refused" in placement) return placement;
+    const { alsoAffects } = placement;
+    if ("at" in placement) {
+        const { at, currentExtension } = placement;
+        if (currentExtension === undefined) {
             return {
-                ops: opsAt(tokens, at, ["$extensions", ...jsonPath], value),
+                ops: createWriteOps(tokens, at, ["$extensions", ...jsonPath], value),
                 alsoAffects,
                 moves: [],
             };
         }
-        const [key, ...within] = jsonPath;
-        const made = withSetting(inForce, within, value);
-        const ops = made === inForce ? [] : opsAt(tokens, at, ["$extensions", key], made ?? null);
+        const [key, ...settingPath] = jsonPath;
+        const newExtension = replaceSetting(currentExtension, settingPath, value);
+        const ops =
+            newExtension === currentExtension
+                ? []
+                : createWriteOps(tokens, at, ["$extensions", key], newExtension ?? null);
         return { ops, alsoAffects, moves: [] };
     }
-    const { into, inside, was } = placed;
-    const made = withSetting(was, placed.within, value);
+    const { into, current, settingPath } = placement;
+    const newExtension = replaceSetting(current, settingPath, value);
     const ops: FileOp[] =
-        made === was || made === undefined
+        newExtension === current || newExtension === undefined
             ? []
-            : [{ kind: "add", file: into, jsonPath: inside, value: made }];
+            : [{ kind: "add", file: into, jsonPath: placement.jsonPath, value: newExtension }];
     return { ops, alsoAffects, moves: [] };
 }
 
-type Placed =
-    | Exclude<ReturnType<typeof extensionPlace>, { into: string }>
+type SettingPlacement =
+    | Exclude<ReturnType<typeof findExtensionPlacement>, { into: string }>
     | {
           into: string;
-          inside: JsonPath;
-          was: JsonValue | undefined;
-          within: JsonPath;
+          jsonPath: JsonPath;
+          current: JsonValue | undefined;
+          settingPath: JsonPath;
           alsoAffects: Permutations;
       };
 
-function placeOf(
+function findSettingPlacement(
     tokens: DesignTokens,
     path: string,
-    [key, ...within]: readonly [string, ...JsonPath],
+    [key, ...settingPath]: readonly [string, ...JsonPath],
     options: PlaceOptions,
-    place: string | undefined,
-): Placed {
-    const steps = path.split(".");
+    chosenFile: string | undefined,
+): SettingPlacement {
+    const pathKeys = path.split(".");
     if (!tokens.permutations.some((perm) => perm.getToken(path))) {
-        const placed = extensionPlace(tokens, path, key, options, place);
-        if (!("into" in placed)) return placed;
-        const { into, inForce, alsoAffects } = placed;
-        return { into, inside: [...steps, "$extensions", key], was: inForce, within, alsoAffects };
+        const placement = findExtensionPlacement(tokens, path, key, options, chosenFile);
+        if (!("into" in placement)) return placement;
+        const { into, currentExtension, alsoAffects } = placement;
+        return {
+            into,
+            jsonPath: [...pathKeys, "$extensions", key],
+            current: currentExtension,
+            settingPath,
+            alsoAffects,
+        };
     }
-    const placed = placement(tokens, path, options, place);
-    if (!("token" in placed)) return placed;
-    const { into, token, alsoAffects } = placed;
-    const own = ownProperties(token);
-    return { into, inside: steps, was: own, within: ["$extensions", key, ...within], alsoAffects };
+    const placement = findPlacement(tokens, path, options, chosenFile);
+    if (!("token" in placement)) return placement;
+    const { into, token, alsoAffects } = placement;
+    const own = getOwnProperties(token);
+    return {
+        into,
+        jsonPath: pathKeys,
+        current: own,
+        settingPath: ["$extensions", key, ...settingPath],
+        alsoAffects,
+    };
 }
 
-function withSetting(
+function replaceSetting(
     whole: JsonValue | undefined,
     jsonPath: JsonPath,
     value: JsonValue | null,
@@ -125,7 +145,7 @@ function withSetting(
     if (step === undefined) return value ?? undefined;
     if (Array.isArray(whole) && typeof step === "number") {
         if (!Number.isInteger(step) || step < 0 || step >= whole.length) return whole;
-        const changed = withSetting(whole[step], rest, value);
+        const changed = replaceSetting(whole[step], rest, value);
         if (changed === whole[step]) return whole;
         return changed === undefined
             ? whole.filter((_, index) => index !== step)
@@ -135,7 +155,7 @@ function withSetting(
     const object = isJsonObject(whole) ? whole : undefined;
     const now = object?.[key];
     if (value === null && now === undefined) return whole;
-    const changed = withSetting(now, rest, value);
+    const changed = replaceSetting(now, rest, value);
     if (changed === now) return whole;
     if (changed !== undefined) return { ...object, [key]: changed };
     return Object.fromEntries(Object.entries(object ?? {}).filter(([each]) => each !== key));

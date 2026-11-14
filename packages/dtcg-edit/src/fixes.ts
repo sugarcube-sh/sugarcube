@@ -3,8 +3,8 @@ import { toJsonPointer, parseReference, toReferenceTarget } from "@sugarcube-sh/
 import { type Node, getNodeValue } from "jsonc-parser";
 import { fixTitles } from "./error-messages.js";
 import type { Fix, TextEdit } from "./index.js";
-import { inline, refString, removal, spliced } from "./json-text.js";
-import { nodeAt, tokenAround } from "./file-text.js";
+import { formatInline, findReferenceString, getRemovalSplices, applySplices } from "./json-text.js";
+import { findNode, findEnclosingToken } from "./file-text.js";
 import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
 
 /**
@@ -22,18 +22,19 @@ import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
  * }
  */
 export function fixesFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix[] {
-    const fix = fixFor(tokens, diagnostic);
+    const fix = findFix(tokens, diagnostic);
     return fix ? [fix] : [];
 }
 
-function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
+function findFix(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
     const { span } = diagnostic;
     if (!span) return undefined;
 
     switch (diagnostic.kind) {
         case "duplicate-key": {
             const earlier = diagnostic.relatedInformation?.[0]?.span;
-            const edits = earlier && deletion(tokens, earlier.file, nodeAt(tokens, earlier));
+            const edits =
+                earlier && getDeletionEdits(tokens, earlier.file, findNode(tokens, earlier));
             return (
                 edits && {
                     title: fixTitles.deleteEarlier(diagnostic.detail.key),
@@ -44,35 +45,42 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
         }
         case "unknown-type": {
             const { type, suggestion } = diagnostic.detail;
-            if (type === "") return deleteEmptyType(tokens, span, nodeAt(tokens, span));
+            if (type === "") return deleteEmptyType(tokens, span, findNode(tokens, span));
             if (suggestion === undefined) return undefined;
-            return guess(fixTitles.useSimilar(suggestion), [replacing(span, suggestion)]);
+            return createGuessFix(fixTitles.useSimilar(suggestion), [
+                replaceWith(span, suggestion),
+            ]);
         }
         case "invalid-property": {
             const { property, reference } = diagnostic.detail;
             if (reference !== undefined) {
-                return guess(fixTitles.extendsAsReference(reference), [replacing(span, reference)]);
+                return createGuessFix(fixTitles.writeExtendsAsReference(reference), [
+                    replaceWith(span, reference),
+                ]);
             }
-            const node = nodeAt(tokens, span);
+            const node = findNode(tokens, span);
             if (property !== "$type" || node?.type !== "null") return undefined;
             return deleteEmptyType(tokens, span, node);
         }
         case "hex-string-color": {
             const { value, asObject } = diagnostic.detail;
-            if (nodeAt(tokens, span)?.value !== value) return undefined;
-            return safe(fixTitles.hexToObject, { ...range(span), text: inline(asObject) });
+            if (findNode(tokens, span)?.value !== value) return undefined;
+            return createSafeFix(fixTitles.writeHexAsObject, {
+                ...toRange(span),
+                text: formatInline(asObject),
+            });
         }
         case "invalid-value":
-            return valueFix(tokens, diagnostic.detail, span, nodeAt(tokens, span)?.value);
+            return findValueFix(tokens, diagnostic.detail, span, findNode(tokens, span)?.value);
         case "malformed-pointer":
         case "not-a-value": {
             const { suggestion } = diagnostic.detail;
-            const node = nodeAt(tokens, span);
-            const ref = node && refString(node);
+            const node = findNode(tokens, span);
+            const ref = node && findReferenceString(node);
             if (suggestion === undefined || !ref) return undefined;
             const { offset, length } = ref;
             const text = JSON.stringify(suggestion);
-            return safe(fixTitles.writePointer(suggestion), {
+            return createSafeFix(fixTitles.writePointer(suggestion), {
                 file: span.file,
                 offset,
                 length,
@@ -83,7 +91,9 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
             const suggestion =
                 "suggestion" in diagnostic.detail ? diagnostic.detail.suggestion : undefined;
             if (suggestion === undefined) return undefined;
-            return guess(fixTitles.useSimilar(suggestion), [replacing(span, suggestion)]);
+            return createGuessFix(fixTitles.useSimilar(suggestion), [
+                replaceWith(span, suggestion),
+            ]);
         }
         case "missing-reference": {
             const { ref, suggestion } = diagnostic.detail;
@@ -92,48 +102,50 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
                 span,
                 ...(diagnostic.relatedInformation ?? []).map((related) => related.span),
             ];
-            const edits = uses.flatMap((use) => renamedReference(tokens, use, ref, suggestion));
-            return edits.length > 0 ? guess(fixTitles.useSimilar(suggestion), edits) : undefined;
+            const edits = uses.flatMap((use) => renameReference(tokens, use, ref, suggestion));
+            return edits.length > 0
+                ? createGuessFix(fixTitles.useSimilar(suggestion), edits)
+                : undefined;
         }
         default:
             return undefined;
     }
 }
 
-function valueFix(
+function findValueFix(
     tokens: DesignTokens,
     detail: Extract<Diagnostic, { kind: "invalid-value" }>["detail"],
     span: Span,
-    written: unknown,
+    nodeValue: unknown,
 ): Fix | undefined {
     switch (detail.reason) {
         case "string-with-unit": {
             const { value, asObject, type } = detail;
-            if (written !== value || !asObject) return undefined;
-            return safe(fixTitles.measureAsObject(type), {
-                ...range(span),
-                text: inline(asObject),
+            if (nodeValue !== value || !asObject) return undefined;
+            return createSafeFix(fixTitles.writeMeasureAsObject(type), {
+                ...toRange(span),
+                text: formatInline(asObject),
             });
         }
         case "hex-not-six-digits": {
             const { value, sixDigits } = detail;
-            if (written !== value || sixDigits === undefined) return undefined;
-            return safe(fixTitles.fullHex(sixDigits), replacing(span, sixDigits));
+            if (nodeValue !== value || sixDigits === undefined) return undefined;
+            return createSafeFix(fixTitles.writeFullHex(sixDigits), replaceWith(span, sixDigits));
         }
         case "short-hex-string": {
             const { value, expanded } = detail;
-            if (written !== value) return undefined;
-            return safe(fixTitles.fullHex(expanded), replacing(span, expanded));
+            if (nodeValue !== value) return undefined;
+            return createSafeFix(fixTitles.writeFullHex(expanded), replaceWith(span, expanded));
         }
         case "curly-brace-not-allowed-here": {
             const reference = parseReference(detail.reference);
-            if (written !== detail.reference || reference?.syntax !== "curly-brace") {
+            if (nodeValue !== detail.reference || reference?.syntax !== "curly-brace") {
                 return undefined;
             }
             const pointer = toJsonPointer(reference);
-            const change = { ...range(span), text: inline(pointer) };
-            if (!readsClean(tokens, [change])) return undefined;
-            return safe(fixTitles.referenceAsPointer(pointer.$ref), change);
+            const change = { ...toRange(span), text: formatInline(pointer) };
+            if (!isCleanAfter(tokens, [change])) return undefined;
+            return createSafeFix(fixTitles.writeReferenceAsPointer(pointer.$ref), change);
         }
         default:
             return undefined;
@@ -143,36 +155,36 @@ function valueFix(
 function deleteEmptyType(
     tokens: DesignTokens,
     span: Span,
-    written: Node | undefined,
+    node: Node | undefined,
 ): Fix | undefined {
-    const edits = deletion(tokens, span.file, written);
-    if (!edits || !readsClean(tokens, edits)) return undefined;
+    const edits = getDeletionEdits(tokens, span.file, node);
+    if (!edits || !isCleanAfter(tokens, edits)) return undefined;
     return { title: fixTitles.deleteType, safe: true, edits };
 }
 
-function readsClean(tokens: DesignTokens, edits: readonly TextEdit[]): boolean {
+function isCleanAfter(tokens: DesignTokens, edits: readonly TextEdit[]): boolean {
     const [first] = edits;
     if (!first) return true;
     const { file } = first;
-    const after = tokens.reread({ [file]: spliced(tokens.getText(file) ?? "", edits) });
-    const edited = Math.min(...edits.map(({ offset }) => offset));
-    const token = tokenAround(tokens, file, edited);
-    const start = Math.min(edited, token?.offset ?? edited);
-    const grown = edits.reduce((acc, { length, text }) => acc + text.length - length, 0);
+    const after = tokens.reread({ [file]: applySplices(tokens.getText(file) ?? "", edits) });
+    const editStart = Math.min(...edits.map(({ offset }) => offset));
+    const token = findEnclosingToken(tokens, file, editStart);
+    const start = Math.min(editStart, token?.offset ?? editStart);
+    const lengthChange = edits.reduce((acc, { length, text }) => acc + text.length - length, 0);
     const editedEnd = Math.max(...edits.map(({ offset, length }) => offset + length));
-    const end = Math.max(editedEnd, token ? token.offset + token.length : editedEnd) + grown;
+    const end = Math.max(editedEnd, token ? token.offset + token.length : editedEnd) + lengthChange;
     return getDiagnosticsAt(after, { file, offset: start, length: end - start }).length === 0;
 }
 
-function renamedReference(
+function renameReference(
     tokens: DesignTokens,
     use: Span,
     ref: string,
     suggestion: string,
 ): TextEdit[] {
-    const node = nodeAt(tokens, use);
+    const node = findNode(tokens, use);
     const reference = node && parseReference(getNodeValue(node));
-    const text = node && refString(node);
+    const text = node && findReferenceString(node);
     if (!reference || !text || toReferenceTarget(reference) !== ref) return [];
     const renamed = reference.syntax === "curly-brace" ? `{${suggestion}}` : suggestion;
     return [
@@ -180,34 +192,34 @@ function renamedReference(
     ];
 }
 
-function deletion(
+function getDeletionEdits(
     tokens: DesignTokens,
     file: string,
-    written: Node | undefined,
+    node: Node | undefined,
 ): TextEdit[] | undefined {
     const text = tokens.getText(file);
-    if (!written || text === undefined) return undefined;
-    const edits = removal(text, written).map(({ offset, length, text: replaced }) => ({
+    if (!node || text === undefined) return undefined;
+    const edits = getRemovalSplices(text, node).map(({ offset, length, text: newText }) => ({
         file,
         offset,
         length,
-        text: replaced,
+        text: newText,
     }));
     return edits.length > 0 ? edits : undefined;
 }
 
-function range({ file, offset, length }: Span): Omit<TextEdit, "text"> {
+function toRange({ file, offset, length }: Span): Omit<TextEdit, "text"> {
     return { file, offset, length };
 }
 
-function replacing(span: Span, value: string): TextEdit {
-    return { ...range(span), text: JSON.stringify(value) };
+function replaceWith(span: Span, value: string): TextEdit {
+    return { ...toRange(span), text: JSON.stringify(value) };
 }
 
-function safe(title: string, change: TextEdit): Fix {
+function createSafeFix(title: string, change: TextEdit): Fix {
     return { title, safe: true, edits: [change] };
 }
 
-function guess(title: string, edits: readonly TextEdit[]): Fix {
+function createGuessFix(title: string, edits: readonly TextEdit[]): Fix {
     return { title, safe: false, edits };
 }

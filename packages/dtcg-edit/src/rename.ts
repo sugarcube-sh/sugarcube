@@ -1,7 +1,7 @@
 import { type DesignTokens, type ReferenceInPermutations, tokenPath } from "@sugarcube-sh/dtcg";
-import { refused } from "./error-messages.js";
+import { refuse } from "./error-messages.js";
 import type { FileOp, OpResult } from "./index.js";
-import { copiesOf } from "./placement.js";
+import { getDefinitionMembers } from "./placement.js";
 import type { Member } from "./file-text.js";
 import { getJsonAt } from "@sugarcube-sh/dtcg/editor";
 
@@ -24,44 +24,51 @@ import { getJsonAt } from "@sugarcube-sh/dtcg/editor";
  */
 export function rename(tokens: DesignTokens, path: string, newName: string): OpResult {
     const parent = tokenPath.getParent(path);
-    if (parent === undefined) return refused({ kind: "top-level" });
+    if (parent === undefined) return refuse({ kind: "top-level" });
     const problem = tokenPath.findNameProblem(newName);
-    if (problem) return refused({ kind: "invalid-name", name: newName, ...problem });
+    if (problem) return refuse({ kind: "invalid-name", name: newName, ...problem });
 
-    const copies = copiesOf(tokens, path);
+    const copies = getDefinitionMembers(tokens, path);
     if ("refused" in copies) return copies;
     const to = tokenPath.join(parent, newName);
     if (to === path) return { ops: [], alsoAffects: copies.alsoAffects, moves: [] };
-    if (tokens.has(to)) return refused({ kind: "taken", path: to });
+    if (tokens.has(to)) return refuse({ kind: "taken", path: to });
 
-    const moved = [{ from: path, to }];
-    const keys = copies.places.map(({ span, jsonPath, json }): FileOp => ({
+    const moves = [{ from: path, to }];
+    const keyOps = copies.members.map(({ span, jsonPath, json }): FileOp => ({
         kind: "renameKey",
         file: span.file,
         jsonPath,
         name: newName,
         was: json,
     }));
-    const all = tokens.getReferencesTo(path);
-    const references = all.filter(isWritten).flatMap((reference): FileOp[] => {
+    const references = tokens.getReferencesTo(path);
+    const referenceOps = references.filter(isInFile).flatMap((reference): FileOp[] => {
         const { span } = reference;
         const was = getJsonAt(tokens, span.file, reference.jsonPath);
         if (was === undefined) return [];
-        const jsonPath = afterKeys(
+        const jsonPath = applyKeyRenames(
             { span, jsonPath: reference.jsonPath, json: was },
-            copies.places,
+            copies.members,
             newName,
         );
-        const value = reference.applyMoves(moved);
+        const value = reference.applyMoves(moves);
         return [{ kind: "set", file: span.file, jsonPath, value, was }];
     });
     const broken = [
-        ...new Set(all.filter((each) => !isWritten(each)).flatMap(({ ownerPaths }) => ownerPaths)),
+        ...new Set(
+            references.filter((each) => !isInFile(each)).flatMap(({ ownerPaths }) => ownerPaths),
+        ),
     ];
-    return { ops: [...keys, ...references], alsoAffects: copies.alsoAffects, broken, moves: moved };
+    return {
+        ops: [...keyOps, ...referenceOps],
+        alsoAffects: copies.alsoAffects,
+        broken,
+        moves: moves,
+    };
 }
 
-function afterKeys(member: Member, keys: Member[], name: string): Member["jsonPath"] {
+function applyKeyRenames(member: Member, keys: Member[], name: string): Member["jsonPath"] {
     return keys.reduce((jsonPath, key) => {
         const inside =
             key.span.file === member.span.file &&
@@ -73,7 +80,7 @@ function afterKeys(member: Member, keys: Member[], name: string): Member["jsonPa
     }, member.jsonPath);
 }
 
-function isWritten(reference: ReferenceInPermutations): boolean {
-    const [writer] = reference.ownerPaths;
-    return !reference.permutations.some((each) => writer && each.getToken(writer)?.generated);
+function isInFile(reference: ReferenceInPermutations): boolean {
+    const [owner] = reference.ownerPaths;
+    return !reference.permutations.some((each) => owner && each.getToken(owner)?.generated);
 }

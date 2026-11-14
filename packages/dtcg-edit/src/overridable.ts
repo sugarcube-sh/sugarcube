@@ -1,6 +1,6 @@
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import type { Overridable } from "./index.js";
-import { chosenContext, contextPlace } from "./placement.js";
+import { getInputContext, findContextPlacement } from "./placement.js";
 
 /**
  * Each context the token at `path` can be given its own value for: one that doesn't write the
@@ -18,11 +18,11 @@ export function overridable(tokens: DesignTokens, path: string): readonly Overri
     return (tokens.resolver?.modifiers ?? []).flatMap((modifier) =>
         modifier.contexts.flatMap((context) => {
             const input = { [modifier.name]: context.name };
-            const chosen = chosenContext(tokens, input);
+            const chosen = getInputContext(tokens, input);
             if (!chosen || "refused" in chosen) return [];
-            const placed = contextPlace(tokens, path, chosen, undefined);
-            return "into" in placed || "choose" in placed
-                ? [{ input, label: chosen.perm.label }]
+            const placement = findContextPlacement(tokens, path, chosen, undefined);
+            return "into" in placement || "choice" in placement
+                ? [{ input, label: chosen.permutation.label }]
                 : [];
         }),
     );

@@ -1,10 +1,10 @@
 import type { DesignTokens, JsonPath, JsonValue } from "@sugarcube-sh/dtcg";
 import { isJsonObject, parseReference } from "@sugarcube-sh/dtcg/values";
-import { refused } from "./error-messages.js";
+import { refuse } from "./error-messages.js";
 import type { FileOp, OpResult, Refusal, ValueOptions } from "./index.js";
-import { asked, ownProperties, placement } from "./placement.js";
-import { opsAt } from "./file-text.js";
-import { propertyEdit } from "./property.js";
+import { createQuestion, getOwnProperties, findPlacement } from "./placement.js";
+import { createWriteOps } from "./file-text.js";
+import { setProperty } from "./property.js";
 
 /**
  * Changes a token's value.
@@ -49,34 +49,40 @@ export function setValue(
     value: JsonValue,
     options: ValueOptions = {},
 ): OpResult {
-    return setValueIn(tokens, path, value, options);
+    return setValueInFile(tokens, path, value, options);
 }
 
-function setValueIn(
+function setValueInFile(
     tokens: DesignTokens,
     path: string,
     value: JsonValue,
     options: ValueOptions,
-    place?: string,
+    chosenFile?: string,
 ): OpResult {
-    const placed = placement(tokens, path, options, place);
-    if ("choose" in placed) {
-        return asked(placed.choose, (file) => setValueIn(tokens, path, value, options, file));
+    const placement = findPlacement(tokens, path, options, chosenFile);
+    if ("choice" in placement) {
+        return createQuestion(placement.choice, (file) =>
+            setValueInFile(tokens, path, value, options, file),
+        );
     }
-    if ("refused" in placed) return placed;
+    if ("refused" in placement) return placement;
     const part = options.part ?? [];
-    if ("at" in placed) {
-        const { at, alsoAffects } = placed;
-        const whole = isJsonObject(at.json) ? at.json.$value : undefined;
-        const checked = withPart(path, whole, part, value);
-        if ("refused" in checked) return checked;
-        return { ops: opsAt(tokens, at, ["$value", ...part], value), alsoAffects, moves: [] };
+    if ("at" in placement) {
+        const { at, alsoAffects } = placement;
+        const currentValue = isJsonObject(at.json) ? at.json.$value : undefined;
+        const newValue = replacePart(path, currentValue, part, value);
+        if ("refused" in newValue) return newValue;
+        return {
+            ops: createWriteOps(tokens, at, ["$value", ...part], value),
+            alsoAffects,
+            moves: [],
+        };
     }
-    const { token, into, alsoAffects } = placed;
-    const own = ownProperties(token);
-    const made = withPart(path, own.$value, part, value);
-    if ("refused" in made) return made;
-    const override = { ...own, $value: made.value };
+    const { token, into, alsoAffects } = placement;
+    const ownProperties = getOwnProperties(token);
+    const newValue = replacePart(path, ownProperties.$value, part, value);
+    if ("refused" in newValue) return newValue;
+    const override = { ...ownProperties, $value: newValue.value };
     const op: FileOp = {
         kind: "add",
         file: into,
@@ -86,16 +92,16 @@ function setValueIn(
     return { ops: [op], alsoAffects, moves: [] };
 }
 
-function withPart(
+function replacePart(
     path: string,
     whole: JsonValue | undefined,
     part: JsonPath,
     value: JsonValue,
-    from = 0,
+    depth = 0,
 ): { value: JsonValue } | { refused: Refusal } {
-    if (from === part.length) return { value };
-    if (parseReference(whole)) return refused({ kind: "part-in-reference", path, part });
-    const step = part[from];
+    if (depth === part.length) return { value };
+    if (parseReference(whole)) return refuse({ kind: "part-in-reference", path, part });
+    const step = part[depth];
     if (
         Array.isArray(whole) &&
         typeof step === "number" &&
@@ -103,16 +109,16 @@ function withPart(
         step >= 0 &&
         step < whole.length
     ) {
-        const made = withPart(path, whole[step], part, value, from + 1);
-        if ("refused" in made) return made;
-        return { value: whole.map((each, index) => (index === step ? made.value : each)) };
+        const newChild = replacePart(path, whole[step], part, value, depth + 1);
+        if ("refused" in newChild) return newChild;
+        return { value: whole.map((each, index) => (index === step ? newChild.value : each)) };
     }
     if (isJsonObject(whole) && typeof step === "string") {
-        const made = withPart(path, whole[step], part, value, from + 1);
-        if ("refused" in made) return made;
-        return { value: { ...whole, [step]: made.value } };
+        const newChild = replacePart(path, whole[step], part, value, depth + 1);
+        if ("refused" in newChild) return newChild;
+        return { value: { ...whole, [step]: newChild.value } };
     }
-    return refused({ kind: "no-such-part", path, part });
+    return refuse({ kind: "no-such-part", path, part });
 }
 
 /**
@@ -133,5 +139,5 @@ export function setDescription(
     path: string,
     description: string | null,
 ): OpResult {
-    return propertyEdit(tokens, path, "$description", description);
+    return setProperty(tokens, path, "$description", description);
 }

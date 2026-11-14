@@ -1,6 +1,6 @@
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import type { OpResult } from "./index.js";
-import { propertyEdit } from "./property.js";
+import { setProperty } from "./property.js";
 
 /**
  * Marks a token or group as deprecated, with a message saying what to use instead, or `true` for
@@ -22,5 +22,5 @@ export function deprecate(
     path: string,
     reason: string | boolean | null,
 ): OpResult {
-    return propertyEdit(tokens, path, "$deprecated", reason);
+    return setProperty(tokens, path, "$deprecated", reason);
 }

@@ -1,14 +1,20 @@
 import { type DesignTokens, type JsonValue, isEqualJson } from "@sugarcube-sh/dtcg";
 import { type Node, findNodeAtLocation, getNodeValue, parseTree } from "jsonc-parser";
-import { conflict } from "./error-messages.js";
+import { createConflict } from "./error-messages.js";
 import type { Applied, Committed, Conflict, EditStep, Edits, FileOp, OpResult } from "./index.js";
-import { type Splice, indentUnit, lineBreak, removal, spliced } from "./json-text.js";
-import { renameSplices, setSplices, valueAt } from "./text-edits.js";
+import {
+    type Splice,
+    detectIndentUnit,
+    detectLineBreak,
+    getRemovalSplices,
+    applySplices,
+} from "./json-text.js";
+import { getRenameSplices, getSetSplices, getValueAt } from "./text-edits.js";
 
 type MemberOp = Exclude<FileOp, { kind: "createFile" | "deleteFile" }>;
 type FileLevelOp = Extract<FileOp, { kind: "createFile" | "deleteFile" }>;
-type Outcome = { conflict: Conflict["kind"] } | "stale" | undefined;
-type Changed = Record<string, string | null>;
+type MemberOpResult = { conflict: Conflict["kind"] } | "stale" | undefined;
+type TextByFile = Record<string, string | null>;
 
 interface Draft {
     text: string;
@@ -16,8 +22,8 @@ interface Draft {
     pending: Splice[];
 }
 
-interface Texts {
-    of(file: string): string | undefined;
+interface FileTexts {
+    get(file: string): string | undefined;
     set(file: string, text: string | null): void;
 }
 
@@ -36,7 +42,7 @@ interface Texts {
  * else tokens = next.tokens;
  */
 export function apply(tokens: DesignTokens, ops: readonly FileOp[]): Applied {
-    const changes = changedBy(tokens, ops);
+    const changes = applyToTexts(tokens, ops);
     return changes.conflicts ? { conflicts: changes.conflicts } : { tokens: changes.tokens };
 }
 
@@ -52,14 +58,14 @@ export function apply(tokens: DesignTokens, ops: readonly FileOp[]): Applied {
  * if (changes.conflicts) showConflicts(changes.conflicts);
  * else await openPullRequest(changes);
  */
-export function changedFiles(tokens: DesignTokens, edits: Edits): FilesChanged {
-    return changedBy(
+export function changedFiles(tokens: DesignTokens, edits: Edits): ChangedFiles {
+    return applyToTexts(
         tokens,
         edits.steps.flatMap((step) => step.ops),
     );
 }
 
-type FilesChanged =
+type ChangedFiles =
     | {
           tokens: DesignTokens;
           written: Record<string, string>;
@@ -68,12 +74,13 @@ type FilesChanged =
       }
     | { conflicts: Conflict[]; tokens?: undefined };
 
-function changedBy(tokens: DesignTokens, ops: readonly FileOp[]): FilesChanged {
-    const { changed, conflicts } = editedFiles(tokens, [{ ops, moves: [] }]);
+function applyToTexts(tokens: DesignTokens, ops: readonly FileOp[]): ChangedFiles {
+    const { changed, conflicts } = editTexts(tokens, [{ ops, moves: [] }]);
     if (conflicts.length > 0) return { conflicts };
     const next = tokens.reread(changed);
-    const lost = unread(next, ops);
-    if (lost.length > 0) return { conflicts: lost.map((op) => conflict(op, "not-read")) };
+    const unreadOps = findUnreadCreates(next, ops);
+    if (unreadOps.length > 0)
+        return { conflicts: unreadOps.map((op) => createConflict(op, "not-read")) };
 
     const written = Object.entries(changed)
         .flatMap(([file, text]): [string, string][] =>
@@ -88,67 +95,68 @@ export function applyStepsThatFit(
     tokens: DesignTokens,
     steps: readonly EditStep[],
 ): { tokens: DesignTokens; applied: readonly EditStep[]; skipped: readonly EditStep[] } {
-    let trying = steps;
+    let stepsToTry = steps;
     for (;;) {
-        const { changed, fitting } = editedFiles(tokens, trying);
+        const { changed, fitting } = editTexts(tokens, stepsToTry);
         const next = fitting.length === 0 ? tokens : tokens.reread(changed);
-        const lost = fitting.filter((step) => unread(next, step.ops).length > 0);
-        if (lost.length === 0) {
-            const kept = new Set(fitting);
-            const skipped = steps.filter((step) => !kept.has(step));
+        const unreadSteps = fitting.filter((step) => findUnreadCreates(next, step.ops).length > 0);
+        if (unreadSteps.length === 0) {
+            const fittingSet = new Set(fitting);
+            const skipped = steps.filter((step) => !fittingSet.has(step));
             return { tokens: next, applied: fitting, skipped };
         }
-        trying = fitting.filter((step) => !lost.includes(step));
+        stepsToTry = fitting.filter((step) => !unreadSteps.includes(step));
     }
 }
 
-function editedFiles(tokens: DesignTokens, steps: readonly EditStep[]) {
-    let changed: Changed = {};
-    const texts: Texts = {
-        of: (file) => (file in changed ? (changed[file] ?? undefined) : tokens.getText(file)),
+function editTexts(tokens: DesignTokens, steps: readonly EditStep[]) {
+    let changed: TextByFile = {};
+    const texts: FileTexts = {
+        get: (file) => (file in changed ? (changed[file] ?? undefined) : tokens.getText(file)),
         set: (file, text) => {
             changed[file] = text;
         },
     };
     let drafts = new Map<string, Draft>();
-    const style = texts.of(tokens.entryFile) ?? "";
-    const written = (file: string) => {
+    const styleText = texts.get(tokens.entryFile) ?? "";
+    const flushDraft = (file: string) => {
         const draft = drafts.get(file);
-        if (draft && draft.pending.length > 0) texts.set(file, spliced(draft.text, draft.pending));
+        if (draft && draft.pending.length > 0)
+            texts.set(file, applySplices(draft.text, draft.pending));
         drafts.delete(file);
     };
-    const draftOf = (file: string) => {
-        const text = texts.of(file);
+    const getDraft = (file: string) => {
+        const text = texts.get(file);
         const draft = drafts.get(file) ?? (text === undefined ? undefined : { text, pending: [] });
         if (draft) drafts.set(file, draft);
         return draft;
     };
     const conflicts: Conflict[] = [];
-    const fitting: EditStep[] = [];
+    const fittingSteps: EditStep[] = [];
     for (const step of steps) {
         const before = { changed: { ...changed }, drafts: new Map(drafts) };
         const pendingBefore = new Map(
             [...drafts].map(([file, draft]) => [file, draft.pending.length]),
         );
-        const found: Conflict[] = [];
+        const stepConflicts: Conflict[] = [];
         for (const op of step.ops) {
-            const kind = applyOne(op, style, texts, { draftOf, written });
-            if (kind !== undefined) found.push(conflict(op, kind));
+            const kind = applyOp(op, styleText, texts, { getDraft, flushDraft });
+            if (kind !== undefined) stepConflicts.push(createConflict(op, kind));
         }
-        if (found.length === 0) {
-            fitting.push(step);
+        if (stepConflicts.length === 0) {
+            fittingSteps.push(step);
             continue;
         }
-        conflicts.push(...found);
+        conflicts.push(...stepConflicts);
         changed = before.changed;
         drafts = before.drafts;
         for (const [file, draft] of drafts) draft.pending.length = pendingBefore.get(file) ?? 0;
     }
-    for (const file of drafts.keys()) written(file);
-    return { changed, conflicts, fitting };
+    for (const file of drafts.keys()) flushDraft(file);
+    return { changed, conflicts, fitting: fittingSteps };
 }
 
-function unread(next: DesignTokens, ops: readonly FileOp[]): FileOp[] {
+function findUnreadCreates(next: DesignTokens, ops: readonly FileOp[]): FileOp[] {
     return ops.filter((op) => op.kind === "createFile" && next.getText(op.file) === undefined);
 }
 
@@ -167,29 +175,33 @@ export function commit(tokens: DesignTokens, result: OpResult): Committed {
     return { tokens: next.tokens, ops: result.ops, moves: result.moves };
 }
 
-function applyOne(
+function applyOp(
     op: FileOp,
     style: string,
-    texts: Texts,
+    texts: FileTexts,
     {
-        draftOf,
-        written,
-    }: { draftOf: (file: string) => Draft | undefined; written: (file: string) => void },
+        getDraft,
+        flushDraft,
+    }: { getDraft: (file: string) => Draft | undefined; flushDraft: (file: string) => void },
 ): Conflict["kind"] | undefined {
     if (op.kind === "createFile" || op.kind === "deleteFile") {
-        written(op.file);
-        return fileEdit(texts, op, style);
+        flushDraft(op.file);
+        return applyFileOp(texts, op, style);
     }
-    const draft = draftOf(op.file);
+    const draft = getDraft(op.file);
     if (!draft) return "not-read";
-    const outcome = memberEdit(draft, op);
+    const outcome = applyMemberOp(draft, op);
     if (outcome !== "stale") return outcome?.conflict;
-    written(op.file);
-    return applyOne(op, style, texts, { draftOf, written });
+    flushDraft(op.file);
+    return applyOp(op, style, texts, { getDraft, flushDraft });
 }
 
-function fileEdit(texts: Texts, op: FileLevelOp, style: string): Conflict["kind"] | undefined {
-    const existing = texts.of(op.file);
+function applyFileOp(
+    texts: FileTexts,
+    op: FileLevelOp,
+    style: string,
+): Conflict["kind"] | undefined {
+    const existing = texts.get(op.file);
     if (op.kind === "deleteFile") {
         if (existing === undefined) return undefined;
         if (existing !== op.was) return "changed";
@@ -197,26 +209,26 @@ function fileEdit(texts: Texts, op: FileLevelOp, style: string): Conflict["kind"
         return undefined;
     }
     if (existing !== undefined)
-        return isEqualJson(valueAt(existing, []), op.value) ? undefined : "taken";
-    const eol = lineBreak(style);
-    const written = JSON.stringify(op.value, null, indentUnit(style));
-    texts.set(op.file, written.replaceAll("\n", eol) + eol);
+        return isEqualJson(getValueAt(existing, []), op.value) ? undefined : "taken";
+    const eol = detectLineBreak(style);
+    const fileText = JSON.stringify(op.value, null, detectIndentUnit(style));
+    texts.set(op.file, fileText.replaceAll("\n", eol) + eol);
     return undefined;
 }
 
-function memberEdit(draft: Draft, op: MemberOp): Outcome {
+function applyMemberOp(draft: Draft, op: MemberOp): MemberOpResult {
     const { text, pending } = draft;
     draft.root ??= parseTree(text);
     const { root } = draft;
     const node = root && findNodeAtLocation(root, [...op.jsonPath]);
-    const splices = root && splicesFor(text, root, op);
-    const reached = node ? [...reads(node, op), ...(splices ?? [])] : [];
-    if (pending.length > 0 && (!node || reached.some((range) => touches(range, pending)))) {
+    const splices = root && getOpSplices(text, root, op);
+    const readRanges = node ? [...getReadRanges(node, op), ...(splices ?? [])] : [];
+    if (pending.length > 0 && (!node || readRanges.some((range) => touches(range, pending)))) {
         return "stale";
     }
-    const current = node && (getNodeValue(node) as JsonValue);
-    const written = (unwritable: Conflict["kind"]): Outcome => {
-        if (splices === undefined) return { conflict: unwritable };
+    const currentValue = node && (getNodeValue(node) as JsonValue);
+    const addSplices = (conflictKind: Conflict["kind"]): MemberOpResult => {
+        if (splices === undefined) return { conflict: conflictKind };
         pending.push(...splices);
         return undefined;
     };
@@ -224,44 +236,46 @@ function memberEdit(draft: Draft, op: MemberOp): Outcome {
     switch (op.kind) {
         case "set":
             if (!node) return { conflict: "gone" };
-            if (isEqualJson(current, op.value)) return undefined;
-            if (!isEqualJson(current, op.was)) return { conflict: "changed" };
-            return written("not-a-group");
+            if (isEqualJson(currentValue, op.value)) return undefined;
+            if (!isEqualJson(currentValue, op.was)) return { conflict: "changed" };
+            return addSplices("not-a-group");
         case "add":
-            if (node) return isEqualJson(current, op.value) ? undefined : { conflict: "taken" };
-            return written("not-a-group");
+            if (node)
+                return isEqualJson(currentValue, op.value) ? undefined : { conflict: "taken" };
+            return addSplices("not-a-group");
         case "remove":
             if (!node) return undefined;
-            if (!isEqualJson(current, op.was)) return { conflict: "changed" };
-            return written("not-a-group");
+            if (!isEqualJson(currentValue, op.was)) return { conflict: "changed" };
+            return addSplices("not-a-group");
         case "renameKey": {
             if (!node) {
                 const renamed =
                     root && findNodeAtLocation(root, [...op.jsonPath.slice(0, -1), op.name]);
-                const there = renamed && (getNodeValue(renamed) as JsonValue);
-                return isEqualJson(there, op.was) ? undefined : { conflict: "gone" };
+                const renamedValue = renamed && (getNodeValue(renamed) as JsonValue);
+                return isEqualJson(renamedValue, op.was) ? undefined : { conflict: "gone" };
             }
-            return written("taken");
+            return addSplices("taken");
         }
     }
 }
 
-function splicesFor(text: string, root: Node, op: MemberOp): Splice[] | undefined {
+function getOpSplices(text: string, root: Node, op: MemberOp): Splice[] | undefined {
     if (op.kind === "set" || op.kind === "add")
-        return setSplices(text, root, op.jsonPath, op.value);
+        return getSetSplices(text, root, op.jsonPath, op.value);
     const node = findNodeAtLocation(root, [...op.jsonPath]);
     if (!node) return op.kind === "remove" ? [] : undefined;
-    return op.kind === "remove" ? removal(text, node) : renameSplices(node, op.name);
+    return op.kind === "remove" ? getRemovalSplices(text, node) : getRenameSplices(node, op.name);
 }
 
-function reads(node: Node, op: MemberOp): { offset: number; length: number }[] {
-    const own = op.kind === "renameKey" ? (node.parent?.parent ?? node) : (node.parent ?? node);
+function getReadRanges(node: Node, op: MemberOp): { offset: number; length: number }[] {
+    const container =
+        op.kind === "renameKey" ? (node.parent?.parent ?? node) : (node.parent ?? node);
     const keys: Node[] = [];
     for (let at = node.parent; at; at = at.parent) {
         const key = at.type === "property" ? at.children?.[0] : undefined;
         if (key) keys.push(key);
     }
-    return [own, ...keys];
+    return [container, ...keys];
 }
 
 function touches(range: { offset: number; length: number }, splices: Splice[]): boolean {
@@ -272,8 +286,8 @@ function touches(range: { offset: number; length: number }, splices: Splice[]): 
     );
 }
 
-export function editedText(text: string, op: MemberOp): string | undefined {
+export function applyOpToText(text: string, op: MemberOp): string | undefined {
     const root = parseTree(text);
-    const splices = root && splicesFor(text, root, op);
-    return splices && spliced(text, splices);
+    const splices = root && getOpSplices(text, root, op);
+    return splices && applySplices(text, splices);
 }

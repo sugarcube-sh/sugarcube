@@ -1,7 +1,7 @@
 import { type DesignTokens, type JsonValue, tokenPath } from "@sugarcube-sh/dtcg";
-import { refused } from "./error-messages.js";
+import { refuse } from "./error-messages.js";
 import type { FileOp, NewToken, OpResult, Where } from "./index.js";
-import { asked, newPlace } from "./placement.js";
+import { createQuestion, findNewPlacement } from "./placement.js";
 
 /**
  * Creates a token or a group at `path`, at the end of the group it goes in; a path with no dot is
@@ -27,27 +27,29 @@ export function create(
     token: NewToken | { group: true },
     options: Where & { after?: string } = {},
 ): OpResult {
-    return createIn(tokens, path, token, options);
+    return createInFile(tokens, path, token, options);
 }
 
-function createIn(
+function createInFile(
     tokens: DesignTokens,
     path: string,
     token: NewToken | { group: true },
     options: Where & { after?: string },
-    place?: string,
+    chosenFile?: string,
 ): OpResult {
     if (options.after !== undefined) throw new Error("not implemented yet");
     for (const name of path.split(".")) {
         const problem = tokenPath.findNameProblem(name);
-        if (problem) return refused({ kind: "invalid-name", name, ...problem });
+        if (problem) return refuse({ kind: "invalid-name", name, ...problem });
     }
-    const placed = newPlace(tokens, path, options, place);
-    if ("choose" in placed) {
-        return asked(placed.choose, (file) => createIn(tokens, path, token, options, file));
+    const placement = findNewPlacement(tokens, path, options, chosenFile);
+    if ("choice" in placement) {
+        return createQuestion(placement.choice, (file) =>
+            createInFile(tokens, path, token, options, file),
+        );
     }
-    if (!("into" in placed)) return placed;
-    const { into: file, alsoAffects } = placed;
+    if (!("into" in placement)) return placement;
+    const { into: file, alsoAffects } = placement;
 
     const value: JsonValue =
         "group" in token

@@ -1,7 +1,7 @@
 import { type DesignTokens, tokenPath } from "@sugarcube-sh/dtcg";
 import type { FileOp, OpResult } from "./index.js";
-import { refused } from "./error-messages.js";
-import { copiesOf } from "./placement.js";
+import { refuse } from "./error-messages.js";
+import { getDefinitionMembers } from "./placement.js";
 
 /**
  * Removes a token or group from every file that writes it: the copy that wins, any copy an earlier
@@ -16,17 +16,17 @@ import { copiesOf } from "./placement.js";
  * if (result.broken?.length) warn(result.broken);
  */
 export function remove(tokens: DesignTokens, path: string): OpResult {
-    if (path === "") return refused({ kind: "top-level" });
-    const copies = copiesOf(tokens, path);
+    if (path === "") return refuse({ kind: "top-level" });
+    const copies = getDefinitionMembers(tokens, path);
     if ("refused" in copies) return copies;
 
-    const ops = copies.places.map(({ span, jsonPath, json }): FileOp => ({
+    const ops = copies.members.map(({ span, jsonPath, json }): FileOp => ({
         kind: "remove",
         file: span.file,
         jsonPath,
         was: json,
     }));
-    const users = tokens.getReferencesTo(path).flatMap(({ ownerPaths }) => ownerPaths);
-    const broken = [...new Set(users)].filter((user) => !tokenPath.contains(path, user));
+    const referringPaths = tokens.getReferencesTo(path).flatMap(({ ownerPaths }) => ownerPaths);
+    const broken = [...new Set(referringPaths)].filter((owner) => !tokenPath.contains(path, owner));
     return { ops, alsoAffects: copies.alsoAffects, broken, moves: [] };
 }

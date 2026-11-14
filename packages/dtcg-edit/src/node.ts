@@ -33,7 +33,7 @@ export async function applyToDisk(
     if (changes.conflicts) return changes;
 
     const { written, deleted } = changes;
-    await replaced(
+    await replaceFiles(
         Object.entries(written).map(([file, text]) => [getAbsoluteFilePath(entryFile, file), text]),
     );
     await Promise.all(
@@ -42,24 +42,24 @@ export async function applyToDisk(
     return changes;
 }
 
-async function replaced(texts: [path: string, text: string][]): Promise<void> {
-    const copies = texts.map(([path, text]) => ({
+async function replaceFiles(files: [path: string, text: string][]): Promise<void> {
+    const tempFiles = files.map(([path, text]) => ({
         path,
         text,
-        copy: `${path}.${randomUUID()}.tmp`,
+        tempPath: `${path}.${randomUUID()}.tmp`,
     }));
-    const made: string[] = [];
+    const createdFolders: string[] = [];
     try {
-        for (const { path, text, copy } of copies) {
+        for (const { path, text, tempPath: copy } of tempFiles) {
             const folder = await mkdir(dirname(path), { recursive: true });
-            if (folder) made.push(folder);
+            if (folder) createdFolders.push(folder);
             await writeFile(copy, text, "utf8");
         }
-        for (const { copy, path } of copies) await rename(copy, path);
+        for (const { tempPath: copy, path } of tempFiles) await rename(copy, path);
     } catch (error) {
-        await Promise.allSettled(copies.map(({ copy }) => rm(copy, { force: true })));
+        await Promise.allSettled(tempFiles.map(({ tempPath: copy }) => rm(copy, { force: true })));
         await Promise.allSettled(
-            made.map((folder) => rm(folder, { recursive: true, force: true })),
+            createdFolders.map((folder) => rm(folder, { recursive: true, force: true })),
         );
         throw error;
     }
