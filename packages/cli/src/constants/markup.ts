@@ -58,7 +58,7 @@ export const IGNORED_DIR_NAMES = new Set([
 
 export const IGNORED_DIR_GLOBS = Array.from(IGNORED_DIR_NAMES, (dir) => `**/${dir}/**`);
 
-/** Glob ignore patterns for markup scanning (dirs + extra file patterns) */
+/** Globs for files and folders the markup scan skips. */
 export const MARKUP_IGNORE_PATTERNS = [
     ...IGNORED_DIR_GLOBS,
     "**/*.config.{js,ts,mjs}",

@@ -107,7 +107,7 @@ base.json:4:35  error[invalid-json]
 
 ## two-tokens-one-variable
 base.json:11:7  error[same-variable-name]
-  `color.brand-primary` and `color.brand.primary` both make `--color-brand-primary`
+  `color.brand-primary` and `color.brand.primary` are both `--color-brand-primary`
   11 |       "primary": {
      |       ^^^^^^^^^
 

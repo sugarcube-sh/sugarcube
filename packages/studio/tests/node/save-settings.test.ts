@@ -40,7 +40,7 @@ const noCheckout = () => gitAt({});
 describe("what the build writes down for saving", () => {
     it("takes the repository from studio's settings and the branch being built from the checkout", () => {
         const { gitSave } = gitSaveFor({
-            studio: { repository: "acme/site", app: "acme-studio" },
+            studio: { repository: "acme/site", githubApp: "acme-studio" },
             resolver: "design/tokens.resolver.json",
             cwd: "/work/site/apps/docs",
             git: checkout().git,
@@ -90,7 +90,7 @@ describe("what the build writes down for saving", () => {
     it("takes a sign-in function somewhere else", () => {
         expect(
             gitSaveFor({
-                studio: { repository: "acme/site", signIn: "/auth/studio" },
+                studio: { repository: "acme/site", signInPath: "/auth/studio" },
                 resolver: "tokens.resolver.json",
                 cwd: "/work/site",
                 git: checkout().git,
@@ -107,7 +107,7 @@ describe("what the build writes down for saving", () => {
         });
         expect(gitSave?.install).toBeUndefined();
         expect(warnings).toHaveLength(1);
-        expect(warnings[0]).toContain("studio.app");
+        expect(warnings[0]).toContain("studio.githubApp");
     });
 
     it("is nothing at all, and asks nothing, when saving is turned off", () => {

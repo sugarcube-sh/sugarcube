@@ -2,62 +2,62 @@ import { type Token, type TokenType, tokenPath } from "@sugarcube-sh/dtcg";
 import { toCSSIdentifier } from "@sugarcube-sh/dtcg/css";
 import type { UtilityClassesConfig } from "../../types/config.js";
 import type {
-    Reported,
+    AnyDiagnostic,
     UtilityEntry,
     UtilityWithoutClassesReason,
 } from "../../types/diagnostics.js";
-import { type AboutToken, aboutToken, diagnostic } from "../diagnostics.js";
-import type { PropertyUtilityConfig } from "../../types/utilities.js";
+import { type TokenProblem, createTokenProblem, createDiagnostic } from "../diagnostics.js";
+import type { UtilityClassConfig } from "../../types/utilities.js";
 import type { UtilityToken } from "./tokens.js";
 
 export type UtilityRule = [RegExp, (match: RegExpMatchArray) => Record<string, string> | undefined];
 
-interface UtilityUse {
+interface PrefixProperty {
     property: string;
     strip?: string;
     names: Map<string, string>;
 }
 
-export interface UtilityStart {
-    start: string;
-    uses: UtilityUse[];
+export interface ClassPrefix {
+    prefix: string;
+    uses: PrefixProperty[];
 }
 
-interface Named {
+interface TokenVariable {
     token: Token;
     name: string;
 }
 
 interface Skipped {
     type: TokenType;
-    why: "typography" | "type" | "private" | "unwritten";
+    reason: "typography" | "type" | "private" | "unwritten";
 }
 
 interface Entry {
-    about: UtilityEntry;
+    location: UtilityEntry;
     source: string;
-    parts: Map<string, [Named, ...Named[]]>;
+    parts: Map<string, [TokenVariable, ...TokenVariable[]]>;
     skipped: Skipped[];
 }
 
-interface Use extends UtilityUse {
+interface EntryProperty extends PrefixProperty {
     entry: Entry;
 }
 
-interface Answer {
-    named: Named;
+interface ClassCandidate {
+    variable: TokenVariable;
     property: string;
     entry: Entry;
-    start: string;
+    prefix: string;
 }
 
-interface Lost {
-    starts: Set<string>;
+interface Shadowing {
+    prefixes: Set<string>;
     by: Set<Entry>;
-    silent: boolean;
+    sameVariable: boolean;
 }
 
-const SIDES = [
+const DIRECTIONS = [
     { direction: "x", letter: "x", logical: "inline" },
     { direction: "y", letter: "y", logical: "block" },
     { direction: "top", letter: "t", logical: "block-start" },
@@ -66,7 +66,7 @@ const SIDES = [
     { direction: "left", letter: "l", logical: "inline-start" },
 ] as const;
 
-const TYPES: Record<string, TokenType[]> = {
+const TOKEN_TYPES_BY_PROPERTY: Record<string, TokenType[]> = {
     "color": ["color"],
     "background-color": ["color"],
     "border-color": ["color"],
@@ -91,94 +91,100 @@ const TYPES: Record<string, TokenType[]> = {
 };
 
 /**
- * The UnoCSS rules for the config's utility classes, the same rules as data (`starts`, equal
- * exactly when two reads make the same rules), and the classes the config asks to be written whether or
- * not markup uses them, and the custom properties its classes set (`--gutter` for a `"--gutter"`
- * entry that makes any class). A class is a start (the entry's `prefix`, or the first segment of its
- * `source`, with a direction's letter) and a part (the {@link toCSSIdentifier} of the token's path below
- * `source`, as its variable has it), and writes that token's variable. Rules come in the config's
- * order, each shorthand before its longhands; entries sharing a start are tried in the config's
- * order, and among tokens making the same class the first in file order is used. A class two
- * tokens with different variables make is reported, on the token not used; so is an entry that
- * makes no classes, with the reason, when there are tokens to judge it by; and a part its
- * `safelist` names that no token under `source` makes.
+ * Makes the UnoCSS rules for the config's utility classes.
+ *
+ * A class is a prefix and a token's name under `source`, such as `bg-primary`.
+ * When two tokens make the same class, the first in file order wins.
+ *
+ * @param tokens - The tokens from `getUtilityTokens`.
+ * @param classes - The config's `utilities.classes`.
+ *
+ * @example
+ * createUtilityRules(tokens, config.utilities.classes).prefixes.map(({ prefix }) => prefix)
+ * // => ["bg", "px", "py"]
  */
-export function utilityRules(
+export function createUtilityRules(
     tokens: UtilityToken[],
     classes: UtilityClassesConfig,
 ): {
     rules: UtilityRule[];
-    starts: UtilityStart[];
+    prefixes: ClassPrefix[];
     safelist: string[];
     customProperties: string[];
-    aboutTokens: AboutToken[];
-    diagnostics: Reported[];
+    tokenProblems: TokenProblem[];
+    diagnostics: AnyDiagnostic[];
 } {
-    const byStart = new Map<string, Use[]>();
+    const usesByPrefix = new Map<string, EntryProperty[]>();
     const entries: Entry[] = [];
     const safelist = new Set<string>();
-    const unmatched: Reported[] = [];
-    for (const [property, listed] of Object.entries(classes)) {
-        const several = Array.isArray(listed);
-        for (const [index, config] of [listed].flat().entries()) {
-            const { parts, skipped } = partsFor(tokens, config, property);
-            const starts = startsFor(config, property);
-            const about = several ? { property, entry: index } : { property };
+    const unmatched: AnyDiagnostic[] = [];
+    for (const [property, entryConfig] of Object.entries(classes)) {
+        const isArray = Array.isArray(entryConfig);
+        for (const [index, config] of [entryConfig].flat().entries()) {
+            const { parts, skipped } = getParts(tokens, config, property);
+            const prefixes = getClassPrefixes(config, property);
+            const location = isArray ? { property, entry: index } : { property };
             if ([config.directions].flat().includes("full")) {
                 const option = 'directions: "full"';
-                unmatched.push(diagnostic("option-deprecated", { option, ...about }));
+                unmatched.push(createDiagnostic("option-deprecated", { option, ...location }));
             }
-            const entry = { about, source: config.source, parts, skipped };
+            const entry = { location, source: config.source, parts, skipped };
             entries.push(entry);
-            const strip = stripOf(config);
+            const strip = getDuplicatePrefix(config);
             const names = new Map([...parts].map(([part, [first]]) => [part, first.name]));
-            const forced = config.safelist === true ? [...parts.keys()] : [];
+            const safelisted = config.safelist === true ? [...parts.keys()] : [];
             for (const part of Array.isArray(config.safelist) ? config.safelist : []) {
-                if (nameFor({ strip, names }, part) !== undefined) forced.push(part);
+                if (getVariableName({ strip, names }, part) !== undefined) safelisted.push(part);
                 else if (parts.size > 0) {
-                    unmatched.push(diagnostic("safelist-without-token", { ...about, part }));
+                    unmatched.push(
+                        createDiagnostic("safelist-without-token", { ...location, part }),
+                    );
                 }
             }
-            for (const { start, property: written } of starts) {
-                byStart.set(start, [
-                    ...(byStart.get(start) ?? []),
-                    { property: written, strip, names, entry },
+            for (const { prefix, property: targetProperty } of prefixes) {
+                usesByPrefix.set(prefix, [
+                    ...(usesByPrefix.get(prefix) ?? []),
+                    { property: targetProperty, strip, names, entry },
                 ]);
-                for (const part of forced) safelist.add(`${start}-${part}`);
+                for (const part of safelisted) safelist.add(`${prefix}-${part}`);
             }
         }
     }
-    const answered = answers(byStart);
-    const lost = lostBy(answered);
-    const starts = [...byStart].map(([start, uses]) => ({
-        start,
+    const candidatesByClass = findClassCandidates(usesByPrefix);
+    const shadowed = findShadowedEntries(candidatesByClass);
+    const prefixes = [...usesByPrefix].map(([prefix, uses]) => ({
+        prefix,
         uses: uses.map(({ property, strip, names }) => ({ property, strip, names })),
     }));
     return {
-        rules: starts.map(ruleFor),
-        starts,
+        rules: prefixes.map(createRule),
+        prefixes,
         safelist: [...safelist],
-        customProperties: customPropertiesOf(answered),
-        aboutTokens: sameClasses(answered),
+        customProperties: getCustomProperties(candidatesByClass),
+        tokenProblems: findSameClasses(candidatesByClass),
         diagnostics: [
-            ...(tokens.length === 0 ? [] : entries.flatMap((entry) => withoutClasses(entry, lost))),
+            ...(tokens.length === 0
+                ? []
+                : entries.flatMap((entry) => findEntryWithoutClasses(entry, shadowed))),
             ...unmatched,
         ],
     };
 }
 
-function customPropertiesOf(answered: Map<string, [Answer, ...Answer[]]>): string[] {
-    const properties = [...answered.values()].map(([{ property }]) => property);
+function getCustomProperties(
+    candidatesByClass: Map<string, [ClassCandidate, ...ClassCandidate[]]>,
+): string[] {
+    const properties = [...candidatesByClass.values()].map(([{ property }]) => property);
     return [...new Set(properties.filter((property) => property.startsWith("--")))];
 }
 
-function ruleFor({ start, uses }: UtilityStart): UtilityRule {
+function createRule({ prefix, uses }: ClassPrefix): UtilityRule {
     return [
-        new RegExp(`^${escaped(start)}-.+$`),
+        new RegExp(`^${escapeRegExp(prefix)}-.+$`),
         (match) => {
-            const part = match[0].slice(start.length + 1);
+            const part = match[0].slice(prefix.length + 1);
             for (const use of uses) {
-                const name = nameFor(use, part);
+                const name = getVariableName(use, part);
                 if (name !== undefined) return { [use.property]: `var(${name})` };
             }
             return undefined;
@@ -186,167 +192,205 @@ function ruleFor({ start, uses }: UtilityStart): UtilityRule {
     ];
 }
 
-function nameFor({ strip, names }: Omit<UtilityUse, "property">, part: string): string | undefined {
-    return names.get(stripped(part, strip));
+function getVariableName(
+    { strip, names }: Omit<PrefixProperty, "property">,
+    part: string,
+): string | undefined {
+    return names.get(stripDuplicatePrefix(part, strip));
 }
 
-function answers(byStart: Map<string, Use[]>): Map<string, [Answer, ...Answer[]]> {
-    const answered = new Map<string, [Answer, ...Answer[]]>();
-    for (const [start, uses] of byStart) {
-        const own = new Map<string, [Answer, ...Answer[]]>();
+function findClassCandidates(
+    usesByPrefix: Map<string, EntryProperty[]>,
+): Map<string, [ClassCandidate, ...ClassCandidate[]]> {
+    const candidatesByClass = new Map<string, [ClassCandidate, ...ClassCandidate[]]>();
+    for (const [prefix, uses] of usesByPrefix) {
+        const prefixCandidates = new Map<string, [ClassCandidate, ...ClassCandidate[]]>();
         for (const { entry, property } of uses) {
-            const answer = (named: Named): Answer => ({ named, property, entry, start });
+            const toCandidate = (variable: TokenVariable): ClassCandidate => ({
+                variable,
+                property,
+                entry,
+                prefix,
+            });
             for (const [part, [first, ...rest]] of entry.parts) {
-                const className = `${start}-${part}`;
-                const found: [Answer, ...Answer[]] = [answer(first), ...rest.map(answer)];
-                const earlier = own.get(className);
-                if (earlier) earlier.push(...found);
-                else own.set(className, found);
+                const className = `${prefix}-${part}`;
+                const candidates: [ClassCandidate, ...ClassCandidate[]] = [
+                    toCandidate(first),
+                    ...rest.map(toCandidate),
+                ];
+                const existing = prefixCandidates.get(className);
+                if (existing) existing.push(...candidates);
+                else prefixCandidates.set(className, candidates);
             }
         }
-        for (const [className, found] of own) {
-            answered.set(className, [...found, ...(answered.get(className) ?? [])]);
+        for (const [className, candidates] of prefixCandidates) {
+            candidatesByClass.set(className, [
+                ...candidates,
+                ...(candidatesByClass.get(className) ?? []),
+            ]);
         }
     }
-    return answered;
+    return candidatesByClass;
 }
 
-function sameClasses(answered: Map<string, [Answer, ...Answer[]]>): AboutToken[] {
-    const found = new Map<string, AboutToken>();
-    for (const [className, [first, ...others]] of answered) {
+function findSameClasses(
+    candidatesByClass: Map<string, [ClassCandidate, ...ClassCandidate[]]>,
+): TokenProblem[] {
+    const problems = new Map<string, TokenProblem>();
+    for (const [className, [first, ...others]] of candidatesByClass) {
         for (const each of others) {
-            const [used, other] = [first.named, each.named];
+            const [used, other] = [first.variable, each.variable];
             const key = [used.token.path, other.token.path].sort().join("\u0000");
-            if (sameVariable(first, each) || found.has(key)) continue;
+            if (sameVariable(first, each) || problems.has(key)) continue;
             const paths: [string, string] = [used.token.path, other.token.path];
-            found.set(key, aboutToken(other.token, "same-utility-class", { className, paths }));
+            problems.set(
+                key,
+                createTokenProblem(other.token, "same-utility-class", { className, paths }),
+            );
         }
     }
-    return [...found.values()];
+    return [...problems.values()];
 }
 
-function withoutClasses(entry: Entry, lost: Map<Entry, Lost>): Reported[] {
-    const why = entry.parts.size === 0 ? emptied(entry) : answeredFirst(lost.get(entry));
-    if (why === undefined) return [];
+function findEntryWithoutClasses(entry: Entry, shadowed: Map<Entry, Shadowing>): AnyDiagnostic[] {
+    const reason =
+        entry.parts.size === 0 ? getEmptyReason(entry) : toShadowedReason(shadowed.get(entry));
+    if (reason === undefined) return [];
     return [
-        diagnostic("utility-without-classes", { ...entry.about, source: entry.source, ...why }),
+        createDiagnostic("utility-without-classes", {
+            ...entry.location,
+            source: entry.source,
+            ...reason,
+        }),
     ];
 }
 
-function emptied({ about, source, skipped }: Entry): UtilityWithoutClassesReason | undefined {
-    const takes = TYPES[about.property];
-    const found = (...why: Skipped["why"][]) => skipped.filter((each) => why.includes(each.why));
-    if (skipped.length === 0) return { reason: "no-tokens", group: groupOf(source) };
-    if (takes?.length === 0) return { reason: "no-type" };
-    if (found("private").length > 0) return { reason: "private" };
-    if (takes && found("type").length > 0) {
-        const types = new Set(found("type", "typography").map(({ type }) => type));
-        return { reason: "wrong-type", found: [...types], takes };
+function getEmptyReason({
+    location,
+    source,
+    skipped,
+}: Entry): UtilityWithoutClassesReason | undefined {
+    const expected = TOKEN_TYPES_BY_PROPERTY[location.property];
+    const skippedFor = (...reasons: Skipped["reason"][]) =>
+        skipped.filter((each) => reasons.includes(each.reason));
+    if (skipped.length === 0) return { reason: "no-tokens", group: getGroupPath(source) };
+    if (expected?.length === 0) return { reason: "no-type" };
+    if (skippedFor("private").length > 0) return { reason: "private" };
+    if (expected && skippedFor("type").length > 0) {
+        const types = new Set(skippedFor("type", "typography").map(({ type }) => type));
+        return { reason: "wrong-type", received: [...types], expected };
     }
-    if (found("typography").length > 0) return { reason: "typography" };
+    if (skippedFor("typography").length > 0) return { reason: "typography" };
     return undefined;
 }
 
-function lostBy(answered: Map<string, [Answer, ...Answer[]]>): Map<Entry, Lost> {
-    const made = new Set<Entry>();
-    const lost = new Map<Entry, Lost>();
-    for (const [first, ...others] of answered.values()) {
-        made.add(first.entry);
+function findShadowedEntries(
+    candidatesByClass: Map<string, [ClassCandidate, ...ClassCandidate[]]>,
+): Map<Entry, Shadowing> {
+    const used = new Set<Entry>();
+    const shadowed = new Map<Entry, Shadowing>();
+    for (const [first, ...others] of candidatesByClass.values()) {
+        used.add(first.entry);
         for (const other of others) {
             if (sameVariable(first, other) && first.property === other.property) {
-                made.add(other.entry);
+                used.add(other.entry);
                 continue;
             }
-            const found = lost.get(other.entry) ?? {
-                starts: new Set(),
+            const shadowing = shadowed.get(other.entry) ?? {
+                prefixes: new Set(),
                 by: new Set(),
-                silent: false,
+                sameVariable: false,
             };
-            found.starts.add(other.start);
-            found.by.add(first.entry);
-            found.silent ||= sameVariable(first, other);
-            lost.set(other.entry, found);
+            shadowing.prefixes.add(other.prefix);
+            shadowing.by.add(first.entry);
+            shadowing.sameVariable ||= sameVariable(first, other);
+            shadowed.set(other.entry, shadowing);
         }
     }
-    for (const entry of made) lost.delete(entry);
-    return lost;
+    for (const entry of used) shadowed.delete(entry);
+    return shadowed;
 }
 
-function answeredFirst(lost: Lost | undefined): UtilityWithoutClassesReason | undefined {
-    if (!lost?.silent) return undefined;
-    const by = [...lost.by].map(({ about }) => about);
-    return { reason: "answered-first", starts: [...lost.starts], by };
+function toShadowedReason(
+    shadowed: Shadowing | undefined,
+): UtilityWithoutClassesReason | undefined {
+    if (!shadowed?.sameVariable) return undefined;
+    const by = [...shadowed.by].map(({ location }) => location);
+    return { reason: "classes-taken", prefixes: [...shadowed.prefixes], by };
 }
 
-function sameVariable(first: Answer, other: Answer): boolean {
-    return first.named.name === other.named.name;
+function sameVariable(first: ClassCandidate, other: ClassCandidate): boolean {
+    return first.variable.name === other.variable.name;
 }
 
-function partsFor(
+function getParts(
     tokens: UtilityToken[],
-    entry: PropertyUtilityConfig,
+    entry: UtilityClassConfig,
     property: string,
-): { parts: Map<string, [Named, ...Named[]]>; skipped: Skipped[] } {
-    const group = groupOf(entry.source);
-    const types = TYPES[property];
-    const parts = new Map<string, [Named, ...Named[]]>();
+): { parts: Map<string, [TokenVariable, ...TokenVariable[]]>; skipped: Skipped[] } {
+    const group = getGroupPath(entry.source);
+    const types = TOKEN_TYPES_BY_PROPERTY[property];
+    const parts = new Map<string, [TokenVariable, ...TokenVariable[]]>();
     const skipped: Skipped[] = [];
-    for (const listed of tokens) {
-        const { token } = listed;
-        const below = tokenPath.relative(group, tokenPath.removeRoot(token.path));
-        if (below === undefined) continue;
-        const skip = (why: Skipped["why"]) => skipped.push({ type: token.type, why });
-        if ("variables" in listed) skip("typography");
+    for (const utilityToken of tokens) {
+        const { token } = utilityToken;
+        const relativePath = tokenPath.relative(group, tokenPath.removeRoot(token.path));
+        if (relativePath === undefined) continue;
+        const skip = (reason: Skipped["reason"]) => skipped.push({ type: token.type, reason });
+        if ("variables" in utilityToken) skip("typography");
         else if (types && !types.includes(token.type)) skip("type");
-        else if ("private" in listed) skip(listed.private ? "private" : "unwritten");
+        else if ("private" in utilityToken) skip(utilityToken.private ? "private" : "unwritten");
         else {
-            const part = stripped(toCSSIdentifier(below), stripOf(entry));
-            const earlier = parts.get(part);
-            if (earlier) earlier.push(listed);
-            else parts.set(part, [listed]);
+            const part = stripDuplicatePrefix(
+                toCSSIdentifier(relativePath),
+                getDuplicatePrefix(entry),
+            );
+            const existing = parts.get(part);
+            if (existing) existing.push(utilityToken);
+            else parts.set(part, [utilityToken]);
         }
     }
     return { parts, skipped };
 }
 
-function groupOf(source: string): string {
+function getGroupPath(source: string): string {
     return source.endsWith(".*") ? source.slice(0, -2) : source;
 }
 
-function prefixOf({ prefix, source }: PropertyUtilityConfig): string {
+function getBasePrefix({ prefix, source }: UtilityClassConfig): string {
     const dot = source.indexOf(".");
     return prefix ?? (dot === -1 ? source : source.slice(0, dot));
 }
 
-function stripOf(entry: PropertyUtilityConfig): string | undefined {
-    return entry.stripDuplicates ? prefixOf(entry) : undefined;
+function getDuplicatePrefix(entry: UtilityClassConfig): string | undefined {
+    return entry.stripDuplicates ? getBasePrefix(entry) : undefined;
 }
 
-function stripped(part: string, strip: string | undefined): string {
+function stripDuplicatePrefix(part: string, strip: string | undefined): string {
     return strip !== undefined && part.startsWith(`${strip}-`)
         ? part.slice(strip.length + 1)
         : part;
 }
 
-function startsFor(
-    entry: PropertyUtilityConfig,
+function getClassPrefixes(
+    entry: UtilityClassConfig,
     property: string,
-): { start: string; property: string }[] {
-    const prefix = prefixOf(entry);
-    if (entry.directions === undefined) return [{ start: prefix, property }];
+): { prefix: string; property: string }[] {
+    const basePrefix = getBasePrefix(entry);
+    if (entry.directions === undefined) return [{ prefix: basePrefix, property }];
     const directions: string[] = [entry.directions].flat();
     const all = directions.includes("all");
     return [
-        ...(all ? [{ start: prefix, property }] : []),
-        ...SIDES.filter(({ direction }) => all || directions.includes(direction)).map(
+        ...(all ? [{ prefix: basePrefix, property }] : []),
+        ...DIRECTIONS.filter(({ direction }) => all || directions.includes(direction)).map(
             ({ letter, logical }) => ({
-                start: `${prefix}${letter}`,
+                prefix: `${basePrefix}${letter}`,
                 property: `${property}-${logical}`,
             }),
         ),
     ];
 }
 
-function escaped(start: string): string {
-    return start.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function escapeRegExp(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

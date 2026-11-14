@@ -1,58 +1,68 @@
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import type { InternalConfig } from "../types/config.js";
-import type { Reported } from "../types/diagnostics.js";
+import type { AnyDiagnostic } from "../types/diagnostics.js";
 import type { CSSFileOutput } from "../types/generate.js";
 import { type Declarations, declare } from "./css/declare.js";
 import { emitCSS } from "./css/emit.js";
-import { type UtilityRule, type UtilityStart, utilityRules } from "./utilities/rules.js";
-import { utilityTokens } from "./utilities/tokens.js";
-import { located } from "./diagnostics.js";
+import { type UtilityRule, type ClassPrefix, createUtilityRules } from "./utilities/rules.js";
+import { getUtilityTokens } from "./utilities/tokens.js";
+import { locateProblems } from "./diagnostics.js";
 
 export interface UtilityCSS {
     rules: UtilityRule[];
-    starts: UtilityStart[];
+    prefixes: ClassPrefix[];
     safelist: string[];
     customProperties: string[];
 }
 
-interface MadeCSS {
+interface GeneratedCSS {
     declared: Declarations;
     variables: CSSFileOutput;
     utilities?: UtilityCSS;
-    diagnostics: Reported[];
+    diagnostics: AnyDiagnostic[];
 }
 
 /**
- * The declarations both halves are made from, the variables' files, the utility rules (none when
- * the config makes no classes) and every problem found making them. Leave out either half with
- * `variables: false` or `utilities: false`.
+ * Makes the variables files and the utility rules for a config.
+ *
+ * It also returns the declarations both are made from, and every problem found.
+ * `utilities` is `undefined` when the config makes no classes.
+ *
+ * @param tokens - The design tokens read with `createReadOptions`.
+ * @param config - The config with its defaults.
+ * @param options.variables - Whether to make the variables files. It's `true` when left out.
+ * @param options.utilities - Whether to make the utility rules. It's `true` when left out.
+ *
+ * @example
+ * generateCSS(tokens, config).utilities?.prefixes.map(({ prefix }) => prefix)
+ * // => ["bg", "px", "py"]
  */
-export function cssFrom(
+export function generateCSS(
     tokens: DesignTokens,
     config: InternalConfig,
     { variables = true, utilities = true }: { variables?: boolean; utilities?: boolean } = {},
-): MadeCSS {
+): GeneratedCSS {
     const declared = declare(tokens, config);
     const emitted = variables ? emitCSS(declared, config) : { files: [], diagnostics: [] };
     const { classes = {} } = config.utilities;
-    const ruled =
+    const utilityRules =
         utilities && Object.keys(classes).length > 0
-            ? utilityRules(utilityTokens(declared), classes)
+            ? createUtilityRules(getUtilityTokens(declared), classes)
             : undefined;
     return {
         declared,
         variables: emitted.files,
-        utilities: ruled && {
-            rules: ruled.rules,
-            starts: ruled.starts,
-            safelist: ruled.safelist,
-            customProperties: ruled.customProperties,
+        utilities: utilityRules && {
+            rules: utilityRules.rules,
+            prefixes: utilityRules.prefixes,
+            safelist: utilityRules.safelist,
+            customProperties: utilityRules.customProperties,
         },
         diagnostics: [
             ...declared.diagnostics,
             ...emitted.diagnostics,
-            ...located(tokens, ruled?.aboutTokens ?? []),
-            ...(ruled?.diagnostics ?? []),
+            ...locateProblems(tokens, utilityRules?.tokenProblems ?? []),
+            ...(utilityRules?.diagnostics ?? []),
         ],
     };
 }

@@ -26,8 +26,9 @@ function resolveContentGlobs(
 }
 
 /**
- * A sugarcube configuration, validated and with defaults applied, with the resolver it reads
- * always named: the config's own, or the one found in the project.
+ * A checked config with its defaults, and the file it came from.
+ *
+ * `config.resolver` is always set. It's the config's own, or the one found in the project.
  */
 export type LoadedConfig = {
     config: InternalConfig & { readonly resolver: string };
@@ -36,8 +37,10 @@ export type LoadedConfig = {
 };
 
 /**
- * Settings to put over the config's, such as a command's flags: any of them, at any depth. A list
- * replaces the config's whole list, and a setting left `undefined` keeps the config's.
+ * Settings that replace the config's, such as a command's flags.
+ *
+ * Any setting can be replaced, at any depth. An array replaces the config's whole array.
+ * A setting left `undefined` keeps the config's.
  */
 export type ConfigOverrides = Overrides<SugarcubeConfig>;
 
@@ -49,23 +52,28 @@ type Overrides<T> = {
           : T[K];
 };
 
-function configFilesIn(root: string): string[] {
+function getConfigFilePaths(root: string): string[] {
     return [".ts", ".js"].map((extension) => resolve(root, `sugarcube.config${extension}`));
 }
 
 function findConfigFile(root = process.cwd()): string | undefined {
-    return configFilesIn(root).find((path) => existsSync(path));
+    return getConfigFilePaths(root).find((path) => existsSync(path));
 }
 
 /**
- * Checks if a file is where sugarcube looks for its config: `sugarcube.config.ts` or `.js` in
- * `root`.
+ * Checks if a file is the project's config file.
  *
- * @param file - The file's path, such as one a watcher reports.
- * @param root - The project's folder.
+ * The config file is `sugarcube.config.ts` or `sugarcube.config.js` in `root`.
+ *
+ * @param file - The file's path, such as `"/site/sugarcube.config.ts"`.
+ * @param root - The project's folder, such as `"/site"`.
+ *
+ * @example
+ * isConfigFile("/site/sugarcube.config.ts", "/site")
+ * // => true
  */
 export function isConfigFile(file: string, root: string): boolean {
-    return configFilesIn(root).includes(resolve(file));
+    return getConfigFilePaths(root).includes(resolve(file));
 }
 
 /**
@@ -105,19 +113,21 @@ async function importConfigFile(configFile: string): Promise<unknown> {
 }
 
 /**
- * Loads `sugarcube.config.ts` or `.js` from the project's folder, when there is one, validates it
- * and fills in its defaults; finds the resolver when nothing names one; then puts `overrides` on
- * top and validates the result.
+ * Loads the project's config, checks it and fills in its defaults.
  *
- * @param overrides - Settings over the config's, such as a command's flags; a `resolver` here is
- * read without looking for one
- * @param root - The project's folder, where the config file and the resolver are looked for and
- * what the config's paths are relative to; `process.cwd()` unless a host such as Vite knows better
- * @param lastConfigFile - The config file a host loaded last, when it loads again; if no config
- * file is there now, the load fails rather than giving the defaults
- * @returns The normalized config with defaults, and the config file it came from, if any
- * @throws ConfigError if the config is invalid or was deleted, or if no resolver, or several, are
- * found
+ * With no config file, every setting is a default. With no `resolver`, it finds the project's only
+ * resolver file. Then `overrides` replace the settings they name.
+ *
+ * @param overrides - Settings that replace the config's, such as `{ variables: { prefix: "ds" } }`.
+ * @param options.root - The project's folder, such as `"/site"`. Paths in the config are relative to it.
+ * @param options.lastConfigFile - The config file loaded last, such as `"/site/sugarcube.config.ts"`.
+ * Pass it when loading again, so a deleted config file is an error.
+ * @throws ConfigError if the config has mistakes, was deleted, or names no single resolver.
+ *
+ * @example
+ * const { config, configFile } = await loadInternalConfig();
+ * config.utilities.path
+ * // => "src/styles/utilities.css"
  */
 export async function loadInternalConfig(
     overrides: ConfigOverrides = {},
@@ -127,18 +137,18 @@ export async function loadInternalConfig(
     if (lastConfigFile !== undefined && configFile === undefined) {
         throw new ConfigError([{ reason: "deleted", file: basename(lastConfigFile) }]);
     }
-    const user = configFile ? validateSugarcubeConfig(await loadConfigFile(configFile)) : {};
-    const resolver = overrides.resolver ?? user.resolver ?? (await foundResolver(root));
-    const filled = fillDefaults({ ...user, resolver });
+    const userConfig = configFile ? validateSugarcubeConfig(await loadConfigFile(configFile)) : {};
+    const resolver = overrides.resolver ?? userConfig.resolver ?? (await findResolverPath(root));
+    const withDefaults = fillDefaults({ ...userConfig, resolver });
     const content = configFile
-        ? resolveContentGlobs(filled.content, dirname(configFile))
-        : filled.content;
-    const config = overridden<InternalConfig>({ ...filled, content }, overrides);
+        ? resolveContentGlobs(withDefaults.content, dirname(configFile))
+        : withDefaults.content;
+    const config = applyOverrides<InternalConfig>({ ...withDefaults, content }, overrides);
     validateSugarcubeConfig(config);
     return { config: { ...config, resolver }, configFile };
 }
 
-async function foundResolver(root: string): Promise<string> {
+async function findResolverPath(root: string): Promise<string> {
     const found = await findResolver(root);
     if (found.kind === "one") return relative(root, found.path);
     if (found.kind === "several") {
@@ -148,14 +158,14 @@ async function foundResolver(root: string): Promise<string> {
     throw new ConfigError([{ reason: "no-resolver" }]);
 }
 
-function overridden<T>(base: T, overrides: Overrides<T>): T {
-    return merged(base, overrides) as T;
+function applyOverrides<T>(base: T, overrides: Overrides<T>): T {
+    return mergeDeep(base, overrides) as T;
 }
 
-function merged(base: unknown, overrides: unknown): unknown {
+function mergeDeep(base: unknown, overrides: unknown): unknown {
     if (overrides === undefined) return base;
     if (!isObject(base) || !isObject(overrides)) return overrides;
     const result: Record<string, unknown> = { ...base };
-    for (const [key, value] of Object.entries(overrides)) result[key] = merged(base[key], value);
+    for (const [key, value] of Object.entries(overrides)) result[key] = mergeDeep(base[key], value);
     return result;
 }

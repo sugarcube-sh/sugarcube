@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
-import { readOptions } from "../src/shared/read-options.js";
+import { createReadOptions } from "../src/shared/read-options.js";
 
 const resolver = JSON.stringify({
     version: "2025.10",
@@ -32,12 +32,12 @@ function readWith(variables?: Parameters<typeof fillDefaults>[0]["variables"]) {
     });
     const tokens = readFromMemory(
         { files, entryFile: "tokens.resolver.json" },
-        readOptions(config),
+        createReadOptions(config),
     );
     return { tokens, inputs: tokens.permutations.map(({ input }) => input) };
 }
 
-describe("readOptions", () => {
+describe("createReadOptions", () => {
     it("reads the default and each context on its own when the config lists no permutations", () => {
         expect(readWith().inputs).toStrictEqual([
             { theme: "light", brand: "house" },
@@ -70,7 +70,10 @@ describe("readOptions", () => {
             "utf8",
         );
         const config = fillDefaults({ resolver: "size-demo.json" });
-        const tokens = readFromMemory({ files: { "size-demo.json": recipe } }, readOptions(config));
+        const tokens = readFromMemory(
+            { files: { "size-demo.json": recipe } },
+            createReadOptions(config),
+        );
         const made = tokens.permutations[0]?.tokens.filter(({ generated }) => generated);
         expect(made?.length).toBe(13);
         expect(made?.every(({ generated }) => generated?.from === "size.step")).toBe(true);

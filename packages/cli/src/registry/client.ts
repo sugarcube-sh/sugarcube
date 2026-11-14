@@ -1,5 +1,5 @@
 import { CLIError } from "../cli-error.js";
-import { ERROR_MESSAGES } from "../constants/error-messages.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import type { Framework, RegistryItemType } from "../types/registry.js";
 import { isFileContent, isRegistryIndex } from "./answers.js";
 
@@ -11,15 +11,15 @@ async function fetchRegistry(url: string) {
 
         if (!response.ok) {
             if (response.status === 401) {
-                throw new CLIError(ERROR_MESSAGES.REGISTRY_AUTH_REQUIRED(url));
+                throw new CLIError(ErrorMessages.REGISTRY_AUTH_REQUIRED(url));
             }
 
             if (response.status === 403) {
-                throw new CLIError(ERROR_MESSAGES.REGISTRY_AUTH_INVALID(url));
+                throw new CLIError(ErrorMessages.REGISTRY_AUTH_INVALID(url));
             }
 
             if (response.status === 404) {
-                throw new CLIError(ERROR_MESSAGES.REGISTRY_NOT_FOUND(url));
+                throw new CLIError(ErrorMessages.REGISTRY_NOT_FOUND(url));
             }
 
             const result = await response.json().catch(() => null);
@@ -28,21 +28,21 @@ async function fetchRegistry(url: string) {
                     ? String(result.error)
                     : response.statusText;
 
-            throw new CLIError(ERROR_MESSAGES.REGISTRY_REQUEST_FAILED(message, url));
+            throw new CLIError(ErrorMessages.REGISTRY_REQUEST_FAILED(message, url));
         }
 
         return response.json();
     } catch (error) {
         if (error instanceof CLIError) throw error;
 
-        throw new CLIError(ERROR_MESSAGES.REGISTRY_NETWORK_ERROR(url));
+        throw new CLIError(ErrorMessages.REGISTRY_NETWORK_ERROR(url));
     }
 }
 
 export async function getRegistryIndex() {
     const url = `${REGISTRY_URL}/index.json`;
     const result: unknown = await fetchRegistry(url);
-    if (!isRegistryIndex(result)) throw new CLIError(ERROR_MESSAGES.REGISTRY_INVALID_DATA(url));
+    if (!isRegistryIndex(result)) throw new CLIError(ErrorMessages.REGISTRY_INVALID_DATA(url));
     return result;
 }
 
@@ -60,7 +60,7 @@ export async function getRegistryFiles({
 
     if (!item) {
         const availableItems = registry.filter((i) => i.type === type).map((i) => i.name);
-        throw new CLIError(ERROR_MESSAGES.REGISTRY_ITEM_NOT_FOUND(type, name, availableItems));
+        throw new CLIError(ErrorMessages.REGISTRY_ITEM_NOT_FOUND(type, name, availableItems));
     }
 
     let selectedFiles = item.files;
@@ -76,7 +76,7 @@ export async function getRegistryFiles({
             const url = `${REGISTRY_URL}/${file.path}.json`;
             const result: unknown = await fetchRegistry(url);
             if (!isFileContent(result)) {
-                throw new CLIError(ERROR_MESSAGES.REGISTRY_FILE_INVALID(file.path));
+                throw new CLIError(ErrorMessages.REGISTRY_FILE_INVALID(file.path));
             }
             return {
                 path: file.path,
@@ -100,7 +100,7 @@ export async function fetchStarterKit(kitChoice: string) {
     });
 
     if (!result.files[0]) {
-        throw new CLIError(ERROR_MESSAGES.STARTER_KIT_UNAVAILABLE(kitChoice));
+        throw new CLIError(ErrorMessages.STARTER_KIT_UNAVAILABLE(kitChoice));
     }
 
     return result;

@@ -32,7 +32,7 @@ export const ErrorMessages = {
     NO_BRANCH: `${prefix} Saving needs the branch the site is built from, and this build has no git checkout to read it from. Set studio.branch in sugarcube.config.ts, for example to your host's branch variable.`,
     RESOLVER_OUTSIDE_REPOSITORY: (resolver: string) =>
         `${prefix} The resolver ${resolver} isn't inside this git checkout, so studio can't tell where it is in the repository.`,
-    NO_APP: `${prefix} Save is on, but studio.app isn't set in sugarcube.config.ts, so studio can't offer a button to install its GitHub App.`,
+    NO_APP: `${prefix} Save is on, but studio.githubApp isn't set in sugarcube.config.ts, so studio can't offer a button to install its GitHub App.`,
     SHORT_SECRET: (name: string, length: number) =>
         `${prefix} ${name} is too short. Use a random value of at least ${length} characters.`,
     MISSING_SETTING: (name: string) =>

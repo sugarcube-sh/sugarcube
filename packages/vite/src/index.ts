@@ -4,15 +4,15 @@ import { isDeepStrictEqual } from "node:util";
 import {
     ConfigError,
     type LoadedConfig,
-    type Reported,
+    type AnyDiagnostic,
     type UtilityCSS,
-    configProblems,
+    toConfigDiagnostics,
     createChangeQueue,
-    cssFrom,
+    generateCSS,
     isConfigFile,
     loadInternalConfig,
-    problemBlocks,
-    tokensOnDisk,
+    formatProblemBlocks,
+    getTokensOnDisk,
 } from "@sugarcube-sh/core";
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import { onFileChanged } from "@sugarcube-sh/dtcg/node";
@@ -50,98 +50,125 @@ interface UnoContext {
     reloadConfig: () => Promise<unknown>;
 }
 
+/**
+ * Options for the sugarcube Vite plugin.
+ */
 interface SugarcubePluginOptions {
     /**
-     * UnoCSS options passed directly to UnoCSS.
-     * Use this to configure presets, theme, layers, outputToCssLayers, etc.
-     * @see https://unocss.dev/config/
+     * Options passed to UnoCSS, such as `{ presets: [presetWind4()] }`.
+     *
+     * @see {@link https://sugarcube.sh/docs/utilities/#extending-with-unocss-presets | Extending with UnoCSS presets}
+     * @see {@link https://unocss.dev/config/ | UnoCSS config}
      */
     unoOptions?: UnoOptions;
 }
 
+/**
+ * The name of the plugin that shares sugarcube's state.
+ *
+ * Other plugins find it by this name. Its `api` is a {@link SugarcubePluginContext}.
+ */
 export const SUGARCUBE_API_PLUGIN_NAME = "sugarcube:api";
 
 /**
- * What other plugins, such as Studio's, can read from sugarcube's: the config in use, the problems
- * loading the config last found (the last good config stays in use meanwhile), the design tokens
- * as last read (their files' text with them), and a signal after every read. The tokens' own
- * problems are not here: a plugin editing them finds those from its own version.
+ * The state other plugins, such as studio's, can read from sugarcube.
  */
 export interface SugarcubePluginContext {
+    /** The config in use. After a config mistake, it's the last one that loaded. */
     readonly config: LoadedConfig["config"];
-    readonly configProblems: readonly Reported[];
+    /** The mistakes found the last time the config loaded. */
+    readonly configProblems: readonly AnyDiagnostic[];
+    /** The design tokens from the last read. Their problems are in `tokens.diagnostics`. */
     readonly tokens: DesignTokens;
+    /** Calls `fn` after every read. Call what it returns to stop. */
     readonly onReload: (fn: () => void) => () => void;
 }
 
-interface Good {
+interface LastGoodCSS {
     css: string;
     utilities: UtilityCSS;
 }
 
-const NO_UTILITIES: UtilityCSS = { rules: [], starts: [], safelist: [], customProperties: [] };
+const NO_UTILITIES: UtilityCSS = { rules: [], prefixes: [], safelist: [], customProperties: [] };
 
 // Returns Promise<any> rather than Promise<Plugin[]> to avoid exposing Vite's
 // Plugin type in the public API. Vite's Plugin type changes across major versions,
 // and pnpm's strict isolation can resolve multiple physical copies of the same
 // version, causing TypeScript to treat identical types as incompatible.
+/**
+ * Makes sugarcube's Vite plugins.
+ *
+ * They serve the CSS variables and utility classes as `virtual:sugarcube.css`.
+ * They read the tokens again when a token file or the config changes.
+ *
+ * @param options - Options for the plugin, such as `{ unoOptions: { presets: [presetWind4()] } }`.
+ *
+ * @see {@link https://sugarcube.sh/docs/vite-plugin/ | Vite plugin}
+ *
+ * @example
+ * // vite.config.ts
+ * import { defineConfig } from "vite";
+ * import sugarcube from "@sugarcube-sh/vite";
+ *
+ * export default defineConfig({ plugins: [sugarcube()] });
+ */
 export default async function sugarcubePlugin(options: SugarcubePluginOptions = {}): Promise<any> {
     const { unoOptions = {} } = options;
-    const timed = debugging(process.env.DEBUG);
+    const isDebugging = isDebugEnabled(process.env.DEBUG);
     let root!: string;
     let loaded!: LoadedConfig;
     let tokens!: DesignTokens;
-    const reading = dtcg(() => tokensOnDisk(loaded.config, root));
-    let fromConfig: Reported[] = [];
-    let tokenProblems: Reported[] = [];
-    const getProblems = () => [...fromConfig, ...tokenProblems];
-    let good: Good = { css: "", utilities: NO_UTILITIES };
+    const dtcgPlugin = dtcg(() => getTokensOnDisk(loaded.config, root));
+    let configProblems: AnyDiagnostic[] = [];
+    let tokenProblems: AnyDiagnostic[] = [];
+    const getProblems = () => [...configProblems, ...tokenProblems];
+    let lastGood: LastGoodCSS = { css: "", utilities: NO_UTILITIES };
     let logger: Logger | undefined;
     const listeners = new Set<() => void>();
     const logUnexpected = (error: unknown) =>
         logger?.error(`[sugarcube] ${error instanceof Error ? error.message : String(error)}`);
 
-    const toTerminalBlocks = (problems: Reported[]) =>
-        problemBlocks(problems, {
+    const formatBlocks = (problems: AnyDiagnostic[]) =>
+        formatProblemBlocks(problems, {
             cwd: root,
-            entryFile: tokensOnDisk(loaded.config, root).entryFile,
+            entryFile: getTokensOnDisk(loaded.config, root).entryFile,
             configFile: loaded.configFile,
             tokens,
         });
 
-    const report = () => {
-        for (const { severity, text } of toTerminalBlocks(getProblems())) {
+    const reportProblems = () => {
+        for (const { severity, text } of formatBlocks(getProblems())) {
             if (severity === "error") logger?.error(text);
             else logger?.warn(text);
         }
     };
 
-    const makeCSSFrom = (next: DesignTokens): boolean => {
+    const updateCSS = (next: DesignTokens): boolean => {
         tokens = next;
-        const made = cssFrom(next, loaded.config);
-        tokenProblems = made.diagnostics;
+        const generated = generateCSS(next, loaded.config);
+        tokenProblems = generated.diagnostics;
         if (hasErrors(getProblems())) return false;
-        const utilities = made.utilities ?? NO_UTILITIES;
-        const same = isDeepStrictEqual(
-            [good.utilities.starts, good.utilities.safelist],
-            [utilities.starts, utilities.safelist],
+        const utilities = generated.utilities ?? NO_UTILITIES;
+        const sameUtilities = isDeepStrictEqual(
+            [lastGood.utilities.prefixes, lastGood.utilities.safelist],
+            [utilities.prefixes, utilities.safelist],
         );
-        good = { css: made.variables.map((file) => file.css).join("\n"), utilities };
-        return !same;
+        lastGood = { css: generated.variables.map((file) => file.css).join("\n"), utilities };
+        return !sameUtilities;
     };
 
     const reloadConfig = createChangeQueue<{ kind: "config" }>(["config"], {
         onChange: async () => {
             try {
                 loaded = await loadInternalConfig({}, { root, lastConfigFile: loaded.configFile });
-                fromConfig = [];
+                configProblems = [];
             } catch (error) {
                 if (!(error instanceof ConfigError)) throw error;
-                fromConfig = configProblems(error);
-                report();
+                configProblems = toConfigDiagnostics(error);
+                reportProblems();
                 return;
             }
-            await reading.api.reread();
+            await dtcgPlugin.api.reread();
         },
         onError: logUnexpected,
     });
@@ -151,7 +178,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             return loaded.config;
         },
         get configProblems() {
-            return fromConfig;
+            return configProblems;
         },
         get tokens() {
             return tokens;
@@ -165,12 +192,12 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
     const sugarcubePreset: any = {
         name: "sugarcube",
         get rules() {
-            return good.utilities.rules;
+            return lastGood.utilities.rules;
         },
         get safelist() {
-            return good.utilities.safelist;
+            return lastGood.utilities.safelist;
         },
-        preflights: [{ getCSS: () => good.css }],
+        preflights: [{ getCSS: () => lastGood.css }],
     };
 
     const unoPlugins: Plugin[] = UnoCSS({
@@ -182,11 +209,11 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         .find((p) => p.name === "unocss:api")
         ?.api?.getContext();
 
-    const applyRead = async (next: DesignTokens, read: ReadEvent) => {
+    const handleRead = async (next: DesignTokens, read: ReadEvent) => {
         const started = performance.now();
-        const utilitiesChanged = makeCSSFrom(next);
+        const utilitiesChanged = updateCSS(next);
         const css = performance.now() - started;
-        report();
+        reportProblems();
         let reloaded: number | undefined;
         if (!hasErrors(getProblems())) {
             if (utilitiesChanged) {
@@ -197,33 +224,33 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 unocss?.invalidate();
             }
         }
-        if (timed) {
+        if (isDebugging) {
             logger?.info(
-                timing(read, { css, unocss: reloaded, rest: performance.now() - started }),
+                formatTiming(read, { css, unocss: reloaded, rest: performance.now() - started }),
             );
         }
         for (const fn of listeners) fn();
     };
     let started: Promise<void> | undefined;
-    const start = async (user: UserConfig) => {
-        root = realpathSync(resolve(user.root ?? "."));
+    const start = async (userConfig: UserConfig) => {
+        root = realpathSync(resolve(userConfig.root ?? "."));
         loaded = await loadInternalConfig({}, { root });
-        makeCSSFrom(await reading.api.getTokens());
-        reading.api.onRead((next, read) => {
-            applyRead(next, read).catch(logUnexpected);
+        updateCSS(await dtcgPlugin.api.getTokens());
+        dtcgPlugin.api.onRead((next, read) => {
+            handleRead(next, read).catch(logUnexpected);
         });
         await unocss?.ready;
         await unocss?.reloadConfig();
     };
 
     const plugins: Plugin[] = [
-        reading,
+        dtcgPlugin,
         {
             name: "sugarcube",
             config: (user) => (started ??= start(user)),
             configResolved(config) {
                 logger = config.logger;
-                if (config.command === "serve") report();
+                if (config.command === "serve") reportProblems();
             },
             configureServer(dev) {
                 if (loaded.configFile) dev.watcher.add(loaded.configFile);
@@ -242,7 +269,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             buildStart() {
                 const problems = getProblems();
                 if (problems.length === 0) return;
-                const text = toTerminalBlocks(problems)
+                const text = formatBlocks(problems)
                     .map((block) => block.text)
                     .join("\n\n");
                 if (hasErrors(problems)) this.error(text);
@@ -286,21 +313,21 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
     return plugins;
 }
 
-function hasErrors(problems: Reported[]): boolean {
+function hasErrors(problems: AnyDiagnostic[]): boolean {
     return problems.some(({ severity }) => severity === "error");
 }
 
-function debugging(names = ""): boolean {
+function isDebugEnabled(names = ""): boolean {
     return names.split(/[\s,]+/).some((name) => ["*", "sugarcube", "sugarcube:*"].includes(name));
 }
 
-interface Spent {
+interface StepTimes {
     css: number;
     unocss?: number;
     rest: number;
 }
 
-function timing({ file, ms }: ReadEvent, { css, unocss, rest }: Spent) {
+function formatTiming({ file, ms }: ReadEvent, { css, unocss, rest }: StepTimes) {
     const parts = [
         `read ${Math.round(ms)}ms`,
         `css ${Math.round(css)}ms`,
@@ -312,4 +339,4 @@ function timing({ file, ms }: ReadEvent, { css, unocss, rest }: Spent) {
 }
 
 export { defineConfig, kebabCase } from "@sugarcube-sh/core";
-export type { SugarcubeConfig, VariableNameFn } from "@sugarcube-sh/core";
+export type { SugarcubeConfig, VariableNameFunction } from "@sugarcube-sh/core";

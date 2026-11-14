@@ -10,9 +10,9 @@ describe("studio's settings", () => {
         const studio = {
             repository: "acme/site",
             branch: "main",
-            app: "acme-studio",
+            githubApp: "acme-studio",
             save: false,
-            signIn: "/auth/studio",
+            signInPath: "/auth/studio",
         };
         expect(issues(studio)).toStrictEqual([]);
         expect(validateSugarcubeConfig({ studio })).toStrictEqual({ studio });
@@ -32,15 +32,15 @@ describe("studio's settings", () => {
 
     it.for(["Acme Studio", "acme/studio", "acme-studio?x=1", "-acme"])(
         "refuse an app name GitHub wouldn't give, such as %s",
-        (app) => {
-            expect(issues({ app })[0]).toContain("studio.app");
+        (githubApp) => {
+            expect(issues({ githubApp })[0]).toContain("studio.githubApp");
         },
     );
 
     it.for(["auth/studio", "//evil.example/auth", "https://acme.com/auth"])(
         "refuse a sign-in address that isn't a path on the site: %s",
-        (signIn) => {
-            expect(issues({ signIn })[0]).toContain("/api/sugarcube-studio");
+        (signInPath) => {
+            expect(issues({ signInPath })[0]).toContain("/api/sugarcube-studio");
         },
     );
 

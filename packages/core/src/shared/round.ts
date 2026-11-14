@@ -1,8 +1,12 @@
 /**
- * Round to N decimals. Defaults to 4, the Utopia convention for fluid
- * scales. Kills binary-float drift (`4.799999999999999` becomes `4.8`),
- * preserves clean designer values, and is sub-pixel invisible
- * (≈0.0016px at the 4th decimal rem).
+ * Rounds a number to a number of decimal places.
+ *
+ * @param value - The number to round, such as `4.799999999999999`.
+ * @param precision - The decimal places to keep, such as `2`. It's `4` when left out.
+ *
+ * @example
+ * roundTo(4.799999999999999)
+ * // => 4.8
  */
 export function roundTo(value: number, precision = 4): number {
     const factor = 10 ** precision;

@@ -75,7 +75,7 @@ describe("generate and analyze agree about what is used", () => {
         "never reports a token unused while generate still emits a utility for it",
         { timeout: TEST_TIMEOUT },
         async () => {
-            await run("generate --force --silent");
+            await run("generate --silent");
             const utilities = await readFile(join(testDir, "out", "utilities.gen.css"), "utf-8");
 
             const shipped = new Set(
@@ -92,7 +92,7 @@ describe("generate and analyze agree about what is used", () => {
     );
 
     it("still reports a token nothing ships as unused", { timeout: TEST_TIMEOUT }, async () => {
-        await run("generate --force --silent");
+        await run("generate --silent");
         const { stdout } = await run("analyze unused --json");
         const { unused } = JSON.parse(stdout) as { unused: string[] };
 

@@ -1,23 +1,23 @@
-import { type Reported, type Where, problemsText } from "@sugarcube-sh/core";
-import type { Built } from "./build.js";
+import { type AnyDiagnostic, type ProblemContext, formatProblems } from "@sugarcube-sh/core";
+import type { BuildResult } from "./build.js";
 
-export function whereOf({ entryFile, configFile, tokens }: Built): Where {
+export function getProblemContext({ entryFile, configFile, tokens }: BuildResult): ProblemContext {
     return { cwd: process.cwd(), entryFile, configFile, tokens };
 }
 
 export function printProblems(
-    problems: Reported[],
-    where: Where,
+    problems: AnyDiagnostic[],
+    context: ProblemContext,
     {
         onlyErrors = false,
-        whenFailed,
-        to = process.stdout,
-    }: { onlyErrors?: boolean; whenFailed?: string; to?: NodeJS.WriteStream } = {},
+        failureText,
+        stream = process.stdout,
+    }: { onlyErrors?: boolean; failureText?: string; stream?: NodeJS.WriteStream } = {},
 ): boolean {
     const errors = problems.filter(({ severity }) => severity === "error");
     const shown = onlyErrors ? errors : problems;
     if (shown.length === 0) return false;
-    const width = to.isTTY ? to.columns : undefined;
-    to.write(`\n${problemsText(shown, where, { width, ending: whenFailed })}\n`);
+    const width = stream.isTTY ? stream.columns : undefined;
+    stream.write(`\n${formatProblems(shown, context, { width, failureText })}\n`);
     return errors.length > 0;
 }

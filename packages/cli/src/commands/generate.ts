@@ -2,17 +2,16 @@ import { type LoadedConfig, writeCSSFiles } from "@sugarcube-sh/core";
 import { Command } from "commander";
 import color from "picocolors";
 import { loadConfig } from "../config.js";
-import { ERROR_MESSAGES } from "../constants/error-messages.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-import { printProblems, whereOf } from "../problems.js";
-import { build, filesOf } from "../build.js";
+import { printProblems, getProblemContext } from "../problems.js";
+import { build, getOutputFiles } from "../build.js";
 import { outputPaths } from "../watch/log.js";
 import { type WatchFlags, watch } from "../watch/watch.js";
 
 interface GenerateFlags extends WatchFlags {
-    force?: boolean;
     watch?: boolean;
 }
 
@@ -38,15 +37,19 @@ async function runOneTimeGeneration(loaded: LoadedConfig, options: GenerateFlags
         variablesOnly: options.variablesOnly,
         utilitiesOnly: options.utilitiesOnly,
     });
-    const failed = printProblems(built.diagnostics, whereOf(built), {
+    const failed = printProblems(built.diagnostics, getProblemContext(built), {
         onlyErrors: options.silent,
-        whenFailed: ERROR_MESSAGES.NO_CSS_WRITTEN(),
+        failureText: ErrorMessages.NO_CSS_WRITTEN(),
     });
     if (failed) {
         process.exitCode = 1;
         return;
     }
-    const files = filesOf(built);
+    const files = getOutputFiles(built);
+    if (files.length === 0) {
+        if (!options.silent) outro(ErrorMessages.NO_CSS_TO_WRITE());
+        return;
+    }
     await writeCSSFiles(files);
     if (!options.silent) await logOneTimeResult(outputPaths(files));
 }
@@ -54,7 +57,6 @@ async function runOneTimeGeneration(loaded: LoadedConfig, options: GenerateFlags
 export const generate = new Command()
     .name("generate")
     .description("Generate CSS from your design tokens")
-    .option("--force", "Skip overwrite confirmation")
     .option("-s, --silent", "Suppress logs and prompts")
     .option("-w, --watch", "Watch for changes and regenerate automatically")
     .option("--resolver <path>", "Path to token resolver file (.resolver.json)")

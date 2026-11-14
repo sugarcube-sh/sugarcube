@@ -1,18 +1,18 @@
-import type { VarRef } from "../scan-css.js";
+import type { VarReference } from "../scan-css.js";
 
 export interface UndeclaredReport {
-    broken: VarRef[];
-    fallback: VarRef[];
+    withoutFallback: VarReference[];
+    withFallback: VarReference[];
 }
 
 export function findUndeclared(
-    used: VarRef[],
+    used: VarReference[],
     declared: Set<string>,
     ignorePrefixes: string[],
 ): UndeclaredReport {
     const seen = new Set<string>();
-    const broken: VarRef[] = [];
-    const fallback: VarRef[] = [];
+    const withoutFallback: VarReference[] = [];
+    const withFallback: VarReference[] = [];
 
     for (const ref of used) {
         if (declared.has(ref.name)) continue;
@@ -22,8 +22,8 @@ export function findUndeclared(
         if (seen.has(key)) continue;
         seen.add(key);
 
-        (ref.hasFallback ? fallback : broken).push(ref);
+        (ref.hasFallback ? withFallback : withoutFallback).push(ref);
     }
 
-    return { broken, fallback };
+    return { withoutFallback, withFallback };
 }

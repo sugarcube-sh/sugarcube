@@ -9,9 +9,9 @@ export type UtilityWithoutClassesReason =
     | { reason: "no-tokens"; group: string }
     | { reason: "no-type" }
     | { reason: "private" }
-    | { reason: "wrong-type"; found: TokenType[]; takes: TokenType[] }
+    | { reason: "wrong-type"; received: TokenType[]; expected: TokenType[] }
     | { reason: "typography" }
-    | { reason: "answered-first"; starts: string[]; by: UtilityEntry[] };
+    | { reason: "classes-taken"; prefixes: string[]; by: UtilityEntry[] };
 
 export type UtilityWithoutClasses = UtilityEntry & { source: string } & UtilityWithoutClassesReason;
 
@@ -72,4 +72,4 @@ export type SugarcubeDiagnosticKind = keyof SugarcubeDiagnosticDetailByKind;
 
 export type SugarcubeDiagnostic = DiagnosticOf<SugarcubeDiagnosticDetailByKind>;
 
-export type Reported = Diagnostic | SugarcubeDiagnostic;
+export type AnyDiagnostic = Diagnostic | SugarcubeDiagnostic;

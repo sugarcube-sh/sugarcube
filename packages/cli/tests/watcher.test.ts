@@ -5,7 +5,7 @@ import { createLiveTokens } from "@sugarcube-sh/dtcg/node";
 import { afterEach, describe, expect, it } from "vitest";
 import {
     type WatchChange,
-    type Watched,
+    type WatchTargets,
     type WatcherHandle,
     startWatcher,
 } from "../src/watch/watcher.js";
@@ -55,7 +55,7 @@ describe("startWatcher", () => {
         const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const changes: WatchChange[] = [];
-        const watched: Watched = { markup: false };
+        const watched: WatchTargets = { markup: false };
         handles.push(
             await startWatcher(live, folder, watched, {
                 onChange: async (change) => {
@@ -84,8 +84,8 @@ describe("startWatcher", () => {
         const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const changes: WatchChange[] = [];
-        const before: Watched = { content: [join(folder, "a/**/*.html")], markup: true };
-        const after: Watched = { content: [join(folder, "b/**/*.html")], markup: true };
+        const before: WatchTargets = { content: [join(folder, "a/**/*.html")], markup: true };
+        const after: WatchTargets = { content: [join(folder, "b/**/*.html")], markup: true };
         handles.push(
             await startWatcher(live, folder, before, {
                 onChange: async (change) => {
@@ -119,7 +119,7 @@ describe("startWatcher", () => {
         const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const saves: string[] = [];
-        const watched: Watched = { content: [join(folder, "a/**/*.html")], markup: true };
+        const watched: WatchTargets = { content: [join(folder, "a/**/*.html")], markup: true };
         handles.push(
             await startWatcher(live, folder, watched, {
                 onChange: async (change) => {
@@ -145,7 +145,7 @@ describe("startWatcher", () => {
         const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const saves: string[] = [];
-        const watched: Watched = { markup: false };
+        const watched: WatchTargets = { markup: false };
         handles.push(
             await startWatcher(live, folder, watched, {
                 onChange: async (change) => {

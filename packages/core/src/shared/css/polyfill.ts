@@ -5,22 +5,22 @@ interface Fallbacks {
     missing: { token: Token; colorSpace: ColorSpace }[];
 }
 
-export function fallbacksIn(from: Token, isPrivate: (each: Token) => boolean): Fallbacks {
+export function findFallbacks(from: Token, isPrivate: (each: Token) => boolean): Fallbacks {
     const found: Fallbacks = { spaces: [], missing: [] };
     const seen = new Set<Token>();
     const walk = (each: Token) => {
         if (seen.has(each)) return;
         seen.add(each);
-        const whole = each.parts;
-        if (whole) visit(each, whole);
+        const parts = each.parts;
+        if (parts) visit(each, parts);
     };
-    const followed = (ref: Reference | undefined): boolean => {
+    const followReference = (ref: Reference | undefined): boolean => {
         const target = ref?.pointsToWholeToken;
         if (target && isPrivate(target)) walk(target);
         return target !== undefined;
     };
     const visit = (owner: Token, part: Part): void => {
-        if (followed(part.ref)) return;
+        if (followReference(part.ref)) return;
         switch (part.type) {
             case "color": {
                 const { colorSpace, hex } = part.resolved;
@@ -33,7 +33,7 @@ export function fallbacksIn(from: Token, isPrivate: (each: Token) => boolean): F
                 return visit(owner, part.color);
             case "shadow":
                 for (const layer of part.layers) {
-                    if (!followed(layer.ref)) visit(owner, layer.color);
+                    if (!followReference(layer.ref)) visit(owner, layer.color);
                 }
                 return;
             case "gradient":
@@ -47,11 +47,11 @@ export function fallbacksIn(from: Token, isPrivate: (each: Token) => boolean): F
     return found;
 }
 
-export function supportsCondition(spaces: ColorSpace[]): string {
-    return spaces.map((space) => `(color: ${sample(space)})`).join(" and ");
+export function toSupportsCondition(spaces: ColorSpace[]): string {
+    return spaces.map((space) => `(color: ${getSampleColor(space)})`).join(" and ");
 }
 
-function sample(space: ColorSpace): string {
+function getSampleColor(space: ColorSpace): string {
     switch (space) {
         case "lab":
         case "lch":

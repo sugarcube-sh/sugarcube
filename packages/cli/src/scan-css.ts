@@ -1,7 +1,7 @@
 import postcss, { type Parser } from "postcss";
 import valueParser from "postcss-value-parser";
 
-export interface VarRef {
+export interface VarReference {
     name: string;
     line: number;
     file: string;
@@ -10,12 +10,12 @@ export interface VarRef {
 
 export interface ScanResult {
     declared: Set<string>;
-    used: VarRef[];
+    used: VarReference[];
 }
 
 export function scanCSS(css: string, file: string, parse: Parser = postcss.parse): ScanResult {
     const declared = new Set<string>();
-    const used: VarRef[] = [];
+    const used: VarReference[] = [];
 
     parse(css, { from: file }).walkDecls((decl) => {
         if (decl.prop.startsWith("--")) {

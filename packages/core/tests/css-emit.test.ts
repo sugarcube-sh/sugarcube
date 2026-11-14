@@ -4,8 +4,8 @@ import { fillDefaults } from "../src/node/config/normalize.js";
 import { declare } from "../src/shared/css/declare.js";
 import { emitCSS } from "../src/shared/css/emit.js";
 import type { InternalConfig } from "../src/types/config.js";
-import type { Reported } from "../src/types/diagnostics.js";
-import { readOptions } from "../src/shared/read-options.js";
+import type { AnyDiagnostic } from "../src/types/diagnostics.js";
+import { createReadOptions } from "../src/shared/read-options.js";
 
 type Variables = Parameters<typeof fillDefaults>[0]["variables"];
 
@@ -20,7 +20,7 @@ function builtFor(files: Record<string, unknown>, variables: Variables = {}) {
     const texts = Object.fromEntries(
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
-    const tokens = readFromMemory({ files: texts }, readOptions(config));
+    const tokens = readFromMemory({ files: texts }, createReadOptions(config));
     return built(tokens, config);
 }
 
@@ -219,7 +219,7 @@ describe("emitCSS", () => {
     it("hands back what reading found from declaring, not from writing", () => {
         const config = fillDefaults({ variables: { path: "variables.css" } });
         const files = { "tokens.json": JSON.stringify({ broken: color("#e11d4") }) };
-        const tokens = readFromMemory({ files }, readOptions(config));
+        const tokens = readFromMemory({ files }, createReadOptions(config));
         const declared = declare(tokens, config);
         expect(declared.diagnostics).toStrictEqual(tokens.diagnostics);
         expect(emitCSS(declared, config).diagnostics).toStrictEqual([]);
@@ -257,7 +257,7 @@ describe("emitCSS", () => {
         };
         const tokens = readFromMemory(
             { files, entryFile: "tokens.resolver.json" },
-            readOptions(config),
+            createReadOptions(config),
         );
         const [first, second] = declare(tokens, config).entries;
         expect(first?.declared).toBe(second?.declared);
@@ -288,7 +288,7 @@ describe("emitCSS", () => {
         };
         const tokens = readFromMemory(
             { files, entryFile: "tokens.resolver.json" },
-            readOptions(config),
+            createReadOptions(config),
         );
         const declared = declare(tokens, config);
         const { files: written } = emitCSS(declared, config);
@@ -319,7 +319,10 @@ describe("emitCSS", () => {
                 variables: { path: "variables.css", propagateDependents: true },
             });
             const declaredRenamed = declare(
-                readFromMemory({ files, entryFile: "tokens.resolver.json" }, readOptions(renamed)),
+                readFromMemory(
+                    { files, entryFile: "tokens.resolver.json" },
+                    createReadOptions(renamed),
+                ),
                 renamed,
             );
             const emitted = emitCSS(declaredRenamed, renamed);
@@ -347,7 +350,7 @@ describe("emitCSS", () => {
         };
         const tokens = readFromMemory(
             { files, entryFile: "tokens.resolver.json" },
-            readOptions(config),
+            createReadOptions(config),
         );
         expect(built(tokens, config).diagnostics.map(({ message }) => message)).toStrictEqual([
             "`brand` and `size` have no default",
@@ -367,7 +370,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
         };
         const declared = declare(
-            readFromMemory({ files, entryFile: "tokens.resolver.json" }, readOptions(config)),
+            readFromMemory({ files, entryFile: "tokens.resolver.json" }, createReadOptions(config)),
             config,
         );
         expect(declared.entries).toStrictEqual([]);
@@ -396,7 +399,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
         };
         const declared = declare(
-            readFromMemory({ files, entryFile: "tokens.resolver.json" }, readOptions(config)),
+            readFromMemory({ files, entryFile: "tokens.resolver.json" }, createReadOptions(config)),
             config,
         );
         expect(declared.diagnostics).toStrictEqual([]);
@@ -829,7 +832,7 @@ describe("emitCSS", () => {
             const texts = Object.fromEntries(
                 Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
             );
-            return built(readFromMemory({ files: texts }, readOptions(config)), config);
+            return built(readFromMemory({ files: texts }, createReadOptions(config)), config);
         };
 
         it("by default, through chains, after what it changes, in file order", () => {
@@ -1082,7 +1085,10 @@ describe("emitCSS", () => {
         it("warning, once, that polyfill will be removed", () => {
             const config = fillDefaults({ variables: { path: "variables.css", ...polyfill } });
             const files = { "tokens.json": JSON.stringify({ ink: color("#111111") }) };
-            const { diagnostics } = built(readFromMemory({ files }, readOptions(config)), config);
+            const { diagnostics } = built(
+                readFromMemory({ files }, createReadOptions(config)),
+                config,
+            );
             expect(
                 diagnostics.map(({ kind, severity, message }) => [kind, severity, message]),
             ).toStrictEqual([
@@ -1102,7 +1108,7 @@ describe("emitCSS", () => {
                 }),
             };
             const { files: written, diagnostics } = built(
-                readFromMemory({ files }, readOptions(config)),
+                readFromMemory({ files }, createReadOptions(config)),
                 config,
             );
             expect(written[0]?.css).toBe(":root {\n    --deep: lab(50 20 -30);\n}\n");
@@ -1257,14 +1263,14 @@ describe("emitCSS", () => {
 
     describe("reports as an error two tokens that make the same variable name", () => {
         const clash = (first: string, later: string, name: string) =>
-            `\`${first}\` and \`${later}\` both make \`${name}\``;
+            `\`${first}\` and \`${later}\` are both \`${name}\``;
         const problems = (files: Record<string, unknown>, variables: Variables = {}) => {
             const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
             const texts = Object.fromEntries(
                 Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
             );
             return built(
-                readFromMemory({ files: texts }, readOptions(config)),
+                readFromMemory({ files: texts }, createReadOptions(config)),
                 config,
             ).diagnostics.map(({ kind, severity, path, message }) => [
                 kind,
@@ -1540,7 +1546,7 @@ describe("emitCSS", () => {
             };
             const files = { "tokens.json": JSON.stringify(tokens) };
             const { files: written, diagnostics } = built(
-                readFromMemory({ files }, readOptions(config)),
+                readFromMemory({ files }, createReadOptions(config)),
                 config,
             );
             expect(written[0]?.css).toContain("--heading-line-height: 1.2;");
@@ -1671,7 +1677,7 @@ describe("emitCSS", () => {
                 },
             });
             const files = { "tokens.json": JSON.stringify(tokens) };
-            return built(readFromMemory({ files }, readOptions(config)), config);
+            return built(readFromMemory({ files }, createReadOptions(config)), config);
         };
 
         it("from its min and max, as Utopia works it out, the token's own value unused", () => {
@@ -1802,7 +1808,7 @@ describe("emitCSS", () => {
                 message: "won't zoom to 200%",
                 help: undefined,
             });
-            const warnings = (diagnostics: readonly Reported[]) =>
+            const warnings = (diagnostics: readonly AnyDiagnostic[]) =>
                 diagnostics.map(({ kind, path, detail, message, help }) => [
                     kind,
                     path,
@@ -1857,7 +1863,7 @@ describe("emitCSS", () => {
                     }).map(([path, json]) => [path, JSON.stringify(json)]),
                 );
                 const { diagnostics } = built(
-                    readFromMemory({ files }, readOptions(config)),
+                    readFromMemory({ files }, createReadOptions(config)),
                     config,
                 );
                 expect(warnings(diagnostics)).toStrictEqual([
@@ -1922,7 +1928,7 @@ describe("emitCSS", () => {
                     step: fluid({ min: { ...px(16), clamp: true }, max: px(20) }),
                 }),
             };
-            const strict = { ...readOptions(config), ignoreUnknownProperties: false };
+            const strict = { ...createReadOptions(config), ignoreUnknownProperties: false };
             const { files: written } = built(readFromMemory({ files }, strict), config);
             expect(written[0]?.css ?? "").not.toContain("clamp(");
         });

@@ -19,14 +19,14 @@ function isRegistryItem(value: unknown): value is RegistryItem {
         isObject(value) &&
         typeof value.name === "string" &&
         typeof value.type === "string" &&
-        optionally(value.description, isString) &&
-        optionally(value.frameworks, isStrings) &&
+        isOptional(value.description, isString) &&
+        isOptional(value.frameworks, isStrings) &&
         Array.isArray(value.files) &&
         value.files.every(isFile) &&
-        optionally(value.tokens, isTokenMappings) &&
-        optionally(value.dependencies, isPerFramework) &&
-        optionally(value.registryDependencies, isPerFramework) &&
-        optionally(value.tokenDependencies, isStrings)
+        isOptional(value.tokens, isTokenMappings) &&
+        isOptional(value.dependencies, isPerFramework) &&
+        isOptional(value.registryDependencies, isPerFramework) &&
+        isOptional(value.tokenDependencies, isStrings)
     );
 }
 
@@ -63,7 +63,7 @@ function isString(value: unknown): boolean {
     return typeof value === "string";
 }
 
-function optionally(value: unknown, check: (value: unknown) => boolean): boolean {
+function isOptional(value: unknown, check: (value: unknown) => boolean): boolean {
     return value === undefined || check(value);
 }
 

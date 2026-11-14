@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { readOptions } from "@sugarcube-sh/core/client";
+import { createReadOptions } from "@sugarcube-sh/core/client";
 import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { createSession, setValue } from "@sugarcube-sh/dtcg-edit";
@@ -35,7 +35,7 @@ async function setup(change: Partial<FilesNow> = {}) {
     remove = copy.remove;
     let now: FilesNow = {
         config: copy.config,
-        tokens: await read(copy.config.resolver, readOptions(copy.config)),
+        tokens: await read(copy.config.resolver, createReadOptions(copy.config)),
         configProblems: [],
         ...change,
     };
@@ -157,7 +157,7 @@ describe("defineStudio", () => {
         const s = await setup();
         await defineStudio(s.files, s.host);
         const session = createSession(
-            readFromMemory(s.message(), readOptions(sugarcubeSettings(s.message()))),
+            readFromMemory(s.message(), createReadOptions(sugarcubeSettings(s.message()))),
         );
         session.do(
             setValue(session.tokens, "color.brand.500", {

@@ -1,10 +1,10 @@
 import type { UnoGenerator } from "@unocss/core";
 import { resolve } from "pathe";
-import { type Built, variablesOf } from "../build.js";
+import { type BuildResult, getTokenByVariable } from "../build.js";
 import { readMarkupSources } from "../scan-markup.js";
 import { type UnreadStylesheets, scanStylesheets } from "../scan-stylesheets.js";
 
-export interface Use {
+export interface TokenUse {
     token: string;
     file: string;
     line?: number;
@@ -12,96 +12,96 @@ export interface Use {
     class?: string;
 }
 
-export interface Uses {
-    uses: Use[];
-    scanned: { forVarReferences: string[]; forUtilityClasses: string[] };
+export interface TokenUses {
+    uses: TokenUse[];
+    scanned: { stylesheets: string[]; markup: string[] };
     unread: UnreadStylesheets[];
 }
 
-export async function findUses(built: Built): Promise<Uses> {
-    const tokenOf = variablesOf(built);
+export async function findUses(built: BuildResult): Promise<TokenUses> {
+    const tokenByVariable = getTokenByVariable(built);
     const { used, files, unread } = await scanStylesheets(built);
-    const fromVar = used.flatMap(({ name, file, line }) => {
-        const token = tokenOf.get(name);
+    const varUses = used.flatMap(({ name, file, line }) => {
+        const token = tokenByVariable.get(name);
         return token ? [{ token, file: resolve(file), line, var: name }] : [];
     });
     const markup = built.markupFiles.map((file) => resolve(file));
-    const { uno, utilityRules, configFile } = built;
-    const fromClass = uno ? await classUses(uno, markup, tokenOf) : [];
-    const safelisted =
-        uno && utilityRules && configFile
-            ? await safelistUses(uno, utilityRules.safelist, resolve(configFile), tokenOf)
+    const { uno, utilityCSS, configFile } = built;
+    const classUses = uno ? await findClassUses(uno, markup, tokenByVariable) : [];
+    const safelistUses =
+        uno && utilityCSS && configFile
+            ? await findSafelistUses(uno, utilityCSS.safelist, resolve(configFile), tokenByVariable)
             : [];
     return {
-        uses: [...fromVar, ...fromClass, ...safelisted],
+        uses: [...varUses, ...classUses, ...safelistUses],
         scanned: {
-            forVarReferences: files.map((file) => resolve(file)),
-            forUtilityClasses: markup,
+            stylesheets: files.map((file) => resolve(file)),
+            markup,
         },
         unread,
     };
 }
 
-async function classUses(
+async function findClassUses(
     uno: UnoGenerator,
     markup: string[],
     tokenOf: Map<string, string>,
-): Promise<Use[]> {
+): Promise<TokenUse[]> {
     const sources = await readMarkupSources(markup);
-    const found: Use[] = [];
+    const found: TokenUse[] = [];
     for (const [index, file] of markup.entries()) {
-        found.push(...(await classUsesIn(file, sources[index] ?? "", uno, tokenOf)));
+        found.push(...(await findClassUsesInFile(file, sources[index] ?? "", uno, tokenOf)));
     }
     return found;
 }
 
-async function classUsesIn(
+async function findClassUsesInFile(
     file: string,
     code: string,
     uno: UnoGenerator,
     tokenOf: Map<string, string>,
-): Promise<Use[]> {
-    const found: Use[] = [];
+): Promise<TokenUse[]> {
+    const found: TokenUse[] = [];
     for (const className of await uno.applyExtractors(code, file)) {
-        const variables = await variablesIn(uno, className, tokenOf);
+        const variables = await getClassVariables(uno, className, tokenOf);
         if (variables.length === 0) continue;
         found.push(
-            ...placesOf(code, className).flatMap((line) =>
-                variables.map((variable) => classUse(file, className, variable, line)),
+            ...getClassLines(code, className).flatMap((line) =>
+                variables.map((variable) => toClassUse(file, className, variable, line)),
             ),
         );
     }
     return found;
 }
 
-async function safelistUses(
+async function findSafelistUses(
     uno: UnoGenerator,
     safelist: string[],
     file: string,
     tokenOf: Map<string, string>,
-): Promise<Use[]> {
+): Promise<TokenUse[]> {
     const perClass = await Promise.all(
         safelist.map(async (className) =>
-            (await variablesIn(uno, className, tokenOf)).map((variable) =>
-                classUse(file, className, variable),
+            (await getClassVariables(uno, className, tokenOf)).map((variable) =>
+                toClassUse(file, className, variable),
             ),
         ),
     );
     return perClass.flat();
 }
 
-function classUse(
+function toClassUse(
     file: string,
     className: string,
     [name, token]: [string, string],
     line?: number,
-): Use {
-    const use: Use = { token, file, var: name, class: className };
+): TokenUse {
+    const use: TokenUse = { token, file, var: name, class: className };
     if (line !== undefined) use.line = line;
     return use;
 }
 
-async function variablesIn(
+async function getClassVariables(
     uno: UnoGenerator,
     className: string,
     tokenOf: Map<string, string>,
@@ -117,12 +117,12 @@ async function variablesIn(
     return [...found];
 }
 
-function placesOf(code: string, className: string): (number | undefined)[] {
-    const lines = linesOf(code, className);
+function getClassLines(code: string, className: string): (number | undefined)[] {
+    const lines = findLines(code, className);
     return lines.length > 0 ? lines : [undefined];
 }
 
-function linesOf(code: string, className: string): number[] {
+function findLines(code: string, className: string): number[] {
     const escaped = className.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const pattern = new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`, "g");
     const lines: number[] = [];

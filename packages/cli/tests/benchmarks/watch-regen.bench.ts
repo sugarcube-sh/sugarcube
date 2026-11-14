@@ -1,10 +1,10 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type LoadedConfig, fillDefaults, readOptions } from "@sugarcube-sh/core";
+import { type LoadedConfig, fillDefaults, createReadOptions } from "@sugarcube-sh/core";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { afterAll, bench, describe } from "vitest";
-import { type Built, build, buildFrom, rescan } from "../../src/build.js";
+import { type BuildResult, build, buildFromTokens, rescan } from "../../src/build.js";
 
 // Measures the cost of a single watch change-event after a first build, at a
 // few project sizes.
@@ -168,8 +168,8 @@ for (const size of SIZES) {
 
         // Warm: built on the first run, which warm-up absorbs, then each sample
         // measures one change event.
-        let markupBuilt: Built | undefined;
-        let tokenBuilt: Built | undefined;
+        let markupBuilt: BuildResult | undefined;
+        let tokenBuilt: BuildResult | undefined;
 
         // One markup file edited after a build — the common hot path.
         bench("single markup change (warm)", async () => {
@@ -190,8 +190,8 @@ for (const size of SIZES) {
                 }),
             );
             const { config } = fx.loaded;
-            const tokens = await read(config.resolver, readOptions(config));
-            tokenBuilt = await buildFrom(tokens, fx.loaded, {}, tokenBuilt);
+            const tokens = await read(config.resolver, createReadOptions(config));
+            tokenBuilt = await buildFromTokens(tokens, fx.loaded, {}, tokenBuilt);
         });
     });
 }

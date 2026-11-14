@@ -1,11 +1,11 @@
 import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
-import { readOptions } from "../src/shared/read-options.js";
-import { located } from "../src/shared/diagnostics.js";
-import { utilityRules } from "../src/shared/utilities/rules.js";
+import { createReadOptions } from "../src/shared/read-options.js";
+import { locateProblems } from "../src/shared/diagnostics.js";
+import { createUtilityRules } from "../src/shared/utilities/rules.js";
 import { declare } from "../src/shared/css/declare.js";
-import { utilityTokens } from "../src/shared/utilities/tokens.js";
+import { getUtilityTokens } from "../src/shared/utilities/tokens.js";
 import type { UtilityClassesConfig } from "../src/types/config.js";
 
 type Variables = Parameters<typeof fillDefaults>[0]["variables"];
@@ -42,9 +42,12 @@ function ruledFrom(
     const texts = Object.fromEntries(
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
-    const tokens = readFromMemory({ files: texts }, readOptions(config));
-    const made = utilityRules(utilityTokens(declare(tokens, config)), classes);
-    return { ...made, diagnostics: [...located(tokens, made.aboutTokens), ...made.diagnostics] };
+    const tokens = readFromMemory({ files: texts }, createReadOptions(config));
+    const made = createUtilityRules(getUtilityTokens(declare(tokens, config)), classes);
+    return {
+        ...made,
+        diagnostics: [...locateProblems(tokens, made.tokenProblems), ...made.diagnostics],
+    };
 }
 
 function ruled(tokens: unknown, classes: UtilityClassesConfig, variables: Variables = {}) {
@@ -67,10 +70,10 @@ function cssFor(
     );
 }
 
-const starts = (classes: UtilityClassesConfig) =>
+const prefixes = (classes: UtilityClassesConfig) =>
     ruled({}, classes).rules.map(([pattern]) => pattern.source.slice(1, -4));
 
-describe("utilityRules", () => {
+describe("createUtilityRules", () => {
     const palette = { color: { primary: color(), secondary: color() }, space: { sm: px(8) } };
 
     it("writes the token's variable for the prefix and the path below source", () => {
@@ -93,7 +96,7 @@ describe("utilityRules", () => {
         ).toStrictEqual({ padding: "var(--ds-space-1\\/2)" });
     });
 
-    it("starts classes with the source's first segment when there is no prefix", () => {
+    it("prefixes classes with the source's first segment when there is no prefix", () => {
         const tokens = { text: { lg: px(18) } };
         expect(cssFor(tokens, { "font-size": { source: "text.*" } }, "text-lg")).toStrictEqual({
             "font-size": "var(--text-lg)",
@@ -236,9 +239,9 @@ describe("utilityRules", () => {
             });
         });
 
-        it("makes each class start once, a shorthand before its longhands", () => {
+        it("makes each class prefix once, a shorthand before its longhands", () => {
             expect(
-                starts({
+                prefixes({
                     padding: {
                         source: "space.*",
                         prefix: "p",
@@ -251,7 +254,7 @@ describe("utilityRules", () => {
 
     it("makes rules in the config's order, an entry without a prefix where it is written", () => {
         expect(
-            starts({
+            prefixes({
                 "color": { source: "color.*", prefix: "text" },
                 "font-size": { source: "size.*" },
                 "background-color": { source: "color.*", prefix: "bg" },
@@ -279,7 +282,7 @@ describe("utilityRules", () => {
         expect(ruled(tokens, classes).safelist).toStrictEqual(["color-ink"]);
     });
 
-    describe("entries sharing a class start", () => {
+    describe("entries sharing a class prefix", () => {
         it("keep their directions", () => {
             const classes: UtilityClassesConfig = {
                 margin: [
@@ -294,7 +297,7 @@ describe("utilityRules", () => {
             expect(cssFor(space, classes, "mx-medium")).toStrictEqual({
                 "margin-inline": "var(--space-medium)",
             });
-            expect(starts(classes)).toStrictEqual(["m", "mx", "my", "mt", "mr", "mb", "ml"]);
+            expect(prefixes(classes)).toStrictEqual(["m", "mx", "my", "mt", "mr", "mb", "ml"]);
         });
 
         it("are tried in the config's order", () => {
@@ -304,7 +307,7 @@ describe("utilityRules", () => {
                 "background-color": { source: "color.*", prefix: "brand" },
                 "font-size": { source: "size.*", prefix: "brand" },
             };
-            expect(starts(classes)).toStrictEqual(["brand"]);
+            expect(prefixes(classes)).toStrictEqual(["brand"]);
             expect(cssFor(tokens, classes, "brand-primary")).toStrictEqual({
                 color: "var(--color-primary)",
             });
@@ -314,7 +317,7 @@ describe("utilityRules", () => {
         });
     });
 
-    it("answers a class two tokens make with the first in file order", () => {
+    it("uses the first token in file order for a class two tokens make", () => {
         const tokens = { color: { "bg-offset": color(), "bg": { offset: color() } } };
         expect(
             cssFor(tokens, { color: { source: "color.*", prefix: "text" } }, "text-bg-offset", {
@@ -323,7 +326,7 @@ describe("utilityRules", () => {
         ).toStrictEqual({ color: "var(--color_bg-offset)" });
     });
 
-    it("lets a class reach past a rule whose start it also has", () => {
+    it("lets a class match past a rule whose prefix it also has", () => {
         const tokens = {
             font: {
                 weight: { bold: { $type: "fontWeight", $value: 700 } },
@@ -356,46 +359,46 @@ describe("utilityRules", () => {
     });
 });
 
-describe("utilityRules' starts, the rules as data", () => {
+describe("createUtilityRules' prefixes, the rules as data", () => {
     const classes = { color: { source: "color.*", prefix: "text" } };
 
     it("are the same for tokens that make the same classes, whatever their values", () => {
-        const before = ruled({ color: { ink: color("#111111") } }, classes).starts;
-        const after = ruled({ color: { ink: color("#222222") } }, classes).starts;
+        const before = ruled({ color: { ink: color("#111111") } }, classes).prefixes;
+        const after = ruled({ color: { ink: color("#222222") } }, classes).prefixes;
         expect(after).toStrictEqual(before);
     });
 
     it("differ when a token makes a class no token made before", () => {
-        const before = ruled({ color: { ink: color() } }, classes).starts;
-        const after = ruled({ color: { ink: color(), paper: color() } }, classes).starts;
+        const before = ruled({ color: { ink: color() } }, classes).prefixes;
+        const after = ruled({ color: { ink: color(), paper: color() } }, classes).prefixes;
         expect(after).not.toStrictEqual(before);
     });
 
     it("differ when a class writes another variable", () => {
-        const before = ruled({ color: { ink: color() } }, classes).starts;
-        const after = ruled({ color: { ink: color() } }, classes, { prefix: "ds" }).starts;
+        const before = ruled({ color: { ink: color() } }, classes).prefixes;
+        const after = ruled({ color: { ink: color() } }, classes, { prefix: "ds" }).prefixes;
         expect(after).not.toStrictEqual(before);
     });
 
     it("differ when a class sets another property", () => {
         const tokens = { color: { ink: color() } };
-        const before = ruled(tokens, classes).starts;
+        const before = ruled(tokens, classes).prefixes;
         const after = ruled(tokens, {
             "background-color": { source: "color.*", prefix: "text" },
-        }).starts;
+        }).prefixes;
         expect(after).not.toStrictEqual(before);
     });
 
     it("differ when a class strips its prefix, though every token's part is the same", () => {
         const tokens = { color: { ink: color() } };
-        const before = ruled(tokens, classes).starts;
+        const before = ruled(tokens, classes).prefixes;
         const after = ruled(tokens, {
             color: { source: "color.*", prefix: "text", stripDuplicates: true },
-        }).starts;
+        }).prefixes;
         expect(after).not.toStrictEqual(before);
     });
 
-    it("make the rules: each class writes what its start's uses say", () => {
+    it("make the rules, each class writing what its prefix's properties say", () => {
         const tokens = { color: { ink: color(), text: { muted: color() } } };
         const stripping = {
             color: { source: "color.*", prefix: "text", stripDuplicates: true },
@@ -406,9 +409,9 @@ describe("utilityRules' starts, the rules as data", () => {
         expect(cssFor(tokens, stripping, "text-muted")).toStrictEqual({
             color: "var(--color-text-muted)",
         });
-        expect(ruled(tokens, stripping).starts).toStrictEqual([
+        expect(ruled(tokens, stripping).prefixes).toStrictEqual([
             {
-                start: "text",
+                prefix: "text",
                 uses: [
                     {
                         property: "color",
@@ -424,7 +427,7 @@ describe("utilityRules' starts, the rules as data", () => {
     });
 });
 
-describe("utilityRules' custom properties, the variables its classes set", () => {
+describe("createUtilityRules' custom properties, the variables its classes set", () => {
     const space = { space: { sm: px(4), md: px(8) } };
 
     it("lists a custom property an entry's classes set", () => {
@@ -453,7 +456,7 @@ describe("utilityRules' custom properties, the variables its classes set", () =>
         expect(customProperties).toStrictEqual(["--gutter"]);
     });
 
-    it("leaves out an entry whose classes an earlier entry answers", () => {
+    it("leaves out an entry whose classes an earlier entry already makes", () => {
         const { customProperties } = ruled(space, {
             "--gap-first": { source: "space.*", prefix: "gap" },
             "--gap-second": { source: "space.*", prefix: "gap" },
@@ -463,7 +466,7 @@ describe("utilityRules' custom properties, the variables its classes set", () =>
     });
 });
 
-describe("utilityRules' safelist", () => {
+describe("createUtilityRules' safelist", () => {
     const tokens = {
         color: { primary: color(), danger: color(), text: { muted: color() } },
         space: { sm: px(8) },
@@ -486,7 +489,7 @@ describe("utilityRules' safelist", () => {
         ).toStrictEqual(["bg-danger", "bg-primary", "bg-text-muted"]);
     });
 
-    it("lists the classes named, when a token answers them", () => {
+    it("lists the classes named, when a token makes them", () => {
         expect(
             safelistFor({
                 "background-color": {
@@ -514,7 +517,7 @@ describe("utilityRules' safelist", () => {
         ).toStrictEqual(["text-danger", "text-muted", "text-primary"]);
     });
 
-    it("lists only classes the rules answer", () => {
+    it("lists only classes the rules make", () => {
         const classes: UtilityClassesConfig = {
             "color": { source: "color.*", prefix: "text", stripDuplicates: true, safelist: true },
             "background-color": { source: "color.*", prefix: "bg", safelist: ["primary"] },
@@ -531,7 +534,7 @@ describe("utilityRules' safelist", () => {
     });
 });
 
-describe("utilityRules' warning for a class two tokens make", () => {
+describe("createUtilityRules' warning for a class two tokens make", () => {
     const warnings = (tokens: unknown, classes: UtilityClassesConfig, variables?: Variables) =>
         ruled(tokens, classes, variables)
             .diagnostics.filter(({ kind }) => kind === "same-utility-class")
@@ -569,7 +572,7 @@ describe("utilityRules' warning for a class two tokens make", () => {
         ]);
     });
 
-    it("across entries sharing a start", () => {
+    it("across entries sharing a prefix", () => {
         const tokens = { color: { brand: { primary: color() }, semantic: { primary: color() } } };
         const classes: UtilityClassesConfig = {
             color: [
@@ -665,8 +668,8 @@ describe("utilityRules' warning for a class two tokens make", () => {
     });
 });
 
-describe("utilityRules' warning for an entry that makes no classes", () => {
-    const messagesOf = ({ diagnostics }: ReturnType<typeof utilityRules>) =>
+describe("createUtilityRules' warning for an entry that makes no classes", () => {
+    const messagesOf = ({ diagnostics }: ReturnType<typeof createUtilityRules>) =>
         diagnostics
             .filter(({ kind }) => kind === "utility-without-classes")
             .map(({ message, help }) => (help === undefined ? message : [message, help]));
@@ -742,18 +745,18 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
         ).toStrictEqual(["`text-shadow` makes no classes: DTCG has no text shadow type"]);
     });
 
-    it("when another entry answers every class it makes", () => {
+    it("when another entry already makes every class it makes", () => {
         expect(
             reported(
                 { color: { ink: color(), rose: color() } },
                 { "color": { source: "color.*" }, "background-color": { source: "color.*" } },
             ),
         ).toStrictEqual([
-            "`background-color` makes no classes: `color` answers every `color-…` class first",
+            "`background-color` makes no classes: `color` already makes every `color-…` class",
         ]);
     });
 
-    it("naming an entry by its place when the property lists several, and every start and answer", () => {
+    it("naming an entry by its place when the property lists several, and every prefix and entry that takes them", () => {
         expect(
             reported(
                 { space: { sm: px(4) } },
@@ -767,7 +770,7 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
                 },
             ),
         ).toStrictEqual([
-            "`margin`'s 2nd entry makes no classes: `padding` and `--inline` answer every `mb-…` and `mx-…` class first",
+            "`margin`'s 2nd entry makes no classes: `padding` and `--inline` already make every `mb-…` and `mx-…` class",
         ]);
     });
 
@@ -814,8 +817,8 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
                     entry: 1,
                     source: "color.*",
                     reason: "wrong-type",
-                    found: ["color"],
-                    takes: ["dimension"],
+                    received: ["color"],
+                    expected: ["dimension"],
                 },
             ],
             [
@@ -877,7 +880,7 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
     });
 });
 
-describe("utilityRules' warning for a safelisted class no token makes", () => {
+describe("createUtilityRules' warning for a safelisted class no token makes", () => {
     const palette = { color: { primary: color(), text: { muted: color() } } };
     const reported = (classes: UtilityClassesConfig) =>
         ruled(palette, classes)
@@ -938,7 +941,7 @@ describe("utilityRules' warning for a safelisted class no token makes", () => {
     });
 });
 
-describe("utilityRules' warning that the direction full is deprecated", () => {
+describe("createUtilityRules' warning that the direction full is deprecated", () => {
     const space = { space: { md: { $type: "dimension", $value: { value: 1, unit: "rem" } } } };
     const reported = (classes: UtilityClassesConfig) =>
         ruled(space, classes).diagnostics.map(({ kind, severity, message }) => [

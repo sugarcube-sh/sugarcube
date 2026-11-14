@@ -3,7 +3,7 @@ import { configFileExists } from "@sugarcube-sh/core";
 import { Command } from "commander";
 import { basename, join } from "pathe";
 import color from "picocolors";
-import { ERROR_MESSAGES } from "../constants/error-messages.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { CLI_PACKAGE, VITE_PLUGIN } from "../constants/plugins.js";
 import { handleError } from "../handle-error.js";
 import { installDependencies } from "../installation/dependencies.js";
@@ -14,7 +14,7 @@ import { detectExistingTokens } from "../project/tokens.js";
 import { errorBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-import { next } from "../prompts/next-steps.js";
+import { showNextSteps } from "../prompts/next-steps.js";
 import { promptOptional, promptStarterKit } from "../prompts/prompts.js";
 import type { Task } from "../prompts/tasks.js";
 import { welcome } from "../prompts/welcome.js";
@@ -24,9 +24,9 @@ import { writeTokenFiles } from "../write-token-files.js";
 import { runComponents } from "./components.js";
 import { runCube } from "./cube.js";
 
-async function preflightInit(): Promise<void> {
+async function checkCanInit(): Promise<void> {
     if (configFileExists()) {
-        errorBoxWithBadge(ERROR_MESSAGES.CONFIG_EXISTS(), {});
+        errorBoxWithBadge(ErrorMessages.CONFIG_EXISTS(), {});
         process.exit(1);
     }
 }
@@ -61,7 +61,7 @@ export const init = new Command()
                 process.exit(1);
             }
 
-            await preflightInit();
+            await checkCanInit();
 
             const { tokensDir: defaultTokensDir } = getProjectInfo(process.cwd());
             const tokensDir = options.tokens ?? defaultTokensDir;
@@ -173,7 +173,7 @@ export const init = new Command()
 
             log.success("🎉 Project initialized!");
 
-            await next({ installedVitePlugin: installVite });
+            await showNextSteps({ installedVitePlugin: installVite });
         } catch (error) {
             handleError(error);
         }

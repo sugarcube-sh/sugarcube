@@ -183,8 +183,8 @@ describe("findUses", () => {
         const found = await findUses(await withClasses());
 
         expect(found.scanned).toStrictEqual({
-            forVarReferences: [join(dir, "index.html"), join(dir, "styles/app.css")],
-            forUtilityClasses: [join(dir, "index.html")],
+            stylesheets: [join(dir, "index.html"), join(dir, "styles/app.css")],
+            markup: [join(dir, "index.html")],
         });
         expect(found.unread).toStrictEqual([]);
     });
@@ -200,7 +200,7 @@ describe("findUses", () => {
         );
         const found = await findUses(await build(await loadConfig()));
 
-        expect(found.scanned.forUtilityClasses).toStrictEqual([join(dir, "lib", "page.heex")]);
+        expect(found.scanned.markup).toStrictEqual([join(dir, "lib", "page.heex")]);
         expect(found.uses.filter(({ class: name }) => name === "p-md")).toStrictEqual([
             {
                 token: "space.md",
@@ -217,7 +217,7 @@ describe("findUses", () => {
             await project(`{ resolver: "./tokens/tokens.resolver.json" }`),
         );
 
-        expect(found.scanned.forUtilityClasses).toStrictEqual([]);
+        expect(found.scanned.markup).toStrictEqual([]);
         expect(found.uses.some(({ class: name }) => name !== undefined)).toBe(false);
     });
 });

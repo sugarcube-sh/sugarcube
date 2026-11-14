@@ -1,62 +1,62 @@
 import { type DesignTokens, type Span, getFilePath, getSourceLine } from "@sugarcube-sh/dtcg";
 import { relative } from "pathe";
 import color from "picocolors";
-import type { Reported } from "../types/diagnostics.js";
-import { plural } from "./plural.js";
+import type { AnyDiagnostic } from "../types/diagnostics.js";
+import { pluralize } from "./plural.js";
 
-export interface Where {
+export interface ProblemContext {
     cwd: string;
     entryFile: string;
     configFile?: string;
     tokens?: DesignTokens;
 }
 
-interface Placed {
-    problem: Reported;
+interface LocatedProblem {
+    problem: AnyDiagnostic;
     location?: { file: string; line: number; column: number };
 }
 
 export interface ProblemBlock {
-    severity: Reported["severity"];
+    severity: AnyDiagnostic["severity"];
     text: string;
 }
 
-interface Look {
+interface PrintOptions {
     colors?: boolean;
     width?: number;
 }
 
 const LINE_WIDTH = 100;
 
-export function problemsText(
-    problems: readonly Reported[],
-    where: Where,
-    { ending, ...look }: Look & { ending?: string } = {},
+export function formatProblems(
+    problems: readonly AnyDiagnostic[],
+    where: ProblemContext,
+    { failureText, ...look }: PrintOptions & { failureText?: string } = {},
 ): string {
     if (problems.length === 0) return "";
-    const count = problemCount(problems);
+    const count = formatProblemCount(problems);
     const failed = problems.some(({ severity }) => severity === "error");
-    const last = failed && ending ? `${count} ${ending}` : count;
-    const blocks = problemBlocks(problems, where, look).map(({ text }) => text);
+    const last = failed && failureText ? `${count} ${failureText}` : count;
+    const blocks = formatProblemBlocks(problems, where, look).map(({ text }) => text);
     return [...blocks, last].join("\n\n");
 }
 
-export function problemBlocks(
-    problems: readonly Reported[],
-    where: Where,
-    { colors: colored, width }: Look = {},
+export function formatProblemBlocks(
+    problems: readonly AnyDiagnostic[],
+    where: ProblemContext,
+    { colors: colored, width }: PrintOptions = {},
 ): ProblemBlock[] {
     const colors = colored === undefined ? color : color.createColors(colored);
     const files = where.tokens?.toMemory().files;
-    const tint: Record<Reported["severity"], (text: string) => string> = {
+    const colorBySeverity: Record<AnyDiagnostic["severity"], (text: string) => string> = {
         error: colors.red,
         warning: colors.yellow,
         info: colors.cyan,
         hint: colors.cyan,
     };
-    const placeText = (span: Span | undefined) => {
+    const formatLocation = (span: Span | undefined) => {
         if (span) {
-            const { file, line, column } = locationOf(span, where);
+            const { file, line, column } = getLocation(span, where);
             return colors.cyan(file) + colors.yellow(`:${line}:${column}`);
         }
         const { cwd, configFile } = where;
@@ -65,21 +65,21 @@ export function problemBlocks(
     return problems
         .map((problem) => ({
             problem,
-            ...(problem.span && { location: locationOf(problem.span, where) }),
+            ...(problem.span && { location: getLocation(problem.span, where) }),
         }))
-        .sort(byPlace)
-        .map(({ problem }: Placed) => {
+        .sort(compareByLocation)
+        .map(({ problem }: LocatedProblem) => {
             const { span, severity, kind, help } = problem;
-            const place = placeText(span);
-            const heading = tint[severity](severity) + colors.gray(`[${kind}]`);
-            const permutations = permutationsNamed(problem, where.tokens);
-            const written = span && files?.[span.file];
+            const place = formatLocation(span);
+            const heading = colorBySeverity[severity](severity) + colors.gray(`[${kind}]`);
+            const permutations = getPermutationsLabel(problem, where.tokens);
+            const fileText = span && files?.[span.file];
             const frame =
-                span && written !== undefined
-                    ? sourceLines(span, written, help, tint[severity], width)
-                    : helpLines(help);
+                span && fileText !== undefined
+                    ? formatSourceLines(span, fileText, help, colorBySeverity[severity], width)
+                    : formatHelp(help);
             const related = (problem.relatedInformation ?? []).map(
-                ({ message, span: at }) => `  ${placeText(at)}  ${message}`,
+                ({ message, span: at }) => `  ${formatLocation(at)}  ${message}`,
             );
             const text = [
                 place ? `${place}  ${heading}` : heading,
@@ -91,18 +91,18 @@ export function problemBlocks(
         });
 }
 
-export function problemCount(problems: readonly Reported[]): string {
+export function formatProblemCount(problems: readonly AnyDiagnostic[]): string {
     const errors = problems.filter(({ severity }) => severity === "error").length;
     const warnings = problems.filter(({ severity }) => severity === "warning").length;
     const counted = [
-        ...(errors > 0 ? [plural(errors, "error")] : []),
-        ...(warnings > 0 ? [plural(warnings, "warning")] : []),
+        ...(errors > 0 ? [pluralize(errors, "error")] : []),
+        ...(warnings > 0 ? [pluralize(warnings, "warning")] : []),
     ];
     return `${counted.join(" and ")}.`;
 }
 
-function permutationsNamed(
-    problem: Reported,
+function getPermutationsLabel(
+    problem: AnyDiagnostic,
     tokens: DesignTokens | undefined,
 ): string | undefined {
     const { permutations, span } = problem;
@@ -114,11 +114,11 @@ function permutationsNamed(
     return permutations.others.length > 0 ? permutations.label : undefined;
 }
 
-function helpLines(help: string | undefined): string[] {
+function formatHelp(help: string | undefined): string[] {
     return help === undefined ? [] : [`  help: ${help}`];
 }
 
-function sourceLines(
+function formatSourceLines(
     span: Span,
     text: string,
     help: string | undefined,
@@ -129,7 +129,7 @@ function sourceLines(
     const number = String(source.line);
     const gutter = `  ${number} | `;
     const blank = `  ${" ".repeat(number.length)} | `;
-    const shown = visiblePart(source, (width ?? LINE_WIDTH) - gutter.length);
+    const shown = fitToWidth(source, (width ?? LINE_WIDTH) - gutter.length);
     const indent = " ".repeat(shown.column - 1);
     const carets = "^".repeat(shown.length);
     const line = `${gutter}${shown.text}`;
@@ -139,28 +139,31 @@ function sourceLines(
     return fits ? [line, `${marker} ${help}`] : [line, marker, `${blank}${indent}${help}`];
 }
 
-function visiblePart(
+function fitToWidth(
     source: { text: string; column: number; length: number },
-    room: number,
+    width: number,
 ): { text: string; column: number; length: number } {
     const { text, column, length } = source;
-    if (text.length <= room) return source;
-    const start = Math.max(0, Math.min(column - 1 - Math.floor(room / 3), text.length - room));
-    const end = start + room;
+    if (text.length <= width) return source;
+    const start = Math.max(0, Math.min(column - 1 - Math.floor(width / 3), text.length - width));
+    const end = start + width;
     let shown = text.slice(start, end);
     if (start > 0) shown = `…${shown.slice(1)}`;
     if (end < text.length) shown = `${shown.slice(0, -1)}…`;
     const at = column - start;
-    return { text: shown, column: at, length: Math.max(1, Math.min(length, room - at)) };
+    return { text: shown, column: at, length: Math.max(1, Math.min(length, width - at)) };
 }
 
-function locationOf(span: Span, { cwd, entryFile }: Where) {
+function getLocation(span: Span, { cwd, entryFile }: ProblemContext) {
     const file = relative(cwd, getFilePath(entryFile, span.file));
     const { line, column } = span.start;
     return { file, line, column };
 }
 
-function byPlace({ location: a }: Placed, { location: b }: Placed): number {
+function compareByLocation(
+    { location: a }: LocatedProblem,
+    { location: b }: LocatedProblem,
+): number {
     if (!a || !b) return Number(!a) - Number(!b);
     if (a.file !== b.file) return a.file < b.file ? -1 : 1;
     return a.line - b.line || a.column - b.column;

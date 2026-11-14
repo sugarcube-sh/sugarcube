@@ -34,11 +34,14 @@ export function gitSaveFor({
         repository,
         branch,
         entry,
-        signIn: studio.signIn ?? STUDIO_SIGN_IN_BASE,
+        signIn: studio.signInPath ?? STUDIO_SIGN_IN_BASE,
     } as const;
-    if (!studio.app) return { gitSave, warnings: [ErrorMessages.NO_APP] };
+    if (!studio.githubApp) return { gitSave, warnings: [ErrorMessages.NO_APP] };
     return {
-        gitSave: { ...gitSave, install: `https://github.com/apps/${studio.app}/installations/new` },
+        gitSave: {
+            ...gitSave,
+            install: `https://github.com/apps/${studio.githubApp}/installations/new`,
+        },
         warnings: [],
     };
 }

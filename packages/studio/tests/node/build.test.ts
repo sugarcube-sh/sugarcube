@@ -64,7 +64,7 @@ describe("buildStudio", () => {
 
     it("hands back what the developer should know, such as no app name for the install link", () => {
         expect(built.warnings).toHaveLength(1);
-        expect(built.warnings[0]).toContain("studio.app");
+        expect(built.warnings[0]).toContain("studio.githubApp");
     });
 
     it("bakes the token files into the dump, so studio boots with no server", () => {

@@ -7,17 +7,17 @@ import type {
     UtilityWithoutClasses,
 } from "../../types/diagnostics.js";
 
-type Entry<K extends SugarcubeDiagnosticKind> = {
+type DiagnosticMessage<K extends SugarcubeDiagnosticKind> = {
     severity: "error" | "warning";
     message: (detail: SugarcubeDiagnosticDetailByKind[K]) => string;
     help?: (detail: SugarcubeDiagnosticDetailByKind[K]) => string | undefined;
 };
 
-const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
+const diagnosticMessages: { [K in SugarcubeDiagnosticKind]: DiagnosticMessage<K> } = {
     "default-required": {
         severity: "error",
         message: ({ modifiers }) =>
-            `${listed(modifiers.map(quoted))} ${modifiers.length > 1 ? "have" : "has"} no default`,
+            `${formatList(modifiers.map(quote))} ${modifiers.length > 1 ? "have" : "has"} no default`,
     },
     "default-not-first": {
         severity: "warning",
@@ -43,7 +43,7 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
     "same-variable-name": {
         severity: "error",
         message: ({ name, paths: [first, later] }) =>
-            `\`${first}\` and \`${later}\` both make \`${name}\``,
+            `\`${first}\` and \`${later}\` are both \`${name}\``,
     },
     "same-utility-class": {
         severity: "warning",
@@ -52,22 +52,24 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
     },
     "utility-without-classes": {
         severity: "warning",
-        message: (detail) => `${entryName(detail)} makes no classes: ${reasonText(detail)}`,
+        message: (detail) => `${formatEntryName(detail)} makes no classes: ${formatReason(detail)}`,
         help: (detail) =>
-            detail.reason === "wrong-type" ? `use ${listed(detail.takes, "or")} tokens` : undefined,
+            detail.reason === "wrong-type"
+                ? `use ${formatList(detail.expected, "or")} tokens`
+                : undefined,
     },
     "safelist-without-token": {
         severity: "warning",
         message: (detail) =>
-            `\`${detail.part}\` in ${entryName(detail)}'s safelist matches no token`,
+            `\`${detail.part}\` in ${formatEntryName(detail)}'s safelist matches no token`,
     },
     "invalid-config": {
         severity: "error",
-        message: (issue) => configIssueText(issue),
+        message: (issue) => formatConfigIssue(issue),
     },
 };
 
-function reasonText(detail: UtilityWithoutClasses): string {
+function formatReason(detail: UtilityWithoutClasses): string {
     const { property, source } = detail;
     switch (detail.reason) {
         case "no-tokens":
@@ -77,19 +79,19 @@ function reasonText(detail: UtilityWithoutClasses): string {
         case "private":
             return `the tokens under \`${source}\` are private`;
         case "wrong-type":
-            return `\`${source}\` has only ${listed(detail.found)} tokens`;
+            return `\`${source}\` has only ${formatList(detail.received)} tokens`;
         case "typography":
             return `\`${source}\` has only typography tokens`;
-        case "answered-first": {
-            const by = detail.by.map(entryName);
-            const starts = listed(detail.starts.map((start) => `\`${start}-…\``));
-            return `${listed(by)} ${by.length > 1 ? "answer" : "answers"} every ${starts} class first`;
+        case "classes-taken": {
+            const by = detail.by.map(formatEntryName);
+            const prefixes = formatList(detail.prefixes.map((prefix) => `\`${prefix}-…\``));
+            return `${formatList(by)} already ${by.length > 1 ? "make" : "makes"} every ${prefixes} class`;
         }
     }
 }
 
-const ordinal = new Intl.PluralRules("en", { type: "ordinal" });
-const SUFFIXES: Record<Intl.LDMLPluralRule, string> = {
+const ordinalRules = new Intl.PluralRules("en", { type: "ordinal" });
+const ORDINAL_SUFFIXES: Record<Intl.LDMLPluralRule, string> = {
     one: "st",
     two: "nd",
     few: "rd",
@@ -98,19 +100,19 @@ const SUFFIXES: Record<Intl.LDMLPluralRule, string> = {
     many: "th",
 };
 
-export function configIssueText(issue: ConfigIssue): string {
-    const subject = "setting" in issue && issue.setting ? quoted(issue.setting) : "the config";
+export function formatConfigIssue(issue: ConfigIssue): string {
+    const subject = "setting" in issue && issue.setting ? quote(issue.setting) : "the config";
     switch (issue.reason) {
         case "not-loaded":
             return `could not be loaded: ${issue.cause}`;
         case "deleted":
             return "was deleted; put it back, or restart to build without it";
         case "wrong-type":
-            return `${subject} must be ${expectedText(issue)}, not ${aOrAn(issue.received)}`;
+            return `${subject} must be ${formatExpected(issue)}, not ${addTypeArticle(issue.received)}`;
         case "missing":
-            return `${subject} needs ${withArticle(quoted(issue.property))}`;
+            return `${subject} needs ${addArticle(quote(issue.property))}`;
         case "not-allowed": {
-            const allowed = listed(
+            const allowed = formatList(
                 issue.allowed.map((value) => JSON.stringify(value)),
                 "or",
             );
@@ -125,7 +127,7 @@ export function configIssueText(issue: ConfigIssue): string {
         case "empty-source":
             return `${subject} is empty: name the group its tokens come from, such as "color.*"`;
         case "wrong-form":
-            return `${subject} ${FORMS[issue.form]}, not ${JSON.stringify(issue.value)}`;
+            return `${subject} ${FORM_DESCRIPTIONS[issue.form]}, not ${JSON.stringify(issue.value)}`;
         case "no-resolver":
             return ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
         case "several-resolvers":
@@ -135,46 +137,46 @@ export function configIssueText(issue: ConfigIssue): string {
     }
 }
 
-const FORMS: Record<Extract<ConfigIssue, { reason: "wrong-form" }>["form"], string> = {
+const FORM_DESCRIPTIONS: Record<Extract<ConfigIssue, { reason: "wrong-form" }>["form"], string> = {
     "repository": 'is written as "owner/name", such as "acme/site"',
     "app": 'is the GitHub App\'s name as it appears in its address, such as "acme-studio" in github.com/apps/acme-studio',
     "sign-in": 'is a path on your site, such as "/api/sugarcube-studio"',
     "source": 'can have `*` only at the end, such as "color.*"',
 };
 
-function expectedText({
+function formatExpected({
     expected,
     allowed,
 }: Extract<ConfigIssue, { reason: "wrong-type" }>): string {
-    if (allowed === undefined) return listed(expected.map(aOrAn), "or");
-    const values = listed(
+    if (allowed === undefined) return formatList(expected.map(addTypeArticle), "or");
+    const values = formatList(
         allowed.map((value) => JSON.stringify(value)),
         "or",
     );
     return expected.includes("array") ? `${values}, or an array of them` : values;
 }
 
-const NO_ARTICLE = new Set<TypeName>(["null", "undefined", "NaN"]);
+const TYPES_WITHOUT_ARTICLE = new Set<TypeName>(["null", "undefined", "NaN"]);
 
-function aOrAn(type: TypeName): string {
-    return NO_ARTICLE.has(type) ? type : withArticle(type);
+function addTypeArticle(type: TypeName): string {
+    return TYPES_WITHOUT_ARTICLE.has(type) ? type : addArticle(type);
 }
 
-function withArticle(word: string): string {
+function addArticle(word: string): string {
     return `${/^`?[aeiou]/i.test(word) ? "an" : "a"} ${word}`;
 }
 
-function entryName({ property, entry }: UtilityEntry): string {
-    if (entry === undefined) return quoted(property);
+function formatEntryName({ property, entry }: UtilityEntry): string {
+    if (entry === undefined) return quote(property);
     const place = entry + 1;
-    return `${quoted(property)}'s ${place}${SUFFIXES[ordinal.select(place)]} entry`;
+    return `${quote(property)}'s ${place}${ORDINAL_SUFFIXES[ordinalRules.select(place)]} entry`;
 }
 
-function quoted(name: string): string {
+function quote(name: string): string {
     return `\`${name}\``;
 }
 
-function listed(items: string[], conjunction = "and"): string {
+function formatList(items: string[], conjunction = "and"): string {
     return items.length > 2
         ? `${items.slice(0, -1).join(", ")} ${conjunction} ${items.at(-1)}`
         : items.join(` ${conjunction} `);
@@ -188,7 +190,7 @@ export const ErrorMessages = {
             "No design tokens found.\n\nRun @sugarcube-sh/cli init to set up your design tokens.\n\nStuck? https://sugarcube.sh/docs",
     },
 
-    DIAGNOSTICS: diagnostics,
+    DIAGNOSTICS: diagnosticMessages,
     FLUID_EXTENSION: {
         "not-an-object": ({ name }: { name: string }) => `\`${name}\` must be an object`,
         "missing-property": ({ name }: { name: string }) => `the fluid range needs \`${name}\``,
@@ -215,6 +217,6 @@ export const ErrorMessages = {
     },
 } as const;
 
-export function diagnosticDocs(kind: string): string {
+export function getDiagnosticDocsURL(kind: string): string {
     return `https://sugarcube.sh/errors/${kind}`;
 }

@@ -20,11 +20,12 @@ export interface FluidRange {
 type Messages = typeof ErrorMessages.FLUID_EXTENSION;
 
 export function readFluid(
-    ours: unknown,
+    extension: unknown,
     options: ParseOptions,
 ): ExtensionResult<FluidRange | undefined, Messages> {
-    if (!isJsonObject(ours) || !Object.hasOwn(ours, "fluid")) return { ok: true, value: undefined };
-    const { fluid } = ours;
+    if (!isJsonObject(extension) || !Object.hasOwn(extension, "fluid"))
+        return { ok: true, value: undefined };
+    const { fluid } = extension;
     const reader = createExtensionReader<Messages>(options);
     if (!isJsonObject(fluid)) {
         reader.report(["fluid"], "not-an-object", { name: "fluid" });
@@ -38,20 +39,20 @@ export function readFluid(
     return reader.result(min && max && { min, max });
 }
 
-export function fluidRangeOf(
+export function findFluidRange(
     from: Token,
     options: ParseOptions,
 ): { token: Token; range: FluidRange } | undefined {
     for (const each of from.aliasChain) {
         if (each.type !== "dimension" || each.resolved === undefined) return undefined;
-        const own = readFluid(each.extensions?.[SUGARCUBE_NAMESPACE], options);
-        if (!own.ok) return undefined;
-        if (own.value) return { token: each, range: own.value };
+        const fluid = readFluid(each.extensions?.[SUGARCUBE_NAMESPACE], options);
+        if (!fluid.ok) return undefined;
+        if (fluid.value) return { token: each, range: fluid.value };
     }
     return undefined;
 }
 
-export function pixels({ value, unit }: DimensionValue): number {
+export function toPixels({ value, unit }: DimensionValue): number {
     return unit === "px" ? value : value * 16;
 }
 

@@ -14,6 +14,6 @@ export function outputPaths(output: CSSFileOutput): string[] {
 
 export function logRegenerated(changedPath: string, output: CSSFileOutput, ms: number): void {
     console.log(
-        `${prefix} ${color.dim(basename(changedPath))} → ${outputPaths(output).join(", ")} ${color.dim(`(${ms}ms)`)}`,
+        `${prefix} ${color.dim(basename(changedPath))} changed, wrote ${outputPaths(output).join(", ")} ${color.dim(`(${ms}ms)`)}`,
     );
 }

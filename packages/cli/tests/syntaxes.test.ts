@@ -1,31 +1,31 @@
 import type { Parser } from "postcss";
 import { describe, expect, it } from "vitest";
 import { scanCSS } from "../src/scan-css.js";
-import { STYLESHEET_EXTENSIONS, parserFor } from "../src/syntaxes.js";
+import { STYLESHEET_EXTENSIONS, getParser } from "../src/syntaxes.js";
 
 function parser(file: string): Parser {
-    const parse = parserFor(file);
+    const parse = getParser(file);
     if (!parse) throw new Error(`expected a parser for ${file}`);
     return parse;
 }
 
-describe("parserFor", () => {
+describe("getParser", () => {
     it("has a parser for .css and every component type", () => {
         for (const file of ["a.css", "a.vue", "a.svelte", "a.astro", "a.html", "a.htm", "a.php"]) {
-            expect(parserFor(file), file).toBeDefined();
+            expect(getParser(file), file).toBeDefined();
         }
     });
 
     it("has none for unknown extensions", () => {
-        expect(parserFor("notes.txt")).toBeUndefined();
+        expect(getParser("notes.txt")).toBeUndefined();
     });
 
     it("has none for extensions we don't ship a parser for", () => {
-        expect(parserFor("styles.scss")).toBeUndefined();
+        expect(getParser("styles.scss")).toBeUndefined();
     });
 
     it("reads the extension whatever its case", () => {
-        expect(parserFor("A.CSS")).toBeDefined();
+        expect(getParser("A.CSS")).toBeDefined();
     });
 });
 

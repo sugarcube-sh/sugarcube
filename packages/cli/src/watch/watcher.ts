@@ -12,13 +12,13 @@ export type WatchChange =
     | { kind: "token"; tokens: DesignTokens; read: ReadEvent }
     | { kind: "markup"; path: string };
 
-export interface Watched {
+export interface WatchTargets {
     content?: readonly string[];
     markup: boolean;
 }
 
 export type WatchCallbacks = {
-    onChange: (change: WatchChange) => Promise<Watched>;
+    onChange: (change: WatchChange) => Promise<WatchTargets>;
     onError: (error: unknown) => void;
     onWarning: (message: string) => void;
 };
@@ -27,14 +27,14 @@ export type WatcherHandle = {
     close: () => Promise<void>;
 };
 
-const IN_ORDER: WatchChange["kind"][] = ["config", "token", "markup"];
+const CHANGE_ORDER: WatchChange["kind"][] = ["config", "token", "markup"];
 
 // Mirrors scan-markup's MAX_FILES
 const WATCH_TARGET_LIMIT = 10_000;
 
 const GLOB_MAGIC = /[*?{}[\]!]/;
 
-function globBaseDir(glob: string): string {
+function getGlobBase(glob: string): string {
     const staticSegments: string[] = [];
     for (const segment of glob.split("/")) {
         if (GLOB_MAGIC.test(segment)) break;
@@ -46,35 +46,35 @@ function globBaseDir(glob: string): string {
 // Derive the directories to watch for markup changes from `content` globs. (Chokidar v5 no longer expands globs)
 export function resolveMarkupWatchTargets(content: readonly string[] | undefined): string[] {
     if (!content || content.length === 0) return ["."];
-    const dirs = content.filter((glob) => !glob.startsWith("!")).map(globBaseDir);
+    const dirs = content.filter((glob) => !glob.startsWith("!")).map(getGlobBase);
     return [...new Set(dirs)];
 }
 
-const CHANGES_ONLY = { ignoreInitial: true };
+const IGNORE_INITIAL = { ignoreInitial: true };
 
-export function ignoredMarkup(path: string, stats?: Stats): boolean {
+export function isIgnoredMarkup(path: string, stats?: Stats): boolean {
     if (path.split(/[\\/]/).some((segment) => IGNORED_DIR_NAMES.has(segment))) return true;
     return stats?.isFile() === true && !MARKUP_EXTENSIONS.has(getExtension(path));
 }
 
-function ready(watcher: FSWatcher): Promise<void> {
+function waitUntilReady(watcher: FSWatcher): Promise<void> {
     return new Promise<void>((done) => watcher.once("ready", done));
 }
 
 export async function startWatcher(
     live: LiveTokens,
     root: string,
-    first: Watched,
+    first: WatchTargets,
     callbacks: WatchCallbacks,
 ): Promise<WatcherHandle> {
     let watched = first;
 
     const startMarkup = async (content: readonly string[] | undefined): Promise<WatcherHandle> => {
         const markup = chokidarWatch(resolveMarkupWatchTargets(content), {
-            ...CHANGES_ONLY,
-            ignored: ignoredMarkup,
+            ...IGNORE_INITIAL,
+            ignored: isIgnoredMarkup,
         });
-        const markupReady = ready(markup);
+        const markupReady = waitUntilReady(markup);
         const onMarkup = (path: string) => queue({ kind: "markup", path });
         const stopChecks = onFileChanged(markup, onMarkup);
         markup.on("add", onMarkup);
@@ -94,41 +94,41 @@ export async function startWatcher(
             },
         };
     };
-    const markupFor = ({ markup, content }: Watched) =>
+    const watchMarkup = ({ markup, content }: WatchTargets) =>
         markup ? startMarkup(content) : Promise.resolve(undefined);
 
-    const update = async (next: Watched) => {
+    const updateTargets = async (next: WatchTargets) => {
         if (next.markup !== watched.markup || !isDeepStrictEqual(next.content, watched.content)) {
             await (await markup)?.close();
-            markup = markupFor(next);
+            markup = watchMarkup(next);
             await markup;
         }
         watched = next;
     };
 
-    const queue = createChangeQueue<WatchChange>(IN_ORDER, {
-        onChange: async (change) => update(await callbacks.onChange(change)),
+    const queue = createChangeQueue<WatchChange>(CHANGE_ORDER, {
+        onChange: async (change) => updateTargets(await callbacks.onChange(change)),
         onError: callbacks.onError,
     });
 
     const folder = resolve(root);
     const configs = chokidarWatch(folder, {
-        ...CHANGES_ONLY,
+        ...IGNORE_INITIAL,
         depth: 0,
         ignored: (path) => resolve(path) !== folder && !isConfigFile(path, folder),
     });
-    const configsReady = ready(configs);
+    const configsReady = waitUntilReady(configs);
     const onConfig = (path: string) => queue({ kind: "config", path });
     const stopConfigChecks = onFileChanged(configs, onConfig);
     configs.on("add", onConfig);
     configs.on("unlink", onConfig);
     configs.on("error", callbacks.onError);
 
-    const files = chokidarWatch([], CHANGES_ONLY);
+    const files = chokidarWatch([], IGNORE_INITIAL);
     files.on("error", callbacks.onError);
     live.watch(files);
     const stopReading = live.onRead((tokens, read) => queue({ kind: "token", tokens, read }));
-    let markup = markupFor(watched);
+    let markup = watchMarkup(watched);
 
     await Promise.all([markup, configsReady]);
 

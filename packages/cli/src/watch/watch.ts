@@ -2,19 +2,25 @@ import {
     type CSSFileOutput,
     ConfigError,
     type LoadedConfig,
-    type Reported,
-    configProblems,
-    plural,
-    tokensOnDisk,
+    type AnyDiagnostic,
+    toConfigDiagnostics,
+    pluralize,
+    getTokensOnDisk,
     writeCSSFiles,
 } from "@sugarcube-sh/core";
 import { createLiveTokens } from "@sugarcube-sh/dtcg/node";
-import { type BuildOptions, type Built, buildFrom, filesOf, rescan } from "../build.js";
+import {
+    type BuildOptions,
+    type BuildResult,
+    buildFromTokens,
+    getOutputFiles,
+    rescan,
+} from "../build.js";
 import { type ConfigFlags, loadConfig } from "../config.js";
-import { ERROR_MESSAGES } from "../constants/error-messages.js";
-import { printProblems, whereOf } from "../problems.js";
+import { ErrorMessages } from "../constants/error-messages.js";
+import { printProblems, getProblemContext } from "../problems.js";
 import { errorPrefix, logRegenerated, prefix, warnPrefix } from "./log.js";
-import { type WatchChange, type Watched, startWatcher } from "./watcher.js";
+import { type WatchChange, type WatchTargets, startWatcher } from "./watcher.js";
 
 export interface WatchFlags extends ConfigFlags {
     silent?: boolean;
@@ -22,66 +28,70 @@ export interface WatchFlags extends ConfigFlags {
     utilitiesOnly?: boolean;
 }
 
-export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<void> {
+export async function watch(flags: WatchFlags, initialConfig: LoadedConfig): Promise<void> {
     const options: BuildOptions = {
         variablesOnly: flags.variablesOnly,
         utilitiesOnly: flags.utilitiesOnly,
     };
-    let loaded = first;
-    let fromConfig: Reported[] = [];
+    let loaded = initialConfig;
+    let configProblems: AnyDiagnostic[] = [];
 
     const onError = (error: unknown) => {
         const message = error instanceof Error ? error.message : String(error);
         console.error(`${errorPrefix} ${message}`);
     };
-    const live = createLiveTokens(() => tokensOnDisk(loaded.config), { onError });
+    const live = createLiveTokens(() => getTokensOnDisk(loaded.config), { onError });
 
-    const written = async (built: Built, files: CSSFileOutput): Promise<boolean> => {
-        const failed = printProblems([...fromConfig, ...built.diagnostics], whereOf(built), {
-            onlyErrors: flags.silent,
-            whenFailed: ERROR_MESSAGES.NO_CSS_WRITTEN(),
-        });
+    const writeIfValid = async (built: BuildResult, files: CSSFileOutput): Promise<boolean> => {
+        const failed = printProblems(
+            [...configProblems, ...built.diagnostics],
+            getProblemContext(built),
+            {
+                onlyErrors: flags.silent,
+                failureText: ErrorMessages.NO_CSS_WRITTEN(),
+            },
+        );
         if (failed) return false;
         await writeCSSFiles(files);
         return true;
     };
 
     const started = performance.now();
-    let last = await buildFrom(await live.getTokens(), loaded, options);
-    if (await written(last, filesOf(last))) {
-        console.log(`${prefix} Generated in ${since(started)}ms`);
+    let last = await buildFromTokens(await live.getTokens(), loaded, options);
+    if (await writeIfValid(last, getOutputFiles(last))) {
+        console.log(`${prefix} Generated in ${getElapsedMs(started)}ms`);
     }
 
-    const configChanged = async (): Promise<Built | undefined> => {
+    const reloadConfig = async (): Promise<BuildResult | undefined> => {
         try {
             loaded = await loadConfig(flags, loaded.configFile);
-            fromConfig = [];
+            configProblems = [];
         } catch (error) {
             if (!(error instanceof ConfigError)) throw error;
-            fromConfig = configProblems(error);
+            configProblems = toConfigDiagnostics(error);
             return last;
         }
         await live.reread();
         return undefined;
     };
 
-    const rebuilt = (change: WatchChange): Promise<Built | undefined> => {
-        if (change.kind === "config") return configChanged();
+    const rebuild = (change: WatchChange): Promise<BuildResult | undefined> => {
+        if (change.kind === "config") return reloadConfig();
         if (change.kind === "markup") return rescan(last);
-        return buildFrom(change.tokens, loaded, options, last);
+        return buildFromTokens(change.tokens, loaded, options, last);
     };
 
-    const watcher = await startWatcher(live, process.cwd(), watchedBy(last), {
+    const watcher = await startWatcher(live, process.cwd(), getWatchTargets(last), {
         onChange: async (change) => {
-            const begun = performance.now() - (change.kind === "token" ? change.read.ms : 0);
-            const next = await rebuilt(change);
-            if (next === undefined) return watchedBy(last);
+            const startTime = performance.now() - (change.kind === "token" ? change.read.ms : 0);
+            const next = await rebuild(change);
+            if (next === undefined) return getWatchTargets(last);
             last = next;
-            const files = change.kind === "markup" ? last.utilities : filesOf(last);
-            if (await written(last, files)) {
-                logRegenerated(savedFile(change, loaded), files, since(begun));
+            const files = change.kind === "markup" ? last.utilities : getOutputFiles(last);
+            if (await writeIfValid(last, files)) {
+                logRegenerated(getChangedFile(change, loaded), files, getElapsedMs(startTime));
             }
-            return watchedBy(last);
+            return getWatchTargets(last);
         },
         onError,
         onWarning: (message) => {
@@ -89,7 +99,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
         },
     });
 
-    const tokenFiles = plural(last.tokens.files.length, "token file");
+    const tokenFiles = pluralize(last.tokens.files.length, "token file");
     console.log(`${prefix} Watching ${tokenFiles} + markup files...`);
 
     process.on("SIGINT", async () => {
@@ -101,15 +111,15 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
     await new Promise(() => {});
 }
 
-function savedFile(change: WatchChange, { configFile }: LoadedConfig): string {
+function getChangedFile(change: WatchChange, { configFile }: LoadedConfig): string {
     if (change.kind !== "token") return change.path;
     return change.read.file ?? configFile ?? "";
 }
 
-function watchedBy({ config, uno }: Built): Watched {
+function getWatchTargets({ config, uno }: BuildResult): WatchTargets {
     return { content: config.content, markup: uno !== undefined };
 }
 
-function since(start: number): number {
+function getElapsedMs(start: number): number {
     return Math.round(performance.now() - start);
 }

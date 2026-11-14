@@ -1,4 +1,4 @@
-import { tokensOnDisk } from "@sugarcube-sh/core";
+import { getTokensOnDisk } from "@sugarcube-sh/core";
 import { ErrorMessages } from "../error-messages";
 import type { StudioMessage } from "../protocol";
 import { STUDIO_DEVFRAME_ID, STUDIO_ROUTE, STUDIO_RPC } from "../studio-names";
@@ -36,6 +36,6 @@ export async function defineStudio(
     });
 
     host.registerAction<[unknown]>(STUDIO_RPC.SAVE, (sent) =>
-        saveEdits(tokensOnDisk(files.now().config), sent),
+        saveEdits(getTokensOnDisk(files.now().config), sent),
     );
 }

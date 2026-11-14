@@ -1,25 +1,25 @@
 import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { beforeAll, describe, expect, it } from "vitest";
-import { type Dependent, type Impact, writtenOf } from "../src/analyze/answers.js";
+import { type Dependent, type Impact, findDefinitions } from "../src/analyze/answers.js";
 import {
-    impactHeading,
-    impactLines,
-    impactSummary,
-    unusedLines,
-    unusedSummary,
+    formatImpactHeading,
+    formatImpactTree,
+    formatImpactSummary,
+    formatUnusedTable,
+    formatUnusedSummary,
 } from "../src/analyze/text.js";
-import type { Use } from "../src/analyze/uses.js";
+import type { TokenUse } from "../src/analyze/uses.js";
 import { strip } from "../src/prompts/common.js";
 
 beforeAll(() => {
     process.stdout.columns = 100;
 });
 
-const use = (file: string, path = "x"): Use => ({ token: path, var: "--x", line: 1, file });
+const use = (file: string, path = "x"): TokenUse => ({ token: path, var: "--x", line: 1, file });
 
-const answerFor = (dependents: Dependent[], uses: Use[] = [], path = "target"): Impact => ({
+const answerFor = (dependents: Dependent[], uses: TokenUse[] = [], path = "target"): Impact => ({
     path,
-    written: [],
+    definitions: [],
     dependents,
     uses,
 });
@@ -28,9 +28,9 @@ const body = (lines: string[]) => lines.slice(2).map(strip);
 
 const nameIn = (row: string) => row.replace(/^[├└│─\s]+/, "").split(/\s+/)[0];
 
-describe("unusedLines", () => {
+describe("formatUnusedTable", () => {
     const lines = (tokens: string[], unused: string[]) =>
-        unusedLines({ unused, total: tokens.length }, tokens).map(strip);
+        formatUnusedTable({ unused, total: tokens.length }, tokens).map(strip);
 
     it("groups leaves under their parent, in natural order", () => {
         const drawn = lines(
@@ -70,10 +70,10 @@ describe("unusedLines", () => {
     });
 });
 
-describe("unusedSummary", () => {
-    const uses = (forVarReferences: string[], forUtilityClasses: string[]) => ({
+describe("formatUnusedSummary", () => {
+    const uses = (stylesheets: string[], markup: string[]) => ({
         uses: [],
-        scanned: { forVarReferences, forUtilityClasses },
+        scanned: { stylesheets, markup },
         unread: [],
     });
 
@@ -83,7 +83,7 @@ describe("unusedSummary", () => {
             ["/a/card.astro", "/a/page.html"],
         );
 
-        expect(strip(unusedSummary({ unused: ["x"], total: 3 }, read))).toBe(
+        expect(strip(formatUnusedSummary({ unused: ["x"], total: 3 }, read))).toBe(
             "1 of 3 tokens unused. Read 2 stylesheets and 2 markup files.",
         );
     });
@@ -91,19 +91,19 @@ describe("unusedSummary", () => {
     it("counts a markup file read only for its style block as markup", () => {
         const read = uses(["/a/app.css", "/a/card.astro"], []);
 
-        expect(strip(unusedSummary({ unused: ["x"], total: 3 }, read))).toBe(
+        expect(strip(formatUnusedSummary({ unused: ["x"], total: 3 }, read))).toBe(
             "1 of 3 tokens unused. Read 1 stylesheet and 1 markup file.",
         );
     });
 
     it("says so when nothing is unused", () => {
-        expect(strip(unusedSummary({ unused: [], total: 3 }, uses(["/a/app.css"], [])))).toBe(
+        expect(strip(formatUnusedSummary({ unused: [], total: 3 }, uses(["/a/app.css"], [])))).toBe(
             "No unused tokens ✨  Read 1 stylesheet and 0 markup files.",
         );
     });
 });
 
-describe("impactHeading", () => {
+describe("formatImpactHeading", () => {
     const tokens = readFromMemory({
         files: {
             "tokens.json": JSON.stringify({
@@ -118,9 +118,9 @@ describe("impactHeading", () => {
         },
     });
     const headingIn = (from: typeof tokens, path: string) => {
-        const written = writtenOf(from, path);
+        const written = findDefinitions(from, path);
         if (!written || written === "group") throw new Error(path);
-        return strip(impactHeading({ path, written, dependents: [], uses: [] }));
+        return strip(formatImpactHeading({ path, definitions: written, dependents: [], uses: [] }));
     };
     const heading = (path: string) => headingIn(tokens, path);
 
@@ -187,7 +187,7 @@ describe("impactHeading", () => {
     });
 });
 
-describe("impactLines", () => {
+describe("formatImpactTree", () => {
     const chain = answerFor(
         [
             { path: "leaf", references: ["mid"] },
@@ -198,7 +198,7 @@ describe("impactLines", () => {
     );
 
     it("indents each token under the one it references, the most used first", () => {
-        const rows = body(impactLines(chain));
+        const rows = body(formatImpactTree(chain));
 
         expect(rows.map(nameIn)).toStrictEqual(["target", "other", "mid", "leaf"]);
         expect(rows[1]).toMatch(/^├─ other/);
@@ -213,7 +213,7 @@ describe("impactLines", () => {
             { path: "deep", references: ["shared"] },
             { path: "shared", references: ["accent", "danger"], label: "per variant" },
         ]);
-        const rows = body(impactLines(perContext));
+        const rows = body(formatImpactTree(perContext));
 
         it("lists it under every parent, its subtree under the first only", () => {
             expect(rows.filter((row) => nameIn(row) === "shared")).toHaveLength(2);
@@ -230,11 +230,16 @@ describe("impactLines", () => {
 
     it("hangs a token under the reference it has in the default permutation", () => {
         const rows = body(
-            impactLines(
+            formatImpactTree(
                 answerFor([
                     { path: "a", references: ["target"] },
                     { path: "b", references: ["target"] },
-                    { path: "shared", references: ["a", "b"], inDefault: "b", label: "per theme" },
+                    {
+                        path: "shared",
+                        references: ["a", "b"],
+                        defaultReference: "b",
+                        label: "per theme",
+                    },
                 ]),
             ),
         );
@@ -255,7 +260,7 @@ describe("impactLines", () => {
             { path: "v.alt", references: ["accent", "danger"] },
             { path: "v.strong", references: ["accent", "danger"] },
         ];
-        const rows = body(impactLines(answerFor(deep)));
+        const rows = body(formatImpactTree(answerFor(deep)));
 
         for (const { path, references } of deep) {
             expect(
@@ -266,19 +271,19 @@ describe("impactLines", () => {
     });
 
     it("leaves a token with one parent unmarked", () => {
-        const rows = body(impactLines(answerFor([{ path: "only", references: ["target"] }])));
+        const rows = body(formatImpactTree(answerFor([{ path: "only", references: ["target"] }])));
 
         expect(rows.find((row) => nameIn(row) === "only")).not.toContain("(");
     });
 
     it("draws nothing when nothing references or uses the token", () => {
-        expect(impactLines(answerFor([]))).toStrictEqual([]);
+        expect(formatImpactTree(answerFor([]))).toStrictEqual([]);
     });
 
     describe("where each token is used", () => {
         const where = (...files: string[]) =>
             body(
-                impactLines(
+                formatImpactTree(
                     answerFor(
                         [],
                         files.map((file) => use(file, "target")),
@@ -312,27 +317,27 @@ describe("impactLines", () => {
     });
 });
 
-describe("impactSummary", () => {
+describe("formatImpactSummary", () => {
     it("counts the uses and the files they are in", () => {
         const answer = answerFor(
             [{ path: "mid", references: ["target"] }],
             [use("/a/a.css", "mid"), use("/a/a.css", "target"), use("/a/b.css", "mid")],
         );
 
-        expect(strip(impactSummary(answer))).toBe("3 uses in 2 files.");
-        expect(strip(impactSummary(answerFor([], [use("/a/a.css", "target")])))).toBe(
+        expect(strip(formatImpactSummary(answer))).toBe("3 uses in 2 files.");
+        expect(strip(formatImpactSummary(answerFor([], [use("/a/a.css", "target")])))).toBe(
             "1 use in 1 file.",
         );
     });
 
     it("says when tokens are built on it but nothing uses any of them", () => {
-        expect(strip(impactSummary(answerFor([{ path: "mid", references: ["target"] }])))).toBe(
-            "No scanned file uses it or a token built on it.",
-        );
+        expect(
+            strip(formatImpactSummary(answerFor([{ path: "mid", references: ["target"] }]))),
+        ).toBe("No scanned file uses it or a token built on it.");
     });
 
     it("says when nothing references or uses the token", () => {
-        expect(strip(impactSummary(answerFor([])))).toBe(
+        expect(strip(formatImpactSummary(answerFor([])))).toBe(
             "No token references target, and no scanned file uses it.",
         );
     });
