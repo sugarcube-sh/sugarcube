@@ -1,6 +1,5 @@
 import type { ColorComponent, ColorSpace } from "@sugarcube-sh/dtcg";
 
-/** A color as a file writes it: the Color module's object, with only the members given. */
 export interface RoundedColor {
     readonly colorSpace: ColorSpace;
     readonly components: readonly [ColorComponent, ColorComponent, ColorComponent];
@@ -8,17 +7,6 @@ export interface RoundedColor {
     readonly hex?: string;
 }
 
-/**
- * A color ready to write into a file, from numbers studio worked out, such as in its color picker:
- * every number rounded to four decimal places, studio's choice of how precisely to save a color,
- * and a component that is missing or not a number written `"none"`, which the Color module allows
- * for any component. `alpha` and `hex` are written only when given, so the members a file has
- * stay the caller's choice. No conversion happens: the components are in `colorSpace` already.
- *
- * @example
- * writtenColor({ colorSpace: "oklch", components: [0.97, 0.09200000000000001, undefined] })
- * // { colorSpace: "oklch", components: [0.97, 0.092, "none"] }
- */
 export function roundColor(color: {
     colorSpace: ColorSpace;
     components: readonly [Component, Component, Component];

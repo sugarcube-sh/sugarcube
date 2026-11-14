@@ -89,7 +89,7 @@ function createTokenPage(path: string) {
 }
 
 describe("an override", () => {
-    it("starts from the value in force, and keeps your cursor once it is written", async () => {
+    it("starts an override from the current value, and keeps your cursor once the override exists", async () => {
         const { studio, Page } = createTokenPage("space.s");
         const screen = await render(<Page />);
 
@@ -150,7 +150,7 @@ describe("a composite", () => {
         });
     });
 
-    it("reaches a part inside a part, and adds a layer as a copy of the last", async () => {
+    it("edits a part inside a part, and adds a layer as a copy of the last", async () => {
         const { studio, Page } = createTokenPage("border.card");
         const screen = await render(<Page />);
 

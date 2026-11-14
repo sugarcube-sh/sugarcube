@@ -51,7 +51,7 @@ describe("what the build writes down for saving", () => {
             branch: "redesign",
             entry: "apps/docs/design/tokens.resolver.json",
             signIn: "/api/sugarcube-studio",
-            install: "https://github.com/apps/acme-studio/installations/new",
+            installURL: "https://github.com/apps/acme-studio/installations/new",
         });
     });
 
@@ -105,7 +105,7 @@ describe("what the build writes down for saving", () => {
             cwd: "/work/site",
             git: checkout().git,
         });
-        expect(gitSave?.install).toBeUndefined();
+        expect(gitSave?.installURL).toBeUndefined();
         expect(warnings).toHaveLength(1);
         expect(warnings[0]).toContain("studio.githubApp");
     });

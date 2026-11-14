@@ -1,6 +1,7 @@
 import type { Clash } from "@sugarcube-sh/dtcg-edit";
 import { useMemo } from "react";
 import { useKeyedState } from "../canvas/use-keyed-state";
+import { ValueText } from "../canvas/Value";
 import { getReasons } from "../controllers/keyed-value";
 import { type ClashRow, toClashRows } from "../controllers/token-page";
 import { useStudio, useStudioState } from "../providers/studio-context";
@@ -56,7 +57,7 @@ function Line({ row }: { row: ClashRow }) {
         return (
             <>
                 You removed <code>{row.path}</code>. Changed elsewhere. Theirs:{" "}
-                <ClashValue value={row.theirs} />
+                <ValueText value={row.theirs} missing="removed" />
             </>
         );
     }
@@ -65,20 +66,16 @@ function Line({ row }: { row: ClashRow }) {
             <>
                 <code>{row.path}</code>
                 {permutationSuffix} removed or renamed elsewhere. Yours:{" "}
-                <ClashValue value={row.yours} />
+                <ValueText value={row.yours} missing="removed" />
             </>
         );
     }
     return (
         <>
             <code>{row.path}</code>
-            {permutationSuffix} changed elsewhere. Yours: <ClashValue value={row.yours} /> Theirs:{" "}
-            <ClashValue value={row.theirs} />
+            {permutationSuffix} changed elsewhere. Yours:{" "}
+            <ValueText value={row.yours} missing="removed" /> Theirs:{" "}
+            <ValueText value={row.theirs} missing="removed" />
         </>
     );
-}
-
-function ClashValue({ value }: { value: unknown }) {
-    if (value === undefined) return <>removed</>;
-    return <code>{typeof value === "string" ? value : JSON.stringify(value)}</code>;
 }

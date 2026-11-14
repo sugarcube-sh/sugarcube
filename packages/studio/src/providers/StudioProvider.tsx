@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import type { SignIn } from "../controllers/sign-in";
 import type { Studio } from "../controllers/studio";
+import { ErrorMessages } from "../error-messages";
 import { openStudio } from "../host/open-studio";
 import { attachPageChannel } from "../host/page-channel";
 import { connectStudio } from "./rpc-client";
@@ -16,10 +17,6 @@ type LoadState =
     | { kind: "error"; message: string }
     | { kind: "ready"; studio: Studio; signIn: SignIn | undefined };
 
-/**
- * Studio is always a devframe client. Whether the other end is a live server
- * or a static dump is the transport's business, not a mode of the app.
- */
 export function StudioProvider({ children }: Props) {
     const [state, setState] = useState<LoadState>({ kind: "loading" });
 
@@ -36,7 +33,7 @@ export function StudioProvider({ children }: Props) {
                 if (controller.signal.aborted) return;
                 setState({
                     kind: "error",
-                    message: error instanceof Error ? error.message : "Failed to connect",
+                    message: error instanceof Error ? error.message : ErrorMessages.CONNECT_FAILED,
                 });
             }
         }

@@ -1,11 +1,12 @@
 import { createContext, useContext, useSyncExternalStore } from "react";
 import type { Studio, StudioState } from "../controllers/studio";
+import { ErrorMessages } from "../error-messages";
 
 export const StudioContext = createContext<Studio | null>(null);
 
 export function useStudio(): Studio {
     const studio = useContext(StudioContext);
-    if (!studio) throw new Error("useStudio must be used inside a StudioProvider");
+    if (!studio) throw new Error(ErrorMessages.NO_STUDIO_PROVIDER);
     return studio;
 }
 

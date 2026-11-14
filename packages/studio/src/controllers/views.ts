@@ -8,7 +8,7 @@ import type {
     TokenType,
 } from "@sugarcube-sh/dtcg";
 import type { TypographyCSS } from "@sugarcube-sh/dtcg/css";
-import { UserFacingError } from "../error-messages";
+import { ErrorMessages, UserFacingError } from "../error-messages";
 import type { BuildOutput, BuildProblem, ExtensionForm } from "./adapter";
 import type { StudioState } from "./studio";
 import {
@@ -268,10 +268,10 @@ export function getReferenceTargets(
 }
 
 export function formatClashMessage({ changedHost }: { changedHost?: string | undefined }): string {
-    return `Not saved: changed ${changedHost ? `on ${changedHost}` : "elsewhere"}.`;
+    return ErrorMessages.CHANGED_ELSEWHERE(changedHost);
 }
 
 export function formatSaveError(error: unknown): string {
     if (error instanceof UserFacingError) return error.message;
-    return `Save failed: ${error instanceof Error ? error.message : String(error)}`;
+    return ErrorMessages.SAVE_FAILED(error instanceof Error ? error.message : String(error));
 }

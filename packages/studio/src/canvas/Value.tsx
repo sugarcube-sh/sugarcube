@@ -1,8 +1,8 @@
 import type { TypographyCSS } from "@sugarcube-sh/dtcg/css";
 import type { TokenType } from "@sugarcube-sh/dtcg";
 
-export function ValueText({ value }: { value: unknown }) {
-    if (value === undefined) return null;
+export function ValueText({ value, missing }: { value: unknown; missing?: string }) {
+    if (value === undefined) return missing ?? null;
     return <code>{typeof value === "string" ? value : JSON.stringify(value)}</code>;
 }
 

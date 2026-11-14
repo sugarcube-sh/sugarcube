@@ -14,7 +14,6 @@ import { createSearch } from "../controllers/search";
 import { useStudio } from "../providers/studio-context";
 import { toHref } from "./token-path";
 
-/** The matched run, marked, so it is obvious why a row is here. */
 function Highlight({ path, query }: { path: string; query: string }) {
     const needle = query.trim();
     const at = path.toLowerCase().indexOf(needle.toLowerCase());

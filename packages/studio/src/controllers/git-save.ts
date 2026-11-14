@@ -48,7 +48,8 @@ function formatPullRequestText(changes: readonly Change[]): {
 } {
     const lines = toChangeLines(changes).map(formatChange);
     return {
-        title: lines.length === 1 ? (lines[0] ?? "") : `${lines.length} changes from studio`,
+        title:
+            lines.length === 1 ? (lines[0] ?? "") : ErrorMessages.PULL_REQUEST_TITLE(lines.length),
         description: lines.map((line) => `- ${line}`).join("\n"),
     };
 }

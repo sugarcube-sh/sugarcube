@@ -16,14 +16,14 @@ export function pickSave({
 }): { save?: StudioSave; signIn?: SignIn } {
     if (live) return { save: saveOnHost };
     if (!gitSave) return {};
-    const { repository, branch, entry, signIn: signInBase, install } = gitSave;
+    const { repository, branch, entry, signIn: signInBase, installURL } = gitSave;
     const signIn = createSignIn({
         page,
         repository,
         entry,
         base: signInBase,
         createHost: (login, key) =>
-            createGitHubHost({ key, repository, branch, login, installURL: install }),
+            createGitHubHost({ key, repository, branch, login, installURL }),
     });
     return { save: signIn.save, signIn };
 }

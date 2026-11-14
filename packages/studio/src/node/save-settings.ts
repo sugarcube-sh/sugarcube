@@ -40,7 +40,7 @@ export function getGitSaveSettings({
     return {
         gitSave: {
             ...gitSave,
-            install: `https://github.com/apps/${studio.githubApp}/installations/new`,
+            installURL: `https://github.com/apps/${studio.githubApp}/installations/new`,
         },
         warnings: [],
     };

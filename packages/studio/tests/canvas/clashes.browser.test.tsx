@@ -15,7 +15,7 @@ const studioMessage = (text: string) => ({
 });
 
 describe("a clash's reason for refusing Keep yours", () => {
-    it("goes once the clashes it was about are settled, and doesn't come back with the next", async () => {
+    it("goes once its clashes are resolved, and doesn't come back with the next", async () => {
         const studio = createStudio(studioMessage(tokensJSON(1, 1)), (sent) =>
             createPlainAdapter(sent.name === "plain" ? sent.settings : {}),
         );

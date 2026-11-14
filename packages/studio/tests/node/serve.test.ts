@@ -39,17 +39,17 @@ describe("serveStudio", () => {
     it("says where studio opens and where its script is, and nothing about how it's served", () => {
         expect(Object.keys(hub).sort()).toStrictEqual([
             "close",
-            "embedScriptUrl",
+            "embedScriptURL",
             "origin",
             "port",
-            "studioUrl",
+            "studioURL",
         ]);
-        expect(hub.studioUrl).toBe(`${hub.origin}/__sugarcube/studio/`);
-        expect(hub.embedScriptUrl).toBe(`${hub.origin}/__sugarcube/embedded.js`);
+        expect(hub.studioURL).toBe(`${hub.origin}/__sugarcube/studio/`);
+        expect(hub.embedScriptURL).toBe(`${hub.origin}/__sugarcube/embedded.js`);
     });
 
     it("serves studio full width under the hub", async () => {
-        const response = await fetch(hub.studioUrl);
+        const response = await fetch(hub.studioURL);
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toContain("text/html");
@@ -64,7 +64,7 @@ describe("serveStudio", () => {
     });
 
     it("serves the dock bootstrap a page on another port loads, with CORS for it", async () => {
-        const response = await fetch(hub.embedScriptUrl, {
+        const response = await fetch(hub.embedScriptURL, {
             headers: { Origin: "http://localhost:8080" },
         });
 
@@ -73,7 +73,7 @@ describe("serveStudio", () => {
     });
 
     it("refuses a foreign origin", async () => {
-        const response = await fetch(hub.embedScriptUrl, {
+        const response = await fetch(hub.embedScriptURL, {
             headers: { Origin: "https://evil.example" },
         });
 
@@ -162,8 +162,8 @@ describe("serveStudio, when things go wrong", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         const hub = await serveFromFiles(await createDemoFiles(), { port: 0, open: true });
 
-        expect((await fetch(hub.studioUrl)).status).toBe(200);
-        expect(warn).toHaveBeenCalledWith(expect.stringContaining(hub.studioUrl));
+        expect((await fetch(hub.studioURL)).status).toBe(200);
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining(hub.studioURL));
         expect(warn).toHaveBeenCalledWith(expect.stringMatching(/^\[sugarcube studio\] /));
 
         warn.mockRestore();

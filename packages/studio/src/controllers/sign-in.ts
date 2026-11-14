@@ -75,7 +75,7 @@ export function createSignIn({
     async function getKey(): Promise<string> {
         cachedKey ??= await fetchKey("key");
         if (cachedKey) return cachedKey;
-        throw new UnauthorizedError("No key from the sign-in function");
+        throw new UnauthorizedError(ErrorMessages.NO_KEY);
     }
 
     async function refresh(): Promise<boolean> {

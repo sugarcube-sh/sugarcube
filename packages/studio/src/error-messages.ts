@@ -1,4 +1,4 @@
-export const STUDIO_NAME = "sugarcube studio";
+import { STUDIO_NAME } from "./studio-names";
 
 const prefix = `[${STUDIO_NAME}]`;
 
@@ -37,6 +37,13 @@ export const ErrorMessages = {
         `${prefix} ${name} is too short. Use a random value of at least ${length} characters.`,
     MISSING_SETTING: (name: string) =>
         `${prefix} ${name} isn't set. The sign-in function needs it on the host.`,
+    CHANGED_ELSEWHERE: (host: string | undefined) =>
+        `Not saved: changed ${host ? `on ${host}` : "elsewhere"}.`,
+    SAVE_FAILED: (reason: string) => `Save failed: ${reason}`,
+    NO_KEY: "No key from the sign-in function.",
+    CONNECT_FAILED: "Failed to connect.",
+    NO_STUDIO_PROVIDER: "useStudio must be used inside a StudioProvider.",
+    PULL_REQUEST_TITLE: (count: number) => `${count} changes from studio`,
 } as const;
 
 export class UserFacingError extends Error {

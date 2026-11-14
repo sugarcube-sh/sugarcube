@@ -24,8 +24,8 @@ export type ServeStudioOptions = {
 export type StudioServer = {
     origin: string;
     port: number;
-    studioUrl: string;
-    embedScriptUrl: string;
+    studioURL: string;
+    embedScriptURL: string;
     close: () => Promise<void>;
 };
 
@@ -108,8 +108,8 @@ export async function serveFromFiles(
     return {
         origin,
         port: boundPort,
-        studioUrl: studioURL,
-        embedScriptUrl: `${origin}${STUDIO_DOCK_SCRIPT}`,
+        studioURL,
+        embedScriptURL: `${origin}${STUDIO_DOCK_SCRIPT}`,
         close: async () => {
             detach();
             await hub.close();

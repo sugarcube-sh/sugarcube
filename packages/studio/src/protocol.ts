@@ -10,20 +10,15 @@ export type GitSaveSettings = {
     readonly branch: string;
     readonly entry: string;
     readonly signIn: string;
-    readonly install?: string;
+    readonly installURL?: string;
 };
 
-/** Settings the host publishes in the handshake for clients to read. */
 export type StudioConnectionConfig = {
     gitSave?: GitSaveSettings;
 };
 
 type Files = Readonly<Record<string, string>>;
 
-/**
- * What a save gives back. A save to a pull request also gives `files`, the files as they are now
- * where it went, for studio to show; a save to disk doesn't, since the host's next message does.
- */
 export type SaveResult =
     | {
           savedFiles: string[];

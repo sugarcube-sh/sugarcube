@@ -1,3 +1,5 @@
+export const STUDIO_NAME = "sugarcube studio";
+
 export const STUDIO_SIGN_IN_BASE = "/api/sugarcube-studio";
 
 export const STUDIO_COOKIES = {
