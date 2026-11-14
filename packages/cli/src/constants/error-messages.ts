@@ -80,12 +80,13 @@ export const ErrorMessages = {
             ? "No token files found.\n\nToken files end .json or .tokens."
             : `No token files found. These JSON files use no DTCG property, such as $value or $type:\n${otherFiles.map((p) => `  - ${p}`).join("\n")}`,
 
-    COMPONENTS_FRAMEWORK_REQUIRED: () =>
-        `Framework is required when specifying components. Use --framework to specify a framework (react, css-only) or run without arguments for interactive mode.\n\nSee ${color.cyan(
+    COMPONENTS_FRAMEWORK_REQUIRED: (frameworks: readonly string[]) =>
+        `Framework is required when specifying components. Use --framework to specify a framework (${frameworks.join(", ")}) or run without arguments for interactive mode.\n\nSee ${color.cyan(
             LINKS.COMPONENTS_CLI,
         )} for more information.`,
 
-    COMPONENTS_INVALID_FRAMEWORK: () => "Invalid framework. Must be one of: react, css-only.",
+    COMPONENTS_INVALID_FRAMEWORK: (frameworks: readonly string[]) =>
+        `Invalid framework. Must be one of: ${frameworks.join(", ")}.`,
 
     LINT_NO_FILES_SCANNED: (cwd: string) =>
         `No stylesheets found, so nothing was linted.\n\n${formatNoStylesheetsHelp(cwd, `Or name it for one run: ${color.cyan("sugarcube lint ../css")}\n\n`)}`,

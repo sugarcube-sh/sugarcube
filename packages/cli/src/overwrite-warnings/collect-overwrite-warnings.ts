@@ -1,73 +1,32 @@
 import { existsSync } from "node:fs";
 import { join, relative } from "pathe";
-import { getRegistryIndex } from "../registry/client.js";
-import { resolveTree } from "../registry/dependency-tree.js";
+import { getComponentFilePath } from "../installation/components.js";
+import { getRegistryIndex, selectFiles } from "../registry/client.js";
 import type { OverwriteWarnings } from "../types/overwrite-warnings.js";
-import type { ComponentFile, Framework, RegistryItem } from "../types/registry.js";
+import type { Framework, RegistryItem } from "../types/registry.js";
 
-export async function collectComponentOverwriteWarnings({
-    selectedComponents,
-    componentType,
+export function collectComponentOverwriteWarnings({
+    tree,
+    framework,
     componentsOutputDirectory,
 }: {
-    selectedComponents: string[];
-    componentType: Framework;
+    tree: RegistryItem[];
+    framework: Framework;
     componentsOutputDirectory: string;
-}): Promise<OverwriteWarnings> {
-    const warnings: OverwriteWarnings = {
+}): OverwriteWarnings {
+    const paths = tree.flatMap((component) =>
+        selectFiles(component, framework).map((file) =>
+            getComponentFilePath(component, file.path, componentsOutputDirectory),
+        ),
+    );
+    return {
         variableCSS: [],
         utilityCSS: [],
-        componentFiles: [],
+        componentFiles: paths.filter(existsSync).map((path) => relative(process.cwd(), path)),
         componentCSS: [],
         cubeCSS: [],
         indexFiles: [],
     };
-
-    const registryIndex = await getRegistryIndex();
-
-    const tree = await resolveTree(registryIndex, selectedComponents, componentType);
-    const allComponents = tree.map((item: RegistryItem) => item.name);
-
-    const componentRegistryItems = registryIndex
-        .filter((item): item is RegistryItem & { type: "component" } => item.type === "component")
-        .filter((item) => allComponents.includes(item.name));
-
-    const componentFiles = componentRegistryItems.flatMap((item) =>
-        item.files
-            .filter(
-                (file): file is ComponentFile =>
-                    (file.type === "tsx" || file.type === "astro" || file.type === "njk") &&
-                    "framework" in file &&
-                    file.framework === componentType,
-            )
-            .map((file) => {
-                return relative(
-                    process.cwd(),
-                    join(componentsOutputDirectory, item.name, `${item.name}.${file.type}`),
-                );
-            }),
-    );
-
-    warnings.componentFiles = componentFiles.filter((file) => {
-        const exists = existsSync(join(process.cwd(), file));
-        return exists;
-    });
-
-    // All component files (CSS) go to component directory
-    const componentCSSFiles = componentRegistryItems.map((item) => {
-        const componentName = item.name;
-        return relative(
-            process.cwd(),
-            join(componentsOutputDirectory, item.name, `${componentName}.css`),
-        );
-    });
-
-    warnings.componentCSS = componentCSSFiles.filter((file) => {
-        const exists = existsSync(join(process.cwd(), file));
-        return exists;
-    });
-
-    return warnings;
 }
 
 export async function collectCubeOverwriteWarnings({

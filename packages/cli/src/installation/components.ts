@@ -1,91 +1,34 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join } from "pathe";
 import { CLIError } from "../cli-error.js";
-import { getRegistryFiles } from "../registry/client.js";
-import { resolveTree } from "../registry/dependency-tree.js";
-import type { InstallComponentsOptions, InstallComponentsResult } from "../types/install.js";
-import type { RegistryItem } from "../types/registry.js";
-import { installDependencies } from "./dependencies.js";
+import { getItemFiles } from "../registry/client.js";
+import type { Framework, RegistryItem } from "../types/registry.js";
 
-interface RegistryFileWithContent {
-    path: string;
-    content: string;
-}
-
-async function writeComponentFile(
-    file: RegistryFileWithContent,
+export function getComponentFilePath(
     component: RegistryItem,
+    registryPath: string,
     componentsOutputDirectory: string,
-): Promise<string | null> {
-    const componentDir = join(componentsOutputDirectory, component.name);
-    await mkdir(componentDir, { recursive: true });
-
-    if (file.path.endsWith(".css")) {
-        const cssFilePath = join(componentDir, `${component.name}.css`);
-        await writeFile(cssFilePath, file.content);
-        return cssFilePath;
-    }
-
-    const filePath = join(componentDir, basename(file.path));
-    await writeFile(filePath, file.content);
-    return filePath;
+): string {
+    const fileName = registryPath.endsWith(".css")
+        ? `${component.name}.css`
+        : basename(registryPath);
+    return join(componentsOutputDirectory, component.name, fileName);
 }
 
-export async function installComponents({
-    registryIndex,
-    selectedComponents,
-    componentType,
-    componentsOutputDirectory,
-    packageManager,
-}: InstallComponentsOptions): Promise<InstallComponentsResult> {
-    const createdFiles: string[] = [];
-    const npmDeps = new Set<string>();
-
-    await mkdir(componentsOutputDirectory, { recursive: true });
-
-    const tree = await resolveTree(registryIndex, selectedComponents, componentType);
-
-    for (const component of tree) {
-        const result = await getRegistryFiles({
-            type: "component",
-            name: component.name,
-            framework: componentType,
-        });
-
-        for (const file of result.files) {
-            if (!file) continue;
-
-            try {
-                const filePath = await writeComponentFile(
-                    file,
-                    component,
-                    componentsOutputDirectory,
-                );
-                if (filePath) {
-                    createdFiles.push(filePath);
-                }
-            } catch (error) {
-                const errorMessage = error instanceof Error ? `: ${error.message}` : "";
-                throw new CLIError(
-                    `Failed to write component file for "${component.name}"${errorMessage}`,
-                );
-            }
+export async function writeComponentFiles(
+    component: RegistryItem,
+    framework: Framework,
+    componentsOutputDirectory: string,
+): Promise<void> {
+    const files = await getItemFiles(component, framework);
+    try {
+        await mkdir(join(componentsOutputDirectory, component.name), { recursive: true });
+        for (const file of files) {
+            const path = getComponentFilePath(component, file.path, componentsOutputDirectory);
+            await writeFile(path, file.content);
         }
-
-        const frameworkDeps = component.dependencies?.[componentType] || [];
-        for (const d of frameworkDeps) {
-            npmDeps.add(d);
-        }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? `: ${error.message}` : "";
+        throw new CLIError(`Failed to write component file for "${component.name}"${errorMessage}`);
     }
-
-    if (npmDeps.size > 0) {
-        try {
-            await installDependencies(Array.from(npmDeps), process.cwd(), packageManager);
-        } catch (error) {
-            const errorMessage = error instanceof Error ? `: ${error.message}` : "";
-            throw new CLIError(`Failed to install component dependencies${errorMessage}`);
-        }
-    }
-
-    return { createdFiles, npmDependencies: npmDeps };
 }
