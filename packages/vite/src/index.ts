@@ -179,20 +179,20 @@ class PluginState {
     }
 
     #createContext(): SugarcubePluginContext {
-        const read = {
+        const current = {
             config: () => this.#loaded.config,
             configProblems: () => this.#configProblems,
             tokens: () => this.#tokens,
         };
         return {
             get config() {
-                return read.config();
+                return current.config();
             },
             get configProblems() {
-                return read.configProblems();
+                return current.configProblems();
             },
             get tokens() {
-                return read.tokens();
+                return current.tokens();
             },
             onReload: (fn) => {
                 this.#listeners.add(fn);

@@ -22,6 +22,9 @@ const formatNoStylesheetsHelp = (cwd: string, also = "") =>
     `Looked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}:\n\n  content: ["../css/**/*.css"]\n\n${also}See ${color.cyan(LINKS.CONFIGURATION)} for more information.`;
 
 export const ErrorMessages = {
+    FILES_WILL_BE_OVERWRITTEN: (kind: "component" | "cube", files: string[]) =>
+        `The following file(s) already exist and will be overwritten:\n\n${kind === "component" ? "Component files" : "CUBE CSS files"}:\n${files.map((file) => `  - ${file}`).join("\n")}`,
+
     CONFIG_EXISTS: () =>
         `A sugarcube config file already exists in this project.\n\nTo start over, remove it and run ${color.cyan(COMMANDS.INIT)} again.`,
 

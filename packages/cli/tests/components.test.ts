@@ -4,7 +4,8 @@ import { join } from "pathe";
 import { x } from "tinyexec";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runComponents } from "../src/commands/components.js";
-import { collectComponentOverwriteWarnings } from "../src/overwrite-warnings/collect-overwrite-warnings.js";
+import { ErrorMessages } from "../src/constants/error-messages.js";
+import { findComponentFilesToOverwrite } from "../src/overwrite-warnings/collect-overwrite-warnings.js";
 
 vi.mock("tinyexec", () => ({
     x: vi.fn(),
@@ -75,14 +76,25 @@ describe("sugarcube components", () => {
         await writeFile(join(output, "button", "button.css"), "");
         await writeFile(join(output, "button", "notes.md"), "");
 
-        const warnings = collectComponentOverwriteWarnings({
-            tree: index,
+        const existing = findComponentFilesToOverwrite({
+            components: index,
             framework: "react",
             componentsOutputDirectory: output,
         });
 
-        expect(warnings.componentFiles.map((file) => file.split("/").slice(-2).join("/"))).toEqual([
+        expect(existing.map((file) => file.split("/").slice(-2).join("/"))).toEqual([
             "button/button.css",
         ]);
+    });
+
+    it("lists the files it would write over in its warning", () => {
+        expect(
+            ErrorMessages.FILES_WILL_BE_OVERWRITTEN("component", [
+                "ui/button/button.css",
+                "ui/card/card.tsx",
+            ]),
+        ).toBe(
+            "The following file(s) already exist and will be overwritten:\n\nComponent files:\n  - ui/button/button.css\n  - ui/card/card.tsx",
+        );
     });
 });

@@ -5,21 +5,18 @@ import { ErrorMessages } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { writeComponentFiles } from "../installation/components.js";
 import { installDependencies } from "../installation/dependencies.js";
-import { collectComponentOverwriteWarnings } from "../overwrite-warnings/collect-overwrite-warnings.js";
-import { formatOverwriteWarnings } from "../overwrite-warnings/format-overwrite-warnings.js";
-import { getComponentsDir } from "../project/output-dirs.js";
 import {
-    confirmOverwrite,
-    promptComponentFramework,
-    promptComponentSelectionFiltered,
-} from "../prompts/prompts.js";
+    confirmOverwriting,
+    findComponentFilesToOverwrite,
+} from "../overwrite-warnings/collect-overwrite-warnings.js";
+import { getComponentsDir } from "../project/output-dirs.js";
+import { promptComponentFramework, promptComponentSelectionFiltered } from "../prompts/prompts.js";
 import { getRegistryIndex } from "../registry/client.js";
 import { resolveTree } from "../registry/dependency-tree.js";
 import type { RegistryItem } from "../types/registry.js";
 
 import { isPackageInstalled } from "../project/is-package-installed.js";
 import { getPackageManager } from "../project/package-manager.js";
-import { printWarning } from "../prompts/box-with-badge.js";
 import { intro, label } from "../prompts/common.js";
 import { log, rawLog } from "../prompts/log.js";
 
@@ -51,24 +48,17 @@ export async function runComponents(
         options.framework,
     );
     const packageManager = await getPackageManager(process.cwd(), { withFallback: true });
-    const tree = await resolveTree(registryIndex, selectedComponents, framework);
+    const componentsToInstall = await resolveTree(registryIndex, selectedComponents, framework);
 
-    const warnings = collectComponentOverwriteWarnings({
-        tree,
+    const filesToOverwrite = findComponentFilesToOverwrite({
+        components: componentsToInstall,
         framework,
         componentsOutputDirectory,
     });
-    const warningMessage = formatOverwriteWarnings(warnings);
-    if (warningMessage && !options.force && !options.silent) {
-        printWarning(warningMessage, { plain: false });
-        const confirmed = await confirmOverwrite("Continue?", false, {
-            exitOnDecline: !options.continueOnDecline,
-        });
-        if (!confirmed) return;
-    }
+    if (!(await confirmOverwriting("component", filesToOverwrite, options))) return;
 
     const tasks = [];
-    const depsToInstall = getMissingDependencies(tree, framework);
+    const depsToInstall = getMissingDependencies(componentsToInstall, framework);
     if (depsToInstall.length > 0) {
         tasks.push({
             pending: `Install ${depsToInstall.length} dependencies`,
@@ -77,7 +67,7 @@ export async function runComponents(
             while: () => installDependencies(depsToInstall, process.cwd(), packageManager),
         });
     }
-    for (const component of tree) {
+    for (const component of componentsToInstall) {
         tasks.push({
             pending: `Write component files for ${component.name}`,
             start: `Writing component files for ${component.name}...`,
@@ -129,9 +119,12 @@ function isSupportedFramework(framework: string): framework is SupportedFramewor
     return (SUPPORTED_FRAMEWORKS as readonly string[]).includes(framework);
 }
 
-function getMissingDependencies(tree: RegistryItem[], framework: SupportedFramework): string[] {
+function getMissingDependencies(
+    components: RegistryItem[],
+    framework: SupportedFramework,
+): string[] {
     const dependencies = new Set(
-        tree.flatMap((component) => component.dependencies?.[framework] ?? []),
+        components.flatMap((component) => component.dependencies?.[framework] ?? []),
     );
     return [...dependencies].filter((name) => !isPackageInstalled(name, process.cwd()));
 }

@@ -1,59 +1,45 @@
 import { existsSync } from "node:fs";
 import { join, relative } from "pathe";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { getComponentFilePath } from "../installation/components.js";
+import { printWarning } from "../prompts/box-with-badge.js";
+import { confirmOverwrite } from "../prompts/prompts.js";
 import { getRegistryIndex, selectFiles } from "../registry/client.js";
-import type { OverwriteWarnings } from "../types/overwrite-warnings.js";
 import type { Framework, RegistryItem } from "../types/registry.js";
 
-export function collectComponentOverwriteWarnings({
-    tree,
+export function findComponentFilesToOverwrite({
+    components,
     framework,
     componentsOutputDirectory,
 }: {
-    tree: RegistryItem[];
+    components: RegistryItem[];
     framework: Framework;
     componentsOutputDirectory: string;
-}): OverwriteWarnings {
-    const paths = tree.flatMap((component) =>
+}): string[] {
+    const componentFilePaths = components.flatMap((component) =>
         selectFiles(component, framework).map((file) =>
             getComponentFilePath(component, file.path, componentsOutputDirectory),
         ),
     );
-    return {
-        variableCSS: [],
-        utilityCSS: [],
-        componentFiles: paths.filter(existsSync).map((path) => relative(process.cwd(), path)),
-        componentCSS: [],
-        cubeCSS: [],
-        indexFiles: [],
-    };
+    return componentFilePaths.filter(existsSync).map((path) => relative(process.cwd(), path));
 }
 
-export async function collectCubeOverwriteWarnings({
-    cubeDirectory,
-}: {
-    cubeDirectory: string;
-}): Promise<OverwriteWarnings> {
-    const warnings: OverwriteWarnings = {
-        variableCSS: [],
-        utilityCSS: [],
-        componentFiles: [],
-        componentCSS: [],
-        cubeCSS: [],
-        indexFiles: [],
-    };
-
+export async function findCubeFilesToOverwrite(cubeDirectory: string): Promise<string[]> {
     const registryIndex = await getRegistryIndex();
-
-    const cubeCSSFiles = registryIndex
-        .filter((item): item is RegistryItem & { type: "cube" } => item.type === "cube")
+    return registryIndex
+        .filter((item) => item.type === "cube")
         .flatMap((item) => item.files)
-        .map((file) => {
-            const relativePath = file.path.replace(/^styles\//, "");
-            return relative(process.cwd(), join(cubeDirectory, relativePath));
-        });
+        .map((file) => join(cubeDirectory, file.path.replace(/^styles\//, "")))
+        .filter(existsSync)
+        .map((path) => relative(process.cwd(), path));
+}
 
-    warnings.cubeCSS = cubeCSSFiles.filter((file) => existsSync(join(process.cwd(), file)));
-
-    return warnings;
+export async function confirmOverwriting(
+    kind: "component" | "cube",
+    files: string[],
+    options: { force?: boolean; silent?: boolean; continueOnDecline?: boolean },
+): Promise<boolean> {
+    if (files.length === 0 || options.force || options.silent) return true;
+    printWarning(ErrorMessages.FILES_WILL_BE_OVERWRITTEN(kind, files), { plain: false });
+    return confirmOverwrite("Continue?", false, { exitOnDecline: !options.continueOnDecline });
 }

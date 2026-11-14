@@ -121,31 +121,34 @@ export function createUtilityRules(
     tokenProblems: TokenProblem[];
     diagnostics: AnyDiagnostic[];
 } {
-    const results = Object.entries(classes).flatMap(([property, entryConfig]) =>
+    const entryResults = Object.entries(classes).flatMap(([property, entryConfig]) =>
         [entryConfig].flat().map((config, index) => {
             const location = Array.isArray(entryConfig) ? { property, entry: index } : { property };
             return readEntry(tokens, config, location);
         }),
     );
-    const usesByPrefix = groupUsesByPrefix(results);
+    const usesByPrefix = groupUsesByPrefix(entryResults);
     const candidatesByClass = findClassCandidates(usesByPrefix);
     const shadowed = findShadowedEntries(candidatesByClass);
     const prefixes = [...usesByPrefix].map(([prefix, uses]) => ({
         prefix,
         uses: uses.map(({ property, strip, names }) => ({ property, strip, names })),
     }));
-    const withoutClasses =
+    const withoutClassesProblems =
         tokens.length === 0
             ? []
-            : results.flatMap(({ entry }) => findEntryWithoutClasses(entry, shadowed));
+            : entryResults.flatMap(({ entry }) => findEntryWithoutClasses(entry, shadowed));
 
     return {
         rules: prefixes.map(createRule),
         prefixes,
-        safelist: [...new Set(results.flatMap(({ safelist }) => safelist))],
+        safelist: [...new Set(entryResults.flatMap(({ safelist }) => safelist))],
         customProperties: getCustomProperties(candidatesByClass),
         tokenProblems: findSameClasses(candidatesByClass),
-        diagnostics: [...withoutClasses, ...results.flatMap(({ diagnostics }) => diagnostics)],
+        diagnostics: [
+            ...withoutClassesProblems,
+            ...entryResults.flatMap(({ diagnostics }) => diagnostics),
+        ],
     };
 }
 
@@ -161,7 +164,11 @@ function readEntry(
         strip: getDuplicatePrefix(config),
         names: new Map([...parts].map(([part, [first]]) => [part, first.name])),
     };
-    const { safelisted, unmatched } = matchSafelist(config.safelist, variableLookup, location);
+    const { safelisted, unmatchedProblems } = matchSafelist(
+        config.safelist,
+        variableLookup,
+        location,
+    );
     const prefixes = getClassPrefixes(config, property);
 
     return {
@@ -171,13 +178,13 @@ function readEntry(
             use: { property: classProperty, ...variableLookup, entry },
         })),
         safelist: prefixes.flatMap(({ prefix }) => safelisted.map((part) => `${prefix}-${part}`)),
-        diagnostics: [...findDeprecatedDirections(config, location), ...unmatched],
+        diagnostics: [...findDeprecatedDirections(config, location), ...unmatchedProblems],
     };
 }
 
-function groupUsesByPrefix(results: ReadEntryResult[]): Map<string, EntryProperty[]> {
+function groupUsesByPrefix(entryResults: ReadEntryResult[]): Map<string, EntryProperty[]> {
     const usesByPrefix = new Map<string, EntryProperty[]>();
-    for (const { uses } of results) {
+    for (const { uses } of entryResults) {
         for (const { prefix, use } of uses) {
             usesByPrefix.set(prefix, [...(usesByPrefix.get(prefix) ?? []), use]);
         }
@@ -189,17 +196,18 @@ function matchSafelist(
     safelist: UtilityClassConfig["safelist"],
     variableLookup: Omit<PrefixProperty, "property">,
     location: UtilityEntry,
-): { safelisted: string[]; unmatched: AnyDiagnostic[] } {
-    if (safelist === true) return { safelisted: [...variableLookup.names.keys()], unmatched: [] };
-    const listed = Array.isArray(safelist) ? safelist : [];
+): { safelisted: string[]; unmatchedProblems: AnyDiagnostic[] } {
+    if (safelist === true)
+        return { safelisted: [...variableLookup.names.keys()], unmatchedProblems: [] };
+    const configuredParts = Array.isArray(safelist) ? safelist : [];
     const hasToken = (part: string) => getVariableName(variableLookup, part) !== undefined;
-    const unmatched =
+    const unmatchedProblems =
         variableLookup.names.size === 0
             ? []
-            : listed
+            : configuredParts
                   .filter((part) => !hasToken(part))
                   .map((part) => createDiagnostic("safelist-without-token", { ...location, part }));
-    return { safelisted: listed.filter(hasToken), unmatched };
+    return { safelisted: configuredParts.filter(hasToken), unmatchedProblems };
 }
 
 function findDeprecatedDirections(
