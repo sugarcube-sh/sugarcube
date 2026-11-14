@@ -1,5 +1,18 @@
 # @sugarcube-sh/vite
 
+## 0.2.0
+
+### Minor Changes
+
+- 67f2eb5: The Vite plugin now keeps your last good styles when a save has errors and prints the problems in the terminal, makes new tokens' utility classes without a restart, picks up changes to `sugarcube.config.ts`, and stops `vite build` on errors. It also needs Vite 7 or 8.
+
+### Patch Changes
+
+- 6705941: Fixes a problem where a mistake in `sugarcube.config.ts` was reported as "Invalid input" without saying which setting was wrong. Each mistake now gets its own line naming the setting and what it must be.
+- Updated dependencies [b150792]
+- Updated dependencies [77d7e99]
+  - @sugarcube-sh/core@0.3.0
+
 ## 0.1.28
 
 ### Patch Changes
