@@ -94,7 +94,7 @@ describe("deprecate", () => {
         const tokens = opened(files);
         const after = committed(tokens, deprecate(tokens, "old.kept", false));
 
-        expect(after.getPermutation().getToken("old.kept")).not.toHaveProperty("deprecated");
+        expect(after.getPermutation().getToken("old.kept")?.deprecated).toBe(undefined);
         expect(
             after.getPermutation().getToken("old.kept")?.winningDefinition.local.deprecated,
         ).toBe(false);
@@ -155,7 +155,7 @@ describe("a group that extends another", () => {
         const after = committed(tokens, deprecate(tokens, "primary", false));
 
         expect(at(after, "base.json", ["primary", "$deprecated"])).toBe(false);
-        expect(after.getPermutation().getGroup("primary")).not.toHaveProperty("deprecated");
+        expect(after.getPermutation().getGroup("primary")?.deprecated).toBe(undefined);
         expect(after.getPermutation().getGroup("button")?.deprecated).toBe("Use action.");
     });
 

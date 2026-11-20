@@ -167,10 +167,10 @@ function createSourceLookup(
         const contexts = contextsBySource.get(sourceKey(loaded));
         const source = {
             file: loaded.file,
-            ...(loaded.pointer && { pointer: loaded.pointer }),
-            ...(context && { modifier: context.modifier }),
+            pointer: loaded.pointer,
+            modifier: context?.modifier,
             sets: route(first),
-            ...(contexts !== undefined && contexts !== ALWAYS_READ && { contexts }),
+            contexts: contexts === ALWAYS_READ ? undefined : contexts,
         };
         const listedSource = { source, pieces };
         byContext.set(context, listedSource);

@@ -76,7 +76,7 @@ interface Resolved {
     read: ParseResult<unknown>;
     references: LocatedReference[];
     resolved?: unknown;
-    typeFrom?: InheritedFrom;
+    typeFrom: InheritedFrom | undefined;
 }
 
 type ResolveResult = Resolved | "untyped";
@@ -385,8 +385,8 @@ function createGroup(
     group.children = children;
 
     const rootToken = findRootToken(children);
-    if (rootToken) group.rootToken = rootToken;
-    if (extending) group.extends = extending;
+    group.rootToken = rootToken;
+    group.extends = extending;
     if (mergedGroup.extends) {
         const { reference, steps, span } = mergedGroup.extends;
         const occurrence = { reference, steps, span, property: [] };
@@ -579,7 +579,7 @@ class TokenValues implements ResolveContext {
             references,
             deferredReads,
         } = this.readValue.read(token, type, this.input);
-        const unresolved = { type, read, references, ...(typeFrom && { typeFrom }) };
+        const unresolved = { type, read, references, typeFrom };
         if (!read.ok) return unresolved;
         if (references.length === 0) return { ...unresolved, resolved: read.value };
 
@@ -600,7 +600,7 @@ class TokenValues implements ResolveContext {
         typeFrom: InheritedFrom | undefined,
     ): ResolveResult {
         const { result: read, references } = this.readValue.read(token, type, this.input);
-        return { type, read, references, ...(typeFrom && { typeFrom }) };
+        return { type, read, references, typeFrom };
     }
 
     #findGroupType(token: MergedToken): DeclaredType | undefined {
@@ -721,15 +721,15 @@ function toGroupFields(
     return {
         path,
         ...pickPublicProperties(settings),
-        ...(typeFrom && { typeFrom }),
-        ...(descriptionFrom && { descriptionFrom }),
-        ...(deprecatedFrom && { deprecatedFrom }),
+        typeFrom,
+        descriptionFrom,
+        deprecatedFrom,
         definitions,
         extensionDefinitions,
         children: [],
         references: NO_REFERENCES,
-        ...(extendedFrom && { extendedFrom }),
-        ...(Object.keys(local).length > 0 && { local }),
+        extendedFrom,
+        local: Object.keys(local).length > 0 ? local : undefined,
     };
 }
 

@@ -72,7 +72,7 @@ export interface ReferenceBase {
      * The path the reference names, such as `"color.primary"`.
      *
      * For a group's `$extends`, it's the group's path. For a JSON Pointer inside a value, it's the
-     * path of that value's token. It's absent for a pointer that names no path, such as `#/`.
+     * path of that value's token. It's `undefined` for a pointer that names no path, such as `#/`.
      */
     readonly pointsToPath?: string;
     /**
@@ -98,7 +98,7 @@ export interface ReferenceBase {
     /**
      * Where in the token's value a JSON Pointer points.
      *
-     * For example, `["components", 0]`. It's absent when the reference points to the whole value.
+     * For example, `["components", 0]`. It's `undefined` when the reference points to the whole value.
      *
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#property-level-references | Format 7.3, Property-level references}
      */
@@ -107,7 +107,7 @@ export interface ReferenceBase {
      * Where in {@link TokenBase.parsedValue | parsedValue} the reference is.
      *
      * For example, `["components", 0]`, or `[0, "color"]` in a single shadow, which is read as an
-     * array of one. It's absent for a reference that is the whole value.
+     * array of one. It's `undefined` for a reference that is the whole value.
      */
     readonly ownerProperty?: JsonPath;
     /**
@@ -197,13 +197,13 @@ export interface ReferenceWithTarget extends Target {
 }
 
 class ReferenceObject {
-    declare readonly pointsToProperty?: JsonPath | undefined;
-    declare readonly generatedFrom?: Token["generatedFrom"];
     readonly pointsToPath: string | undefined;
     readonly owner: Token | Group;
     readonly pointsToToken: Token | undefined;
     readonly pointsToWholeToken: Token | undefined;
     readonly ownerProperty: JsonPath | undefined;
+    readonly pointsToProperty: JsonPath | undefined;
+    readonly generatedFrom: Token["generatedFrom"];
     readonly #parsed: ParsedReference;
     readonly #span: Span;
     readonly #isBarePointer: boolean;
@@ -216,9 +216,8 @@ class ReferenceObject {
         this.pointsToToken = token;
         this.pointsToWholeToken = pointsToProperty === undefined ? token : undefined;
         this.ownerProperty = property.length > 0 ? property : undefined;
-        if (reference.syntax === "json-pointer") Object.assign(this, { pointsToProperty });
-        const generatedFrom = from.kind === "token" ? from.generatedFrom : undefined;
-        if (generatedFrom) Object.assign(this, { generatedFrom });
+        this.pointsToProperty = reference.syntax === "json-pointer" ? pointsToProperty : undefined;
+        this.generatedFrom = from.kind === "token" ? from.generatedFrom : undefined;
         this.#parsed = reference;
         this.#span = span;
         this.#isBarePointer = isBarePointer;
@@ -259,12 +258,12 @@ class ReferenceObject {
 }
 
 class ReferenceInPermutationsObject {
-    declare readonly generatedFrom?: Token["generatedFrom"];
     readonly pointsToPath: string | undefined;
     readonly ownerPaths: readonly string[];
     readonly pointsToProperty: JsonPath | undefined;
     readonly span: Span;
     readonly ownerProperty: JsonPath | undefined;
+    readonly generatedFrom: Token["generatedFrom"];
     readonly permutations: Permutations;
     readonly #parsed: ParsedReference;
     readonly #jsonPath: () => JsonPath;
@@ -284,8 +283,7 @@ class ReferenceInPermutationsObject {
         this.pointsToProperty = reference.pointsToProperty;
         this.span = span;
         this.ownerProperty = reference.ownerProperty;
-        if (reference.generatedFrom)
-            Object.assign(this, { generatedFrom: reference.generatedFrom });
+        this.generatedFrom = reference.generatedFrom;
         this.permutations = permutations;
         this.#parsed = parsed;
         this.#jsonPath = jsonPath;

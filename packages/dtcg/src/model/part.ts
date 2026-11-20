@@ -48,7 +48,7 @@ export interface PartBase<V> {
     /**
      * Where the part is in {@link TokenBase.parsedValue | parsedValue}, such as `["color"]`.
      *
-     * It's absent for the whole value.
+     * It's `undefined` for the whole value.
      */
     readonly property?: JsonPath;
     /** The part's value, with references followed. */

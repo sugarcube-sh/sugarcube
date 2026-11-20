@@ -475,7 +475,7 @@ function toInput({ context }: InputContext): Input {
 
 function findRefusal(tokenOrGroup: Token | Group): { refusal: Refusal } | undefined {
     const { path, extendedFrom } = tokenOrGroup;
-    const generatedFrom = "generatedFrom" in tokenOrGroup ? tokenOrGroup.generatedFrom : undefined;
+    const generatedFrom = tokenOrGroup.kind === "token" ? tokenOrGroup.generatedFrom : undefined;
     if (generatedFrom) {
         const { path: from, extension } = generatedFrom;
         return refuse({ kind: "generated", path, from, extension });

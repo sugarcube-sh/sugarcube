@@ -97,8 +97,7 @@ function listParts(
 }
 
 function attachLocation(token: Token, property: JsonPath, part: PartObject): PartObject {
-    if (property.length > 0) part.property = property;
-    const ref = token.getReferenceAt(property);
-    if (ref) part.ref = ref;
+    part.property = property.length > 0 ? property : undefined;
+    part.ref = token.getReferenceAt(property);
     return part;
 }

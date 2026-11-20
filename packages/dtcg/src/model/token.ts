@@ -54,20 +54,20 @@ export interface TokenBase<T extends TokenType> {
      * The `$value` read and checked, with references kept. What a file may leave out is filled in,
      * such as a color's `alpha: 1`.
      *
-     * It's absent when the token is {@link TokenBase.invalid | invalid}.
+     * It's `undefined` when the token is {@link TokenBase.invalid | invalid}.
      */
     readonly parsedValue?: UnresolvedValue<T>;
     /**
      * The value, with every reference followed.
      *
-     * It's absent when the token is invalid, or a reference can't be followed.
+     * It's `undefined` when the token is invalid, or a reference can't be followed.
      */
     readonly resolvedValue?: ValueByType[T];
     /**
      * Set when the token's value couldn't be read.
      *
      * Why is in {@link DesignTokens.diagnostics}, under the token's path. A reference to a missing
-     * token doesn't make it invalid. Its `resolvedValue` is just absent.
+     * token doesn't make it invalid. Its `resolvedValue` is just `undefined`.
      */
     readonly invalid?: true;
     /** The token's `$description`. */
@@ -75,7 +75,7 @@ export interface TokenBase<T extends TokenType> {
     /**
      * `true`, or a message saying what to use instead.
      *
-     * It can come from the token's group. It's absent when the token isn't deprecated, even if it
+     * It can come from the token's group. It's `undefined` when the token isn't deprecated, even if it
      * writes `"$deprecated": false`.
      *
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#deprecated | Format 5.2.4, Deprecated}
@@ -250,16 +250,16 @@ class TokenObject {
         self.type = fields.type;
         self.references = fields.references;
         self.definitions = fields.definitions;
-        if (fields.parsedValue !== undefined) self.parsedValue = fields.parsedValue;
-        if (fields.resolvedValue !== undefined) self.resolvedValue = fields.resolvedValue;
-        if (fields.invalid) self.invalid = fields.invalid;
-        if (fields.description !== undefined) self.description = fields.description;
-        if (fields.deprecated !== undefined) self.deprecated = fields.deprecated;
         self.typeFrom = fields.typeFrom;
-        if (fields.deprecatedFrom) self.deprecatedFrom = fields.deprecatedFrom;
-        if (fields.extensions) self.extensions = fields.extensions;
-        if (fields.generatedFrom) self.generatedFrom = fields.generatedFrom;
-        if (fields.extendedFrom) self.extendedFrom = fields.extendedFrom;
+        self.parsedValue = fields.parsedValue;
+        self.resolvedValue = fields.resolvedValue;
+        self.invalid = fields.invalid;
+        self.description = fields.description;
+        self.deprecated = fields.deprecated;
+        self.deprecatedFrom = fields.deprecatedFrom;
+        self.extensions = fields.extensions;
+        self.generatedFrom = fields.generatedFrom;
+        self.extendedFrom = fields.extendedFrom;
     }
 
     getReferenceAt(property: JsonPath = []): Reference | undefined {

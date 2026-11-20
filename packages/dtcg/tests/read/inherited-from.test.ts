@@ -25,7 +25,7 @@ const token = (path: string) => light.getToken(path)!;
 const group = (path: string) => light.getGroup(path)!;
 
 describe("where a token's type comes from (Format 6.7.3)", () => {
-    it("is absent when the token writes $type", () => {
+    it("is undefined when the token writes $type", () => {
         expect(oneFile({ n: { $type: "number", $value: 1 } }).getToken("n")?.typeFrom).toBe(
             undefined,
         );
@@ -51,7 +51,7 @@ describe("where a token's type comes from (Format 6.7.3)", () => {
 });
 
 describe("where a group's type, description and deprecation come from", () => {
-    it("are absent when the group writes them", () => {
+    it("are undefined when the group writes them", () => {
         const { typeFrom, descriptionFrom, deprecatedFrom } = group("button");
         expect([typeFrom, descriptionFrom, deprecatedFrom]).toStrictEqual([
             undefined,
@@ -96,7 +96,7 @@ describe("where a token's deprecation comes from", () => {
         expect(token("cta.gap").deprecatedFrom).toStrictEqual({ path: "button", via: "group" });
     });
 
-    it("is absent when the token writes $deprecated, or a closer group undoes it", () => {
+    it("is undefined when the token writes $deprecated, or a closer group undoes it", () => {
         const read = oneFile({
             $type: "number",
             old: {
@@ -122,7 +122,7 @@ describe("a copy through $extends", () => {
         expect(group("hero.sizes").extendedFrom).toStrictEqual({ path: "button.sizes" });
     });
 
-    it("is absent on what a group writes itself", () => {
+    it("is undefined on what a group writes itself", () => {
         expect(token("cta.gap").extendedFrom).toBe(undefined);
         expect(group("cta").extendedFrom).toBe(undefined);
     });
@@ -181,7 +181,7 @@ describe("what a group writes itself, without the $", () => {
         });
     });
 
-    it("is absent when the group writes none of its properties", () => {
+    it("is undefined when the group writes none of its properties", () => {
         expect(group("cta.sizes").local).toBe(undefined);
     });
 });

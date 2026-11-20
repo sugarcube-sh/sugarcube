@@ -57,7 +57,7 @@ export interface Group {
     /**
      * `true`, or a message saying what to use instead.
      *
-     * It can come from the group it extends, or the group it's inside. It's absent when the group
+     * It can come from the group it extends, or the group it's inside. It's `undefined` when the group
      * isn't deprecated, even if it writes `"$deprecated": false`.
      */
     readonly deprecated?: true | string;
@@ -83,7 +83,7 @@ export interface Group {
     /**
      * The group this one extends, through `$extends`.
      *
-     * It's absent if the reference doesn't reach a group. The reference is in
+     * It's `undefined` if the reference doesn't reach a group. The reference is in
      * {@link Group.references | references}. The tokens it brings are marked
      * {@link TokenBase.extendedFrom | extendedFrom}.
      *
@@ -125,7 +125,7 @@ export interface Group {
      * The properties the files write on the group itself, not inherited.
      *
      * A group can be written in several files. This combines them, the later file winning each
-     * property. It's absent when the files write none of them.
+     * property. It's `undefined` when the files write none of them.
      *
      * @example
      * // cta writes "$extends": "{button}" and nothing else
@@ -183,7 +183,23 @@ class GroupObject {
     #tokens: readonly Token[] | undefined;
 
     constructor(fields: GroupFields) {
-        Object.assign(this, fields);
+        const self = this as unknown as Record<string, unknown>;
+        self.path = fields.path;
+        self.type = fields.type;
+        self.typeFrom = fields.typeFrom;
+        self.description = fields.description;
+        self.descriptionFrom = fields.descriptionFrom;
+        self.deprecated = fields.deprecated;
+        self.deprecatedFrom = fields.deprecatedFrom;
+        self.extensions = fields.extensions;
+        self.extends = fields.extends;
+        self.references = fields.references;
+        self.definitions = fields.definitions;
+        self.extensionDefinitions = fields.extensionDefinitions;
+        self.extendedFrom = fields.extendedFrom;
+        self.local = fields.local;
+        self.children = fields.children;
+        self.rootToken = fields.rootToken;
     }
 
     get childTokens(): readonly Token[] {

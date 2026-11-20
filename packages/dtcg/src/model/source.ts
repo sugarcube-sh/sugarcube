@@ -24,7 +24,7 @@ export interface Source {
     /**
      * The part of the file the source is, such as `"#/dark"` for `{ "$ref": "all.json#/dark" }`.
      *
-     * It's absent when the source is a whole file. Tokens written in the resolver have one too,
+     * It's `undefined` when the source is a whole file. Tokens written in the resolver have one too,
      * such as `"#/resolutionOrder/0/sources/1"`.
      */
     readonly pointer?: string;
@@ -51,7 +51,7 @@ export interface Source {
      */
     readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**
-     * The contexts that list this file, such as `dark`. Absent when the file is always read.
+     * The contexts that list this file, such as `dark`. `undefined` when the file is always read.
      *
      * @example
      * // The base set in resolutionOrder lists color.json
@@ -90,7 +90,13 @@ export class SourceObject {
     readonly #position: number;
 
     constructor(fields: Source, position: number) {
-        Object.assign(this, fields);
+        const self = this as unknown as Record<string, unknown>;
+        self.file = fields.file;
+        self.pointer = fields.pointer;
+        self.modifier = fields.modifier;
+        self.sets = fields.sets;
+        self.extensions = fields.extensions;
+        self.contexts = fields.contexts;
         this.#position = position;
     }
 
