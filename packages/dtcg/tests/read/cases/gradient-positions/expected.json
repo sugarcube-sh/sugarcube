@@ -9,15 +9,15 @@
         },
         {
           "path": "beyond",
-          "resolved": 2
+          "resolvedValue": 2
         },
         {
           "path": "before",
-          "resolved": -1
+          "resolvedValue": -1
         },
         {
           "path": "fade",
-          "resolved": [
+          "resolvedValue": [
             {
               "color": {
                 "colorSpace": "srgb",

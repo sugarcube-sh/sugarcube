@@ -60,7 +60,7 @@ const light = tokens.getPermutation();
 const dark = tokens.getPermutation({ theme: "dark" });
 const paths = (items: readonly { path: string }[] | undefined) => items?.map(({ path }) => path);
 const valueOf = (found: ReturnType<typeof light.getToken>) =>
-    found?.type === "dimension" ? found.resolved?.value : undefined;
+    found?.type === "dimension" ? found.resolvedValue?.value : undefined;
 
 const single = readFromMemory({ files: { "tokens.json": files["base.json"] } });
 
@@ -199,9 +199,9 @@ describe("permutation.isDefault", () => {
     });
 });
 
-describe("tokens.getTokenPaths", () => {
+describe("tokens.tokenPaths", () => {
     it("lists every token in any permutation once, in the order the permutations list them", () => {
-        expect(tokens.getTokenPaths()).toStrictEqual([
+        expect(tokens.tokenPaths).toStrictEqual([
             "px",
             "2",
             "1",
@@ -214,9 +214,9 @@ describe("tokens.getTokenPaths", () => {
     });
 });
 
-describe("tokens.getGroupPaths", () => {
+describe("tokens.groupPaths", () => {
     it("lists every group in any permutation once, in the order the permutations list them", () => {
-        expect(tokens.getGroupPaths()).toStrictEqual(["", "space", "space.inset", "spacer"]);
+        expect(tokens.groupPaths).toStrictEqual(["", "space", "space.inset", "spacer"]);
     });
 });
 

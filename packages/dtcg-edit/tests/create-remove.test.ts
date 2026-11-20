@@ -79,10 +79,12 @@ describe("create, which file", () => {
             { kind: "add", file: "dark.json", jsonPath: ["radius", "xl"], value },
         ]);
         const after = committed(demo, result);
-        expect(after.getPermutation({ mode: "dark" }).getToken("radius.xl")?.resolved).toEqual({
-            value: 1,
-            unit: "rem",
-        });
+        expect(after.getPermutation({ mode: "dark" }).getToken("radius.xl")?.resolvedValue).toEqual(
+            {
+                value: 1,
+                unit: "rem",
+            },
+        );
         expect(after.getPermutation().getToken("radius.xl")).toBeUndefined();
     });
 
@@ -514,10 +516,10 @@ describe("remove", () => {
             }),
         );
         expect(remove(inherited, "danger.bg")).toEqual(
-            refusal("inherited", { path: "danger.bg", from: "button" }),
+            refusal("extended", { path: "danger.bg", from: "button.bg" }),
         );
         expect(remove(inherited, "danger.state")).toEqual(
-            refusal("inherited", { path: "danger.state", from: "button" }),
+            refusal("extended", { path: "danger.state", from: "button.state" }),
         );
     });
 });

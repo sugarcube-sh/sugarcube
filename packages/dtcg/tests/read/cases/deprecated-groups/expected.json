@@ -1,88 +1,54 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 5.2.4 and 6.3.1: a group's $deprecated extends to every token and group inside unless a closer group or the token says otherwise; false undoes it, so a group that writes false is not deprecated, and has false only as written. The top level counts as the outermost group. deprecatedByGroup names the group whose $deprecated applies, \"\" for the top level, and is absent for a mark of its own or none. Format 6.4: a group that extends another takes its type and deprecation, so the group it extends is the one deprecating it and its tokens. asWritten holds only what a token or group writes itself",
+  "spec": "Format 5.2.4 and 6.3.1: a group's $deprecated extends to every token and group inside unless a closer group or the token says otherwise; false undoes it, so a group that writes false is not deprecated, and has false only as written. The top level counts as the outermost group. deprecatedFrom names the group whose $deprecated applies, \"\" for the top level, reached through a group it's inside, and is absent for a mark of its own or none. Format 6.4: a group that extends another takes its type and deprecation, so the group it extends is the one deprecating it, through $extends, and its tokens, through the group they're inside",
   "permutations": [
     {
       "tokens": [
         {
           "path": "top",
           "deprecated": true,
-          "deprecatedByGroup": "",
-          "original": {
-            "value": 1
-          }
+          "deprecatedFrom": { "path": "", "via": "group" }
         },
         {
           "path": "old.a",
           "deprecated": "use new",
-          "deprecatedByGroup": "old",
-          "original": {
-            "value": 2
-          }
+          "deprecatedFrom": { "path": "old", "via": "group" }
         },
         {
           "path": "old.b",
           "deprecated": "use new.b",
-          "deprecatedByGroup": null,
-          "original": {
-            "value": 3,
-            "deprecated": "use new.b"
-          }
+          "deprecatedFrom": null
         },
         {
           "path": "old.inner.c",
           "deprecated": "use new",
-          "deprecatedByGroup": "old",
-          "original": {
-            "value": 6
-          }
+          "deprecatedFrom": { "path": "old", "via": "group" }
         },
         {
           "path": "old.kept.c",
           "deprecated": null,
-          "deprecatedByGroup": null,
-          "original": {
-            "value": 4
-          }
+          "deprecatedFrom": null
         },
         {
           "path": "old.kept.d",
           "deprecated": true,
-          "deprecatedByGroup": null,
-          "original": {
-            "value": 5,
-            "deprecated": true
-          }
+          "deprecatedFrom": null
         },
         {
           "path": "button.pad",
           "deprecated": "Use control",
-          "deprecatedByGroup": "button",
-          "original": {
-            "value": {
-              "value": 4,
-              "unit": "px"
-            }
-          }
+          "deprecatedFrom": { "path": "button", "via": "group" }
         },
         {
           "path": "primary.gap",
           "deprecated": "Use control",
-          "deprecatedByGroup": "button",
-          "original": {
-            "value": {
-              "value": 2,
-              "unit": "px"
-            }
-          }
+          "deprecatedFrom": { "path": "button", "via": "group" }
         },
         {
           "path": "primary.pad",
           "deprecated": "Use control",
-          "deprecatedByGroup": "button",
-          "inherited": {
-            "from": "button"
-          }
+          "deprecatedFrom": { "path": "button", "via": "group" },
+          "extendedFrom": { "path": "button.pad" }
         }
       ],
       "groups": [
@@ -90,47 +56,43 @@
         {
           "path": "old",
           "deprecated": "use new",
-          "deprecatedByGroup": null
+          "deprecatedFrom": null
         },
         {
           "path": "old.inner",
           "deprecated": "use new",
-          "deprecatedByGroup": "old"
+          "deprecatedFrom": { "path": "old", "via": "group" }
         },
         {
           "path": "old.kept",
           "deprecated": null,
-          "deprecatedByGroup": null,
-          "original": {
-            "deprecated": false
-          }
+          "deprecatedFrom": null,
+          "local": { "deprecated": false }
         },
         {
           "path": "button",
           "type": "dimension",
+          "typeFrom": null,
           "description": "Base button",
+          "descriptionFrom": null,
           "deprecated": "Use control",
-          "deprecatedByGroup": null,
-          "original": {
+          "deprecatedFrom": null,
+          "local": {
             "type": "dimension",
             "description": "Base button",
             "deprecated": "Use control",
-            "extensions": {
-              "com.example": {
-                "a": 1
-              }
-            }
+            "extensions": { "com.example": { "a": 1 } }
           }
         },
         {
           "path": "primary",
           "type": "dimension",
+          "typeFrom": { "path": "button", "via": "extends" },
           "description": "Primary only",
+          "descriptionFrom": null,
           "deprecated": "Use control",
-          "deprecatedByGroup": "button",
-          "original": {
-            "description": "Primary only"
-          }
+          "deprecatedFrom": { "path": "button", "via": "extends" },
+          "local": { "description": "Primary only", "extends": "button" }
         }
       ]
     }

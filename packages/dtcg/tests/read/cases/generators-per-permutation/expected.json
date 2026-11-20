@@ -9,10 +9,7 @@
       "tokens": [
         {
           "path": "space.1",
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          },
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] },
           "definitions": [
             {
               "source": 0,
@@ -29,17 +26,11 @@
       "tokens": [
         {
           "path": "space.2",
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          }
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
         },
         {
           "path": "space.1",
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          },
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] },
           "definitions": [
             {
               "source": 1,

@@ -6,30 +6,31 @@
       "tokens": [
         {
           "path": "base.primary",
-          "type": "number"
+          "type": "number",
+          "typeFrom": { "path": "base", "via": "group" }
         },
         {
           "path": "base.colors.x",
-          "type": "number"
+          "type": "number",
+          "typeFrom": { "path": "base", "via": "group" }
         },
         {
           "path": "extended.spacing",
-          "type": "dimension"
+          "type": "dimension",
+          "typeFrom": { "path": "extended", "via": "group" }
         },
         {
           "path": "extended.primary",
           "type": "dimension",
-          "inherited": {
-            "from": "base"
-          },
+          "typeFrom": { "path": "extended", "via": "group" },
+          "extendedFrom": { "path": "base.primary" },
           "invalid": true
         },
         {
           "path": "extended.colors.x",
           "type": "dimension",
-          "inherited": {
-            "from": "base"
-          },
+          "typeFrom": { "path": "extended", "via": "group" },
+          "extendedFrom": { "path": "base.colors.x" },
           "invalid": true
         }
       ],
@@ -43,13 +44,12 @@
         },
         {
           "path": "extended",
-          "type": "dimension"
+          "type": "dimension",
+          "typeFrom": null
         },
         {
           "path": "extended.colors",
-          "inherited": {
-            "from": "base"
-          }
+          "extendedFrom": { "path": "base.colors" }
         },
         {
           "path": "palette"

@@ -36,22 +36,38 @@ export interface TokenBase<T extends TokenType> {
      */
     readonly type: T;
     /**
-     * The value, with references as written.
+     * Where the token's type comes from, when it doesn't write `$type` itself.
+     *
+     * `via` is `"group"` when a group it's inside gives it, and `path` names the group that writes
+     * the `$type`, `""` for the top of the file. `via` is `"reference"` when the type comes from
+     * the token its value refers to, and `path` names that token.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#type-inheritance | Format 6.7.3, Type Inheritance}
+     *
+     * @example
+     * // brand is "{color.primary}" and writes no $type
+     * light.getToken("brand")!.typeFrom
+     * // => { path: "color.primary", via: "reference" }
+     */
+    readonly typeFrom?: InheritedFrom;
+    /**
+     * The `$value` read and checked, with references kept. What a file may leave out is filled in,
+     * such as a color's `alpha: 1`.
      *
      * It's absent when the token is {@link TokenBase.invalid | invalid}.
      */
-    readonly value?: UnresolvedValue<T>;
+    readonly parsedValue?: UnresolvedValue<T>;
     /**
      * The value, with every reference followed.
      *
      * It's absent when the token is invalid, or a reference can't be followed.
      */
-    readonly resolved?: ValueByType[T];
+    readonly resolvedValue?: ValueByType[T];
     /**
      * Set when the token's value couldn't be read.
      *
      * Why is in {@link DesignTokens.diagnostics}, under the token's path. A reference to a missing
-     * token doesn't make it invalid. Its `resolved` is just absent.
+     * token doesn't make it invalid. Its `resolvedValue` is just absent.
      */
     readonly invalid?: true;
     /** The token's `$description`. */
@@ -66,12 +82,17 @@ export interface TokenBase<T extends TokenType> {
      */
     readonly deprecated?: true | string;
     /**
-     * The group whose `$deprecated` applies to this token.
+     * Where the token's deprecation comes from, when it doesn't write `$deprecated` itself.
      *
-     * It's the nearest group above with one, written itself or through `$extends`; `""` when it's the
-     * top of the file. It's absent when the token writes its own, or when there's none.
+     * `path` names the group that writes the `$deprecated`, `""` for the top of the file. That's
+     * the nearest group above with one, or a group it extends. `via` is `"group"`.
+     *
+     * @example
+     * // The button group writes "$deprecated": "Use action"
+     * light.getToken("button.padding")!.deprecatedFrom
+     * // => { path: "button", via: "group" }
      */
-    readonly deprecatedByGroup?: string;
+    readonly deprecatedFrom?: InheritedFrom;
     /**
      * The token's `$extensions`, unchanged.
      *
@@ -94,36 +115,28 @@ export interface TokenBase<T extends TokenType> {
      */
     readonly definitions: readonly Definition[];
     /**
-     * What the file writes for the token's value, `$type` and `$deprecated`.
-     *
-     * `$type` and `$deprecated` are here only when the token writes them itself. It's absent for a
-     * token a {@link Generator} adds.
-     *
-     * @example
-     * // color.primary in dark writes its own $type
-     * dark.getToken("color.primary")!.original
-     * // => { value: "{color.blue.300}", type: "color" }
-     */
-    readonly original?: { readonly value: JsonValue } & Pick<
-        OriginalProperties,
-        "type" | "deprecated"
-    >;
-    /**
      * Set when a {@link Generator} makes the token.
      *
-     * `from` is the group with the extension, `""` at the top of a file. `extension` is where the
+     * `path` names the group with the extension, `""` at the top of a file. `extension` is where the
      * generator's settings are in its `$extensions`, such as `["com.example", "steps"]`.
      */
-    readonly generated?: {
-        readonly from: string;
+    readonly generatedFrom?: {
+        readonly path: string;
         readonly extension: readonly [string, ...string[]];
     };
     /**
-     * Set when the token is here only through `$extends`.
+     * Set when the token is here only through `$extends`, as a copy.
      *
-     * `from` is the group it comes from.
+     * `path` names the token it's a copy of, where it's written.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#extending-groups | Format 6.4, Extending Groups}
+     *
+     * @example
+     * // cta writes "$extends": "{button}"
+     * light.getToken("cta.padding")!.extendedFrom
+     * // => { path: "button.padding" }
      */
-    readonly inherited?: { readonly from: string };
+    readonly extendedFrom?: { readonly path: string };
     /**
      * Each reference in the token's value, in the order written.
      *
@@ -192,26 +205,32 @@ export interface TokenBase<T extends TokenType> {
 /**
  * A design token.
  *
- * Check `type`, and TypeScript knows the shape of `value` and `resolved`.
+ * Check `type`, and TypeScript knows the shape of `parsedValue` and `resolvedValue`.
  *
  * @example
  * // A color token's color space
  * const token = light.getToken("color.blue.500")!;
- * if (token.type === "color") token.resolved?.colorSpace;
+ * if (token.type === "color") token.resolvedValue?.colorSpace;
  * // => "srgb"
  */
 export type Token = { [T in TokenType]: TokenBase<T> }[TokenType];
 
 /**
- * What a token or group writes on itself.
+ * Where a property a token or group doesn't write itself comes from.
  *
- * It leaves out what comes from its group, or from a group it extends.
+ * @example
+ * // cta writes "$extends": "{button}", and button writes "$type": "dimension"
+ * light.getGroup("cta")!.typeFrom
+ * // => { path: "button", via: "extends" }
  */
-export interface OriginalProperties {
-    readonly type?: TokenType;
-    readonly description?: string;
-    readonly deprecated?: boolean | string;
-    readonly extensions?: Readonly<Record<string, JsonValue>>;
+export interface InheritedFrom {
+    /** The group or token that writes it, such as `"button"`; `""` for the top of a file. */
+    readonly path: string;
+    /**
+     * How it gets here: `"group"`, from a group it's inside; `"extends"`, through `$extends`;
+     * `"reference"`, from the token its value refers to.
+     */
+    readonly via: "group" | "extends" | "reference";
 }
 
 const UNCOMPUTED = Symbol("not yet worked out");
@@ -231,22 +250,21 @@ class TokenObject {
         self.type = fields.type;
         self.references = fields.references;
         self.definitions = fields.definitions;
-        if (fields.value !== undefined) self.value = fields.value;
-        if (fields.resolved !== undefined) self.resolved = fields.resolved;
+        if (fields.parsedValue !== undefined) self.parsedValue = fields.parsedValue;
+        if (fields.resolvedValue !== undefined) self.resolvedValue = fields.resolvedValue;
         if (fields.invalid) self.invalid = fields.invalid;
         if (fields.description !== undefined) self.description = fields.description;
         if (fields.deprecated !== undefined) self.deprecated = fields.deprecated;
-        if (fields.deprecatedByGroup !== undefined)
-            self.deprecatedByGroup = fields.deprecatedByGroup;
+        self.typeFrom = fields.typeFrom;
+        if (fields.deprecatedFrom) self.deprecatedFrom = fields.deprecatedFrom;
         if (fields.extensions) self.extensions = fields.extensions;
-        if (fields.original) self.original = fields.original;
-        if (fields.generated) self.generated = fields.generated;
-        if (fields.inherited) self.inherited = fields.inherited;
+        if (fields.generatedFrom) self.generatedFrom = fields.generatedFrom;
+        if (fields.extendedFrom) self.extendedFrom = fields.extendedFrom;
     }
 
     getReferenceAt(property: JsonPath = []): Reference | undefined {
         return (this as unknown as Token).references.find((each) =>
-            samePropertyPath(each.property, property),
+            samePropertyPath(each.ownerProperty, property),
         );
     }
 

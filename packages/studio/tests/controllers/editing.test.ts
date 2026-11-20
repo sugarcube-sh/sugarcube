@@ -17,7 +17,7 @@ describe("editing in studio", () => {
         expect(done.tokens).toBe(studio.state.tokens);
         expect(
             studio.state.tokens.getPermutation({ mode: "dark" }).getToken("color.text.default")
-                ?.value,
+                ?.parsedValue,
         ).toEqual({ syntax: "curly-brace", path: "color.neutral.100" });
         expect(studio.state.css).toContain("--color-text-default: var(--color-neutral-100);");
         expect(studio.state.changes.map(({ kind, path }) => [kind, path])).toEqual([

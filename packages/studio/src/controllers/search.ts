@@ -57,7 +57,7 @@ function findHits({ tokens, shownPermutation, getValue }: StudioState, query: st
     const hits: Hit[] = [];
     if (!needle) return { query, hits, capped: false };
 
-    for (const path of tokens.getTokenPaths()) {
+    for (const path of tokens.tokenPaths) {
         if (!path.toLowerCase().includes(needle)) continue;
         if (hits.length === MAX_HITS) return { query, hits, capped: true };
         const token = shownPermutation.getToken(path);

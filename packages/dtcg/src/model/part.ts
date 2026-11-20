@@ -17,7 +17,7 @@ import type {
  * One part of a token's value.
  *
  * It can be the whole value, or a part of it, such as a border's `color` or one shadow layer.
- * Check `type`, and TypeScript knows its `resolved` and its own parts.
+ * Check `type`, and TypeScript knows its `resolvedValue` and its own parts.
  *
  * @example
  * // button.background refers to color.primary
@@ -46,18 +46,18 @@ export type SimplePartType =
 /** What every part has. */
 export interface PartBase<V> {
     /**
-     * Where the part is in {@link TokenBase.value | value}, such as `["color"]`.
+     * Where the part is in {@link TokenBase.parsedValue | parsedValue}, such as `["color"]`.
      *
      * It's absent for the whole value.
      */
     readonly property?: JsonPath;
     /** The part's value, with references followed. */
-    readonly resolved: V;
+    readonly resolvedValue: V;
     /**
      * The reference written as this part, if there is one.
      *
      * A JSON Pointer inside the part, such as to one color component, doesn't count. Its value is
-     * in `resolved`.
+     * in `resolvedValue`.
      */
     readonly ref?: Reference;
 }

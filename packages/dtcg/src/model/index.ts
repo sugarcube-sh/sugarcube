@@ -51,9 +51,15 @@ export type {
 } from "./part.js";
 export type { Input, Permutation } from "./permutation.js";
 export type { JsonPath, Span, SourceLine } from "./location.js";
-export type { TokenBase, Token, OriginalProperties } from "./token.js";
+export type { TokenBase, Token, InheritedFrom } from "./token.js";
 export type { Group } from "./group.js";
-export type { Definition, DefinitionInPermutations } from "./definition.js";
+export type {
+    Definition,
+    DefinitionInPermutations,
+    LocalProperties,
+    LocalToken,
+    LocalGroup,
+} from "./definition.js";
 export type { Source, ParentSet } from "./source.js";
 export type {
     Resolver,
@@ -93,8 +99,6 @@ export type {
     Move,
     TokenProperty,
     GroupProperty,
-    OriginalToken,
-    OriginalGroup,
     Change,
     TokenChange,
     GroupChange,

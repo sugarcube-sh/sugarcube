@@ -80,20 +80,6 @@ describe("tokenPath.join", () => {
     });
 });
 
-describe("tokenPath.findInvalidCharacter", () => {
-    it.for([
-        { name: "a.b", expected: "." },
-        { name: "{x", expected: "{" },
-        { name: "x}", expected: "}" },
-        { name: "$x", expected: "$" },
-        { name: "a$b", expected: undefined },
-        { name: "$root", expected: undefined },
-        { name: "brand", expected: undefined },
-    ])("$name gives $expected (Format 5.1.1)", ({ name, expected }) => {
-        expect(tokenPath.findInvalidCharacter(name)).toBe(expected);
-    });
-});
-
 describe("tokenPath.findNameProblem", () => {
     it.for([
         { name: "brand", expected: undefined },
@@ -102,21 +88,11 @@ describe("tokenPath.findNameProblem", () => {
         { name: "a.b", expected: { character: "." } },
         { name: "$x", expected: { character: "$" } },
         { name: "{x}", expected: { character: "{" } },
+        { name: "x}", expected: { character: "}" } },
+        { name: "a$b", expected: undefined },
+        { name: "a b", expected: undefined },
     ])("$name gives $expected (Format 5.1.1)", ({ name, expected }) => {
         expect(tokenPath.findNameProblem(name)).toStrictEqual(expected);
-    });
-});
-
-describe("tokenPath.isValidName", () => {
-    it.for([
-        { name: "brand", expected: true },
-        { name: "$root", expected: true },
-        { name: "a b", expected: true },
-        { name: "", expected: false },
-        { name: "a.b", expected: false },
-        { name: "$x", expected: false },
-    ])("$name gives $expected (Format 5.1.1)", ({ name, expected }) => {
-        expect(tokenPath.isValidName(name)).toBe(expected);
     });
 });
 

@@ -106,7 +106,7 @@ function getDeclaredPermutations(
         const base = tokens.permutations.filter(({ isDefault }) => isDefault);
         const overrides = tokens.permutations.filter(({ isDefault }) => !isDefault);
         return [...base, ...overrides].map((permutation) => {
-            const input = getChangedInput(permutation);
+            const input = permutation.changedInput;
             return {
                 permutation,
                 selector: toSelector(input),
@@ -155,14 +155,6 @@ function findPermutation(tokens: DesignTokens, input: Input): Permutation | unde
         if (error instanceof PermutationError) return undefined;
         throw error;
     }
-}
-
-function getChangedInput(permutation: Permutation): Input {
-    return Object.fromEntries(
-        permutation.contexts
-            .filter((context) => !context.isDefault)
-            .map((context) => [context.modifier.name, context.name]),
-    );
 }
 
 function toSelector(input: Input): string {

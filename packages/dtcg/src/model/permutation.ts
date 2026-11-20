@@ -61,6 +61,19 @@ export interface Permutation {
      */
     readonly isDefault: boolean;
     /**
+     * The permutation's input without the modifiers at their `default`.
+     *
+     * It's `{}` for the default permutation.
+     *
+     * @example
+     * // mode and size, with size at its default
+     * dark.input
+     * // => { mode: "dark", size: "medium" }
+     * dark.changedInput
+     * // => { mode: "dark" }
+     */
+    readonly changedInput: Input;
+    /**
      * The top level of the files: the group at `""`, which holds everything else.
      *
      * By the spec's own definition, the top of a file is a group, so it has every group property,
@@ -115,7 +128,7 @@ export interface Permutation {
      *
      * @example
      * // color.primary in dark
-     * dark.getToken("color.primary")?.value
+     * dark.getToken("color.primary")?.parsedValue
      * // => { syntax: "curly-brace", path: "color.blue.300" }
      */
     getToken(path: string): Token | undefined;
@@ -225,6 +238,7 @@ export class PermutationObject {
     readonly #tokens: ReadonlyMap<string, Token>;
     readonly #groups: ReadonlyMap<string, Group>;
     #designTokens: DesignTokens | undefined;
+    #changedInput: Input | undefined;
 
     constructor(
         fields: PermutationFields,
@@ -238,6 +252,17 @@ export class PermutationObject {
 
     get isDefault(): boolean {
         return this.#self.contexts.every((context) => context.isDefault);
+    }
+
+    get changedInput(): Input {
+        this.#changedInput ??= Object.freeze(
+            Object.fromEntries(
+                this.#self.contexts
+                    .filter((context) => !context.isDefault)
+                    .map((context) => [context.modifier.name, context.name]),
+            ),
+        );
+        return this.#changedInput;
     }
 
     getToken(path: string): Token | undefined {
@@ -305,9 +330,9 @@ export class PermutationObject {
             const otherToken = other.getToken(token.path);
             if (otherToken === token) return false;
             if (otherToken === undefined || otherToken.type !== token.type) return true;
-            if (token.resolved === undefined || otherToken.resolved === undefined)
-                return token.resolved !== otherToken.resolved;
-            return !isEquivalentValue(token.type, token.resolved, otherToken.resolved);
+            if (token.resolvedValue === undefined || otherToken.resolvedValue === undefined)
+                return token.resolvedValue !== otherToken.resolvedValue;
+            return !isEquivalentValue(token.type, token.resolvedValue, otherToken.resolvedValue);
         });
     }
 

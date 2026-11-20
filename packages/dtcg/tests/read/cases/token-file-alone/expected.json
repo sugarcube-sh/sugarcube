@@ -13,8 +13,7 @@
   "sources": [
     {
       "file": "tokens.json",
-      "sets": [],
-      "contexts": "every-context"
+      "sets": []
     }
   ]
 }

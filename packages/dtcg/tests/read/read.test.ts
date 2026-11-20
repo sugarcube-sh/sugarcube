@@ -244,9 +244,7 @@ describe("read", () => {
         const tokens = await read("tokens/base.json", { readText });
         expect(readText.mock.calls).toStrictEqual([["tokens/base.json", "base.json"]]);
         expect(tokens.files).toStrictEqual(["base.json"]);
-        expect(tokens.permutations[0]?.sources).toEqual([
-            { file: "base.json", sets: [], contexts: "every-context" },
-        ]);
+        expect(tokens.permutations[0]?.sources).toEqual([{ file: "base.json", sets: [] }]);
     });
 
     it("tidies the entry's folder", async () => {
@@ -779,7 +777,7 @@ describe("a group referring to the whole document", () => {
             "t": { $type: "number", $value: { $ref: "#" } },
         });
         expect(tokens.diagnostics.map(({ kind }) => kind)).toContain("invalid-name");
-        expect(tokens.getPermutation().getToken("t")?.resolved).toBeUndefined();
+        expect(tokens.getPermutation().getToken("t")?.resolvedValue).toBeUndefined();
     });
 });
 
@@ -790,7 +788,7 @@ describe("a $root token", () => {
             g: { $type: "number", $root: { $ref: "#/a/$value" } },
         });
         expect(tokens.diagnostics).toStrictEqual([]);
-        expect(tokens.getPermutation().getToken("g.$root")?.resolved).toBe(2);
+        expect(tokens.getPermutation().getToken("g.$root")?.resolvedValue).toBe(2);
     });
 });
 

@@ -78,7 +78,7 @@ describe("createStudio", () => {
         const after = studio.state.tokens;
         expect(after).not.toBe(before);
         expect(studio.state.shownPermutation.label).toBe("mode: dark");
-        expect(studio.state.shownPermutation.getToken("color.text.default")?.value).toEqual({
+        expect(studio.state.shownPermutation.getToken("color.text.default")?.parsedValue).toEqual({
             syntax: "curly-brace",
             path: "color.neutral.100",
         });

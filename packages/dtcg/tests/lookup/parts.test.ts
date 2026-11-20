@@ -78,13 +78,13 @@ const partsOfPath = (path: string) => {
 
 describe("token.parts", () => {
     it("gives a simple value as one part, with what it resolved to", () => {
-        expect(partsOfPath("thin")).toStrictEqual({ type: "dimension", resolved: px(1) });
+        expect(partsOfPath("thin")).toStrictEqual({ type: "dimension", resolvedValue: px(1) });
     });
 
     it("gives a whole value written as a reference that reference", () => {
         expect(partsOfPath("accent")).toStrictEqual({
             type: "color",
-            resolved: redRead,
+            resolvedValue: redRead,
             ref: expect.objectContaining({ parsed: { syntax: "curly-brace", path: "red" } }),
         });
     });
@@ -92,7 +92,7 @@ describe("token.parts", () => {
     it("gives each part of a composite, typed, with the reference written there", () => {
         expect(partsOfPath("edge")).toStrictEqual({
             type: "border",
-            resolved: {
+            resolvedValue: {
                 color: redRead,
                 width: px(2),
                 style: "solid",
@@ -100,14 +100,14 @@ describe("token.parts", () => {
             color: {
                 type: "color",
                 property: ["color"],
-                resolved: redRead,
+                resolvedValue: redRead,
                 ref: expect.objectContaining({ parsed: { syntax: "curly-brace", path: "red" } }),
             },
-            width: { type: "dimension", property: ["width"], resolved: px(2) },
+            width: { type: "dimension", property: ["width"], resolvedValue: px(2) },
             style: {
                 type: "strokeStyle",
                 property: ["style"],
-                resolved: "solid",
+                resolvedValue: "solid",
             },
         });
     });
@@ -125,7 +125,7 @@ describe("token.parts", () => {
     });
 
     it("leaves a pointer inside a part, such as at one color component, in what it resolved to", () => {
-        expect(partsOfPath("mixed")).toStrictEqual({ type: "color", resolved: redRead });
+        expect(partsOfPath("mixed")).toStrictEqual({ type: "color", resolvedValue: redRead });
     });
 
     it("gives a shadow its layers, a single shadow as a list of one", () => {
@@ -133,7 +133,7 @@ describe("token.parts", () => {
         expect(shadow?.type === "shadow" && shadow.layers).toStrictEqual([
             {
                 property: [0],
-                resolved: {
+                resolvedValue: {
                     color: redRead,
                     offsetX: px(0),
                     offsetY: px(1),
@@ -144,15 +144,15 @@ describe("token.parts", () => {
                 color: {
                     type: "color",
                     property: [0, "color"],
-                    resolved: redRead,
+                    resolvedValue: redRead,
                     ref: expect.objectContaining({
                         parsed: { syntax: "curly-brace", path: "red" },
                     }),
                 },
-                offsetX: { type: "dimension", property: [0, "offsetX"], resolved: px(0) },
-                offsetY: { type: "dimension", property: [0, "offsetY"], resolved: px(1) },
-                blur: { type: "dimension", property: [0, "blur"], resolved: px(2) },
-                spread: { type: "dimension", property: [0, "spread"], resolved: px(0) },
+                offsetX: { type: "dimension", property: [0, "offsetX"], resolvedValue: px(0) },
+                offsetY: { type: "dimension", property: [0, "offsetY"], resolvedValue: px(1) },
+                blur: { type: "dimension", property: [0, "blur"], resolvedValue: px(2) },
+                spread: { type: "dimension", property: [0, "spread"], resolvedValue: px(0) },
             },
         ]);
     });
@@ -165,10 +165,10 @@ describe("token.parts", () => {
         expect(first?.color).toStrictEqual({
             type: "color",
             property: [0, "color"],
-            resolved: redRead,
+            resolvedValue: redRead,
         });
         expect(second?.ref).toBeUndefined();
-        expect(second?.resolved.inset).toBe(true);
+        expect(second?.resolvedValue.inset).toBe(true);
         expect(second?.offsetX.ref).toMatchObject({
             parsed: { syntax: "curly-brace", path: "thin" },
         });
@@ -178,13 +178,13 @@ describe("token.parts", () => {
         const gradient = partsOfPath("fade");
         if (gradient?.type !== "gradient") throw new Error("not a gradient");
         expect(gradient.stops.map(({ color, position }) => [color.ref, position])).toStrictEqual([
-            [undefined, { type: "number", property: [0, "position"], resolved: 0 }],
+            [undefined, { type: "number", property: [0, "position"], resolvedValue: 0 }],
             [
                 expect.objectContaining({ parsed: { syntax: "curly-brace", path: "red" } }),
                 {
                     type: "number",
                     property: [1, "position"],
-                    resolved: 0.5,
+                    resolvedValue: 0.5,
                     ref: expect.objectContaining({
                         parsed: { syntax: "curly-brace", path: "half" },
                     }),
@@ -200,12 +200,12 @@ describe("token.parts", () => {
                 {
                     type: "dimension",
                     property: ["dashArray", 0],
-                    resolved: px(1),
+                    resolvedValue: px(1),
                     ref: expect.objectContaining({
                         parsed: { syntax: "curly-brace", path: "thin" },
                     }),
                 },
-                { type: "dimension", property: ["dashArray", 1], resolved: px(2) },
+                { type: "dimension", property: ["dashArray", 1], resolvedValue: px(2) },
             ],
         );
         const plain = partsOfPath("plain");
@@ -228,7 +228,7 @@ describe("token.parts", () => {
         expect(typography.lineHeight).toStrictEqual({
             type: "number",
             property: ["lineHeight"],
-            resolved: 0.5,
+            resolvedValue: 0.5,
             ref: expect.objectContaining({ parsed: { syntax: "curly-brace", path: "half" } }),
         });
     });

@@ -44,8 +44,8 @@ const refusalReasons: {
         character === undefined
             ? "a name can't be empty"
             : `\`${name}\` can't be a name: ${character === "$" ? "a leading `$` marks a property" : `\`${character}\` is used by references`}`,
-    "inherited": ({ path, from }) =>
-        `\`${path}\` comes from \`${from}\` through \`$extends\`; change it there`,
+    "extended": ({ path, from }) =>
+        `\`${path}\` is a copy of \`${from}\` through \`$extends\`; change it there`,
     "no-permutation": ({ input, cause: why }) =>
         `there is no permutation for ${quoteInput(input)}: ${permutationErrorMessages[why]}`,
     "several-contexts": ({ input }) =>

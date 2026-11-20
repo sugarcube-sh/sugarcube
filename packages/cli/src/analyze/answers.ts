@@ -4,7 +4,6 @@ import {
     type ResolverContext,
     type Source,
     type Token,
-    groupPermutationsBy,
 } from "@sugarcube-sh/dtcg";
 import type { TokenUse, TokenUses } from "./uses.js";
 
@@ -50,7 +49,7 @@ export function findUnused({ tokens, uses }: Analysis): Unused {
             }
         }
     }
-    const paths = tokens.getTokenPaths();
+    const paths = tokens.tokenPaths;
     return { unused: paths.filter((path) => !usedPaths.has(path)).sort(), total: paths.length };
 }
 
@@ -77,7 +76,7 @@ export function findImpact(
     definitions: TokenDefinition[],
 ): Impact {
     const byDependent = new Map<string, DependentReference[]>();
-    const groups = groupPermutationsBy(tokens, (p) => p.getReferencesTo(path, { chained: true }));
+    const groups = tokens.groupPermutationsBy((p) => p.getReferencesTo(path, { chained: true }));
     for (const { result, permutations } of groups) {
         for (const reference of result) {
             const from = reference.owner.path;
@@ -142,9 +141,9 @@ function describeDependent(
 }
 
 function isInEveryContext({ contexts }: Source): boolean {
-    return contexts === "every-context";
+    return contexts === undefined;
 }
 
 function getContexts({ contexts }: Source): readonly ResolverContext[] {
-    return contexts === "every-context" ? [] : contexts;
+    return contexts ?? [];
 }

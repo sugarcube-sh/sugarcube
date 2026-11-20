@@ -120,19 +120,19 @@ function write(part: Exclude<Part, TypographyPart>, options: CSSValueOptions): s
     const each = (inner: Exclude<Part, TypographyPart>) => write(inner, options);
     switch (part.type) {
         case "color":
-            return writeColor(part.resolved, options.colors ?? "components");
+            return writeColor(part.resolvedValue, options.colors ?? "components");
         case "dimension":
         case "duration":
-            return `${part.resolved.value}${part.resolved.unit}`;
+            return `${part.resolvedValue.value}${part.resolvedValue.unit}`;
         case "cubicBezier":
-            return `cubic-bezier(${part.resolved.join(", ")})`;
+            return `cubic-bezier(${part.resolvedValue.join(", ")})`;
         case "number":
         case "fontWeight":
-            return String(part.resolved);
+            return String(part.resolvedValue);
         case "fontFamily":
-            return part.resolved.map(quoteFont).join(", ");
+            return part.resolvedValue.map(quoteFont).join(", ");
         case "strokeStyle":
-            return typeof part.resolved === "string" ? part.resolved : "dashed";
+            return typeof part.resolvedValue === "string" ? part.resolvedValue : "dashed";
         case "border":
             return [part.width, part.style, part.color].map(each).join(" ");
         case "transition":
@@ -149,7 +149,7 @@ function shadowLayerToCSS(part: ShadowLayerPart, options: CSSValueOptions): stri
     if (css !== undefined) return css;
     const lengths = [part.offsetX, part.offsetY, part.blur, part.spread, part.color];
     const lengthsCSS = lengths.map((one) => write(one, options));
-    return `${part.resolved.inset ? "inset " : ""}${lengthsCSS.join(" ")}`;
+    return `${part.resolvedValue.inset ? "inset " : ""}${lengthsCSS.join(" ")}`;
 }
 
 function gradientStopToCSS(
@@ -159,7 +159,7 @@ function gradientStopToCSS(
     const named = getReplacementProperty(position, options);
     const where = named
         ? `clamp(0%, var(${named}) * 100%, 100%)`
-        : `${roundToDigits(position.resolved * 100, 4)}%`;
+        : `${roundToDigits(position.resolvedValue * 100, 4)}%`;
     return `${write(color, options)} ${where}`;
 }
 

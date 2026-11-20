@@ -12,10 +12,10 @@ const steps = (tokens.getPermutation().getGroup("space")?.childTokens ?? []).fla
     tokens.getDefinitions(path).flatMap(({ span, winningPermutations }) => {
         const there = winningPermutations[0]?.getToken(path);
         return there?.type === "dimension" &&
-            there.resolved &&
+            there.resolvedValue &&
             !there.getReferenceAt() &&
-            !there.generated
-            ? [{ path, at: span, size: there.resolved }]
+            !there.generatedFrom
+            ? [{ path, at: span, size: there.resolvedValue }]
             : [];
     }),
 );

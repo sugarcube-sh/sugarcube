@@ -62,16 +62,16 @@ describe("rename, on the demo", () => {
             tokens.diagnostics.map(({ kind }) => kind).sort();
         expect(problems(after)).toEqual(problems(demo));
         for (const step of ["50", "300", "500", "700", "900"]) {
-            expect(after.getPermutation().getToken(`color.primary.${step}`)?.resolved).toEqual(
-                demo.getPermutation().getToken(`color.brand.${step}`)?.resolved,
+            expect(after.getPermutation().getToken(`color.primary.${step}`)?.resolvedValue).toEqual(
+                demo.getPermutation().getToken(`color.brand.${step}`)?.resolvedValue,
             );
         }
         for (const path of ["color.text.brand", "border.focus", "gradient.brand"]) {
-            expect(after.getPermutation().getToken(path)?.resolved).toEqual(
-                demo.getPermutation().getToken(path)?.resolved,
+            expect(after.getPermutation().getToken(path)?.resolvedValue).toEqual(
+                demo.getPermutation().getToken(path)?.resolvedValue,
             );
-            expect(after.getPermutation({ mode: "dark" }).getToken(path)?.resolved).toEqual(
-                demo.getPermutation({ mode: "dark" }).getToken(path)?.resolved,
+            expect(after.getPermutation({ mode: "dark" }).getToken(path)?.resolvedValue).toEqual(
+                demo.getPermutation({ mode: "dark" }).getToken(path)?.resolvedValue,
             );
         }
         expect(after.getPermutation().getToken("color.brand.500")).toBeUndefined();
@@ -107,7 +107,7 @@ describe("rename, refused", () => {
         );
     });
 
-    it("is refused for a token a generator makes, and one inherited through $extends", () => {
+    it("is refused for a token a generator makes, and one copied through $extends", () => {
         const steps = defineGenerator({
             extension: ["com.example", "steps"],
             generate: () => ({ ok: true, value: [{ name: "1", $value: 1 }] }),
@@ -134,7 +134,7 @@ describe("rename, refused", () => {
             },
         });
         expect(rename(extended, "button.primary.pad", "gap")).toMatchObject({
-            refusal: { kind: "inherited" },
+            refusal: { kind: "extended" },
         });
     });
 
@@ -181,7 +181,7 @@ describe("rename, references of every kind", () => {
         expect(at(after, "tokens.json", ["alpha", "$value"])).toEqual({
             $ref: "#/color/primary/$value/components/0",
         });
-        expect(after.getPermutation().getToken("alpha")?.resolved).toBe(1);
+        expect(after.getPermutation().getToken("alpha")?.resolvedValue).toBe(1);
     });
 
     it("rewrites a group's $extends", () => {
@@ -210,7 +210,9 @@ describe("rename, references of every kind", () => {
 
         expect(at(after, "tokens.json", ["$extends"])).toBe("{core}");
         expect(after.getPermutation().topLevel.extends?.path).toBe("core");
-        expect(after.getPermutation().getToken("pad")?.inherited).toStrictEqual({ from: "core" });
+        expect(after.getPermutation().getToken("pad")?.extendedFrom).toStrictEqual({
+            path: "core.pad",
+        });
         expect(after.diagnostics).toEqual([]);
     });
 
@@ -227,7 +229,7 @@ describe("rename, references of every kind", () => {
         expect(at(after, "tokens.json", ["button", "primary", "$ref"])).toBe(
             "#/button/core/pad/$value",
         );
-        expect(after.getPermutation().getToken("button.primary")?.resolved).toBe(1);
+        expect(after.getPermutation().getToken("button.primary")?.resolvedValue).toBe(1);
         expect(after.diagnostics).toEqual([]);
     });
 
@@ -236,7 +238,7 @@ describe("rename, references of every kind", () => {
         const after = committed(tokens, rename(tokens, "g", "h"));
 
         expect(at(after, "tokens.json", ["h", "b", "$value"])).toBe("{h.a}");
-        expect(after.getPermutation().getToken("h.b")?.resolved).toBe(1);
+        expect(after.getPermutation().getToken("h.b")?.resolvedValue).toBe(1);
     });
 
     it("rewrites a reference in a value that has another mistake", () => {
@@ -287,8 +289,8 @@ describe("rename, references of every kind", () => {
 
         expect(after.getText("tokens.resolver.json")).toContain("// The design system.");
         expect(after.getText("tokens.resolver.json")).toContain('"$value": "{danger}"');
-        expect(after.getPermutation().getToken("text")?.resolved).toEqual(
-            tokens.getPermutation().getToken("text")?.resolved,
+        expect(after.getPermutation().getToken("text")?.resolvedValue).toEqual(
+            tokens.getPermutation().getToken("text")?.resolvedValue,
         );
     });
 });
@@ -322,7 +324,8 @@ describe("rename, a file several contexts list", () => {
 
         expect(opsOf(result).map(({ file }) => file)).toStrictEqual(["base.json", "night.json"]);
         expect(
-            committed(tokens, result).getPermutation({ mode: "dim" }).getToken("space")?.resolved,
+            committed(tokens, result).getPermutation({ mode: "dim" }).getToken("space")
+                ?.resolvedValue,
         ).toBe(2);
     });
 });

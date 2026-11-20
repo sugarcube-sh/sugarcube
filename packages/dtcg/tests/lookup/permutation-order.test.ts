@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { type Permutation, type Permutations, groupPermutationsBy } from "../../src/index.js";
+import type { Permutation, Permutations } from "../../src/index.js";
 import { twoModifierFiles, twoModifiers } from "./two-modifiers.js";
 import { getSpan } from "../../src/editor.js";
 
 const tokens = twoModifiers();
 
 function asked(question: (permutation: Permutation) => unknown): Permutations[] {
-    return groupPermutationsBy(tokens, question).map(({ permutations }) => permutations);
+    return tokens.groupPermutationsBy(question).map(({ permutations }) => permutations);
 }
 
 function inTheirOrder(permutations: Permutations): void {
@@ -33,7 +33,7 @@ describe("every group's permutations, with two modifiers and files that overlap"
                     permutations,
                     winningPermutations,
                 ]),
-            ...asked((p) => p.getToken("gap")?.resolved),
+            ...asked((p) => p.getToken("gap")?.resolvedValue),
             ...asked((p) => p.getToken("color.x")),
             ...tokens.getReferencesTo("color.red").map(({ permutations }) => permutations),
             ...asked((p) => p.getDependencies("color.x")),

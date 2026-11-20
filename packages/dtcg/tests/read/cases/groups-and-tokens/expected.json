@@ -7,12 +7,8 @@
         {
           "path": "color.accent.$root",
           "type": "color",
-          "original": {
-            "value": {
-              "colorSpace": "srgb",
-              "components": [0.867, 0, 0]
-            }
-          },
+          "typeFrom": { "path": "color", "via": "group" },
+
           "definitions": [
             {
               "source": 0,
@@ -26,6 +22,7 @@
         {
           "path": "color.accent.light",
           "type": "color",
+          "typeFrom": { "path": "color", "via": "group" },
           "description": "Hover",
           "deprecated": "use the root accent",
           "extensions": {
@@ -33,13 +30,7 @@
               "note": true
             }
           },
-          "original": {
-            "value": {
-              "colorSpace": "srgb",
-              "components": [1, 0.133, 0.133]
-            },
-            "deprecated": "use the root accent"
-          },
+
           "definitions": [
             {
               "source": 0,
@@ -53,9 +44,8 @@
         {
           "path": "opacity.half",
           "type": "number",
-          "original": {
-            "value": 0.5
-          },
+          "typeFrom": { "path": "", "via": "group" },
+
           "definitions": [
             {
               "source": 0,
@@ -69,13 +59,8 @@
         {
           "path": "space.sm",
           "type": "dimension",
-          "original": {
-            "value": {
-              "value": 4,
-              "unit": "px"
-            },
-            "type": "dimension"
-          },
+          "typeFrom": null,
+
           "definitions": [
             {
               "source": 0,
@@ -92,7 +77,9 @@
         {
           "path": "color",
           "type": "color",
+          "typeFrom": null,
           "description": "Brand colors",
+          "descriptionFrom": null,
           "extensions": {
             "com.example": {
               "tier": 1
@@ -111,7 +98,8 @@
         {
           "path": "color.accent",
           "type": "color",
-          "original": null,
+          "typeFrom": { "path": "color", "via": "group" },
+          "local": null,
           "definitions": [
             {
               "source": 0,

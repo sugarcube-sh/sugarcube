@@ -34,10 +34,12 @@ describe("rebase", () => {
 
         expect(session.rebase(fresh)).toEqual([]);
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.winningDefinition.local
+                .value,
         ).toEqual(red);
         expect(
-            session.tokens.getPermutation().getToken("color.brand.600")?.original?.value,
+            session.tokens.getPermutation().getToken("color.brand.600")?.winningDefinition.local
+                .value,
         ).toEqual(blue);
         expect(opsIn(session.unsavedEdits)).toHaveLength(1);
         expect(session.getChanges().map((change) => change.path)).toEqual(["color.brand.500"]);
@@ -53,7 +55,8 @@ describe("rebase", () => {
         session.rebase(fresh);
         expect(session.tokens.getText("radius.json")).toBe(fresh.getText("radius.json"));
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.winningDefinition.local
+                .value,
         ).toEqual(red);
     });
 
@@ -231,7 +234,9 @@ describe("rebase", () => {
         expect(session.unsavedEdits.steps.map((step) => step.ops.map((op) => op.file))).toEqual([
             ["radius.json"],
         ]);
-        expect(session.tokens.getPermutation().getToken("radius.md")?.original?.value).toEqual({
+        expect(
+            session.tokens.getPermutation().getToken("radius.md")?.winningDefinition.local.value,
+        ).toEqual({
             value: 1,
             unit: "rem",
         });
@@ -390,7 +395,9 @@ describe("restore", () => {
                 theirs: expect.objectContaining({ $value: blue }),
             },
         ]);
-        expect(session.tokens.getPermutation().getToken("radius.md")?.original?.value).toEqual({
+        expect(
+            session.tokens.getPermutation().getToken("radius.md")?.winningDefinition.local.value,
+        ).toEqual({
             value: 1,
             unit: "rem",
         });

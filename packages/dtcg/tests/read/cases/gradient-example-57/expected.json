@@ -15,7 +15,7 @@
         },
         {
           "path": "brand-in-the-middle",
-          "resolved": [
+          "resolvedValue": [
             {
               "color": {
                 "colorSpace": "srgb",
@@ -44,7 +44,7 @@
         },
         {
           "path": "gradient-with-references",
-          "resolved": [
+          "resolvedValue": [
             {
               "color": {
                 "colorSpace": "srgb",

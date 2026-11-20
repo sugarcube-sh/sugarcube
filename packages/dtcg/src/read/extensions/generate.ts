@@ -177,13 +177,13 @@ class GeneratorRun {
         const path = tokenPath.join(group, generated.name);
         if (this.#made.has(path)) return;
 
-        const from = { from: group, extension: generator.extension };
+        const generatedFrom = { path: group, extension: generator.extension };
         const existing = findExistingSpans(this.#merged, path);
         if (existing) {
             this.#reportOverridden(call, path, existing);
             this.#merged.order.delete(path);
         }
-        this.#made.set(path, createGeneratedToken(path, generated, from, extension));
+        this.#made.set(path, createGeneratedToken(path, generated, generatedFrom, extension));
     }
 
     #reportProblems(
@@ -274,7 +274,7 @@ function findGeneratorExtension(
 function createGeneratedToken(
     path: string,
     { $type, $value, $description, $extensions }: GeneratedToken,
-    generated: { from: string; extension: Generator["extension"] },
+    generatedFrom: { path: string; extension: Generator["extension"] },
     { json, node, source }: Extension,
 ): MergedToken {
     return {
@@ -286,7 +286,7 @@ function createGeneratedToken(
         span: toSpan(json, node),
         nameSpan: toSpan(json, getKeyNode(node)),
         source,
-        generated,
+        generatedFrom,
         ...($type !== undefined && { type: $type }),
         ...($description !== undefined && { description: $description }),
         ...($extensions && { extensions: $extensions }),

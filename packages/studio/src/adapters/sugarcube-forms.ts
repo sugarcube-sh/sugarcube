@@ -37,7 +37,7 @@ export function getSugarcubeForm(
     at?: DefinitionOptions["at"],
 ): ExtensionForm | undefined {
     if (node.kind === "group") return getScaleForm(tokens, node);
-    if (node.generated) return getStepForm(node);
+    if (node.generatedFrom) return getStepForm(node);
     return at && getFluidForm(tokens, node, at);
 }
 
@@ -50,11 +50,7 @@ function getFluidForm(
     const { path } = token;
     const findDefinition = (stepTokens: DesignTokens) =>
         stepTokens.getDefinitions(path).find(({ span }) => span.file === at.file);
-    const definitionJson = findDefinition(tokens)?.json;
-    const fluid = getSugarcubeSetting(
-        isJsonObject(definitionJson) ? definitionJson.$extensions : undefined,
-        "fluid",
-    );
+    const fluid = getSugarcubeSetting(findDefinition(tokens)?.local.extensions, "fluid");
     if (!fluid) return undefined;
     const getSpan = (stepTokens: DesignTokens) => findDefinition(stepTokens)?.span ?? at;
     return {

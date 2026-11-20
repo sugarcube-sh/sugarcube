@@ -43,20 +43,20 @@ function changesWhatTheReadGave(): void {
     // @ts-expect-error
     tokens.resolver?.resolutionOrder.pop();
     // @ts-expect-error
-    if (source!.contexts !== "every-context") source!.contexts.pop();
+    source!.contexts?.pop();
     // @ts-expect-error
-    brand.references[0]!.property!.push("color");
+    brand.references[0]!.ownerProperty!.push("color");
     // @ts-expect-error nor can anything inside them be assigned
     brand.path = "color.other";
     // @ts-expect-error
     brand.definitions[0]!.span.offset = 0;
     // @ts-expect-error
     brand.extensions!["com.example"] = {};
-    if (red.type === "color" && red.resolved) {
+    if (red.type === "color" && red.resolvedValue) {
         // @ts-expect-error
-        red.resolved.alpha = 0.5;
+        red.resolvedValue.alpha = 0.5;
         // @ts-expect-error
-        red.resolved.components[0] = 0;
+        red.resolvedValue.components[0] = 0;
     }
     for (const found of tokens.diagnostics) {
         // @ts-expect-error
@@ -69,7 +69,7 @@ function changesWhatTheReadGave(): void {
     // @ts-expect-error
     tokens.getReferencesTo("color.red").pop();
     // @ts-expect-error
-    tokens.getTokenPaths().reverse();
+    tokens.tokenPaths.reverse();
     // @ts-expect-error
     tokens.getChangesSince(tokens)[0]!.path = "color.other";
 }

@@ -11,7 +11,7 @@ describe("sugarcube", () => {
     it("reads with sugarcube's rules, so a scale recipe makes its steps", () => {
         const tokens = readWith();
 
-        expect(tokens.getTokenPaths().some((path) => path.startsWith("size.step."))).toBe(true);
+        expect(tokens.tokenPaths.some((path) => path.startsWith("size.step."))).toBe(true);
     });
 
     it("reads with sugarcube's rules, so a fluid range it can't read is a problem", () => {

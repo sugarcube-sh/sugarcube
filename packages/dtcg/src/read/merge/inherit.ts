@@ -1,8 +1,9 @@
+import type { InheritedFrom } from "../../model/token.js";
 import { tokenPath } from "../../path.js";
 import type { Merged, MergedGroup } from "./merge.js";
 import { type Settings, findSettings } from "./settings.js";
 
-export type Inheritable = "type" | "deprecated" | "deprecatedBy";
+export type Inheritable = "type" | "typeBy" | "deprecated" | "deprecatedBy";
 
 export type EffectiveSettings = Omit<Settings, "deprecated"> & { deprecated?: true | string };
 
@@ -59,12 +60,43 @@ function findGroupDefault<K extends Inheritable>(
     return applies;
 }
 
-export function findDeprecatingGroup(
+export function findDeprecatedFrom(
     merged: Merged,
     item: Pick<Settings, "deprecated"> & { path: string },
     inForce: Settings["deprecated"],
     extended?: string,
-): string | undefined {
+): InheritedFrom | undefined {
     if (inForce === undefined || item.deprecated !== undefined) return undefined;
-    return extended ?? findInAncestors(item.path, merged, "deprecatedBy");
+    if (extended !== undefined) return { path: extended, via: "extends" };
+    return fromGroup(findInAncestors(item.path, merged, "deprecatedBy"));
+}
+
+export function findTokenType(
+    merged: Merged,
+    item: Pick<Settings, "type"> & { path: string },
+): { type?: Settings["type"]; typeFrom?: InheritedFrom } {
+    if (item.type !== undefined) return { type: item.type };
+    const typeBy = findInAncestors(item.path, merged, "typeBy");
+    if (typeBy === undefined) return {};
+    return { type: merged.groups.get(typeBy)?.type, typeFrom: { path: typeBy, via: "group" } };
+}
+
+export function findGroupTypeFrom(merged: Merged, group: MergedGroup): InheritedFrom | undefined {
+    if (group.type !== undefined) return undefined;
+    const { type, typeBy } = findSettings(merged, group);
+    if (type !== undefined && typeBy !== undefined) return { path: typeBy, via: "extends" };
+    return fromGroup(findInAncestors(group.path, merged, "typeBy"));
+}
+
+export function findGroupDescriptionFrom(
+    merged: Merged,
+    group: MergedGroup,
+): InheritedFrom | undefined {
+    if (group.description !== undefined) return undefined;
+    const { descriptionBy } = findSettings(merged, group);
+    return descriptionBy === undefined ? undefined : { path: descriptionBy, via: "extends" };
+}
+
+function fromGroup(path: string | undefined): InheritedFrom | undefined {
+    return path === undefined ? undefined : { path, via: "group" };
 }

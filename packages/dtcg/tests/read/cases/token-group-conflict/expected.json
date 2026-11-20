@@ -25,11 +25,13 @@
       "tokens": [
         {
           "path": "space.scale.sm",
-          "type": "number"
+          "type": "number",
+          "typeFrom": { "path": "space", "via": "group" }
         },
         {
           "path": "radius",
-          "type": "number"
+          "type": "number",
+          "typeFrom": null
         }
       ],
       "groups": [

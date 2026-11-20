@@ -22,3 +22,26 @@ describe("tokens.getPermutationsReading", () => {
         );
     });
 });
+
+describe("tokens.getPermutationsWith", () => {
+    const some = readFromMemory({
+        files: {
+            "tokens.resolver.json": lightDark(["base.json"], ["dark.json"]),
+            "base.json": JSON.stringify({ size: { $type: "number", sm: { $value: 1 } } }),
+            "dark.json": JSON.stringify({ size: { lg: { $value: 2 } } }),
+        },
+    });
+
+    it("gives the permutations with a token or group at a path, either kind", () => {
+        expect(some.getPermutationsWith("size.lg").label).toBe("mode: dark");
+        expect(some.getPermutationsWith("size").label).toBe("every permutation");
+        expect(some.getPermutationsWith("size.xl")).toHaveLength(0);
+    });
+
+    it("counts only a token, or only a group, when asked", () => {
+        expect(some.getPermutationsWith("size.lg", "token").label).toBe("mode: dark");
+        expect(some.getPermutationsWith("size.lg", "group")).toHaveLength(0);
+        expect(some.getPermutationsWith("size", "token")).toHaveLength(0);
+        expect(some.getPermutationsWith("size", "group").label).toBe("every permutation");
+    });
+});

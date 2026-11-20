@@ -95,7 +95,9 @@ describe("deprecate", () => {
         const after = committed(tokens, deprecate(tokens, "old.kept", false));
 
         expect(after.getPermutation().getToken("old.kept")).not.toHaveProperty("deprecated");
-        expect(after.getPermutation().getToken("old.kept")?.original?.deprecated).toBe(false);
+        expect(
+            after.getPermutation().getToken("old.kept")?.winningDefinition.local.deprecated,
+        ).toBe(false);
     });
 
     it("is refused for a path that is neither a token nor a group", () => {
@@ -159,9 +161,9 @@ describe("a group that extends another", () => {
 
     it("can't be changed where it is there only because of $extends", () => {
         expect(deprecate(tokens, "primary.icon", true).refusal).toMatchObject({
-            kind: "inherited",
+            kind: "extended",
             path: "primary.icon",
-            from: "button",
+            from: "button.icon",
         });
     });
 });

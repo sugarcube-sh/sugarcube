@@ -52,7 +52,7 @@ export function rename(tokens: DesignTokens, path: string, newName: string): Ope
         const was = getJsonAt(tokens, span.file, reference.jsonPath);
         if (was === undefined) return [];
         const jsonPath = applyKeyRenames(
-            { span, jsonPath: reference.jsonPath, json: was },
+            { span, jsonPath: reference.jsonPath },
             copies.members,
             newName,
         );
@@ -72,7 +72,11 @@ export function rename(tokens: DesignTokens, path: string, newName: string): Ope
     };
 }
 
-function applyKeyRenames(member: Member, keys: Member[], name: string): Member["jsonPath"] {
+function applyKeyRenames(
+    member: Pick<Member, "span" | "jsonPath">,
+    keys: Member[],
+    name: string,
+): Member["jsonPath"] {
     return keys.reduce((jsonPath, key) => {
         const inside =
             key.span.file === member.span.file &&
@@ -85,6 +89,5 @@ function applyKeyRenames(member: Member, keys: Member[], name: string): Member["
 }
 
 function isInFile(reference: ReferenceInPermutations): boolean {
-    const [owner] = reference.ownerPaths;
-    return !reference.permutations.some((each) => owner && each.getToken(owner)?.generated);
+    return reference.generatedFrom === undefined;
 }

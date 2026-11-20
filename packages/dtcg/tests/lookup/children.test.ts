@@ -92,7 +92,7 @@ describe("the top level", () => {
         const rooted = oneFile({ $type: "number", $root: { $value: 1 }, a: { $value: "{$root}" } });
         const top = rooted.getPermutation();
         expect(top.topLevel.rootToken).toBe(top.getToken("$root"));
-        expect(top.getToken("a")?.resolved).toBe(1);
+        expect(top.getToken("a")?.resolvedValue).toBe(1);
     });
 
     it("keeps a $type written at the top of the file", () => {

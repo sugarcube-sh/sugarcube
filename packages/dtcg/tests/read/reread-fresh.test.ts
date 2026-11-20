@@ -68,6 +68,6 @@ describe("a reread of tokens from read", () => {
     it("reads a file the read fetched", async () => {
         const tokens = await read("tokens.resolver.json", { readText: readText(onDisk) });
         const again = tokens.reread({ "tokens.resolver.json": `${resolver}\n` });
-        expect(again.getPermutation().getToken("blue")?.resolved).toBe(1);
+        expect(again.getPermutation().getToken("blue")?.resolvedValue).toBe(1);
     });
 });

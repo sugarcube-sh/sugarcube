@@ -42,9 +42,9 @@ describe("sources", () => {
         expect(base).not.toHaveProperty("from");
     });
 
-    it("say who reads them: every context, or the contexts that do", () => {
+    it("say which contexts list them, and none when every context reads them", () => {
         const [base, darkFile] = tokens.sources;
-        expect(base?.contexts).toBe("every-context");
+        expect(base?.contexts).toBe(undefined);
         expect(darkFile?.contexts).toStrictEqual([darkContext]);
     });
 });

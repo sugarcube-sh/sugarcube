@@ -16,7 +16,7 @@ import { applyMovesToReference } from "../values/references.js";
  *
  * @example
  * // button.background's value
- * light.getToken("button.background")!.value
+ * light.getToken("button.background")!.parsedValue
  * // => { syntax: "curly-brace", path: "color.primary" }
  */
 export interface CurlyBraceReference {
@@ -104,12 +104,24 @@ export interface ReferenceBase {
      */
     readonly pointsToProperty?: JsonPath;
     /**
-     * Where in {@link TokenBase.value | value} the reference is.
+     * Where in {@link TokenBase.parsedValue | parsedValue} the reference is.
      *
      * For example, `["components", 0]`, or `[0, "color"]` in a single shadow, which is read as an
      * array of one. It's absent for a reference that is the whole value.
      */
-    readonly property?: JsonPath;
+    readonly ownerProperty?: JsonPath;
+    /**
+     * Set when a {@link Generator} wrote the reference, as its token's
+     * {@link TokenBase.generatedFrom | generatedFrom}.
+     *
+     * The reference is in no file. Renaming what it points to leaves it to the generator.
+     *
+     * @example
+     * // A generator on space makes space.2 with the value "{space.base}"
+     * light.getToken("space.2")!.references[0]!.generatedFrom
+     * // => { path: "space", extension: ["com.example", "steps"] }
+     */
+    readonly generatedFrom?: Token["generatedFrom"];
     /**
      * Rewrites the reference after some moves, such as a rename.
      *
@@ -151,7 +163,7 @@ export type ReferenceInPermutations = Omit<
     applyMoves(moves: readonly Move[]): JsonValue;
 };
 
-/** One group from {@link groupPermutationsBy}. */
+/** One group from {@link DesignTokens.groupPermutationsBy}. */
 export interface PermutationGroup<Result> {
     /** What the function returned, such as `"rgb(51 102 204)"`. */
     readonly result: Result;
@@ -186,11 +198,12 @@ export interface ReferenceWithTarget extends Target {
 
 class ReferenceObject {
     declare readonly pointsToProperty?: JsonPath | undefined;
+    declare readonly generatedFrom?: Token["generatedFrom"];
     readonly pointsToPath: string | undefined;
     readonly owner: Token | Group;
     readonly pointsToToken: Token | undefined;
     readonly pointsToWholeToken: Token | undefined;
-    readonly property: JsonPath | undefined;
+    readonly ownerProperty: JsonPath | undefined;
     readonly #parsed: ParsedReference;
     readonly #span: Span;
     readonly #isBarePointer: boolean;
@@ -202,8 +215,10 @@ class ReferenceObject {
         this.owner = from;
         this.pointsToToken = token;
         this.pointsToWholeToken = pointsToProperty === undefined ? token : undefined;
-        this.property = property.length > 0 ? property : undefined;
+        this.ownerProperty = property.length > 0 ? property : undefined;
         if (reference.syntax === "json-pointer") Object.assign(this, { pointsToProperty });
+        const generatedFrom = from.kind === "token" ? from.generatedFrom : undefined;
+        if (generatedFrom) Object.assign(this, { generatedFrom });
         this.#parsed = reference;
         this.#span = span;
         this.#isBarePointer = isBarePointer;
@@ -239,16 +254,17 @@ class ReferenceObject {
     }
 
     toJSON() {
-        return { parsed: this.#parsed, property: this.property };
+        return { parsed: this.#parsed, ownerProperty: this.ownerProperty };
     }
 }
 
 class ReferenceInPermutationsObject {
+    declare readonly generatedFrom?: Token["generatedFrom"];
     readonly pointsToPath: string | undefined;
     readonly ownerPaths: readonly string[];
     readonly pointsToProperty: JsonPath | undefined;
     readonly span: Span;
-    readonly property: JsonPath | undefined;
+    readonly ownerProperty: JsonPath | undefined;
     readonly permutations: Permutations;
     readonly #parsed: ParsedReference;
     readonly #jsonPath: () => JsonPath;
@@ -267,7 +283,9 @@ class ReferenceInPermutationsObject {
         this.ownerPaths = ownerPaths;
         this.pointsToProperty = reference.pointsToProperty;
         this.span = span;
-        this.property = reference.property;
+        this.ownerProperty = reference.ownerProperty;
+        if (reference.generatedFrom)
+            Object.assign(this, { generatedFrom: reference.generatedFrom });
         this.permutations = permutations;
         this.#parsed = parsed;
         this.#jsonPath = jsonPath;

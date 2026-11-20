@@ -61,8 +61,8 @@ describe("a reread", () => {
         expect(kept("color.red")).toBe(false);
         expect(kept("theme.text")).toBe(false);
         expect(kept("theme.tint")).toBe(false);
-        expect(after.getPermutation().getToken("theme.tint")?.resolved).toBe(0.5);
-        expect(after.getPermutation().getToken("color.red")?.resolved).toMatchObject({
+        expect(after.getPermutation().getToken("theme.tint")?.resolvedValue).toBe(0.5);
+        expect(after.getPermutation().getToken("color.red")?.resolvedValue).toMatchObject({
             components: [0.5, 0, 0],
         });
         expect(after.getPermutation().getToken("theme.text")?.references[0]?.pointsToToken).toBe(
@@ -98,10 +98,10 @@ describe("a reread", () => {
 
     it("leaves the read it started from as it was", () => {
         before.reread({ "dark.json": null });
-        expect(before.getPermutation().getToken("color.red")?.original?.value).toStrictEqual(
-            rgb(1),
-        );
-        expect(before.getPermutation().getToken("color.red")?.resolved).toMatchObject({
+        expect(
+            before.getPermutation().getToken("color.red")?.winningDefinition.local.value,
+        ).toStrictEqual(rgb(1));
+        expect(before.getPermutation().getToken("color.red")?.resolvedValue).toMatchObject({
             components: [1, 0, 0],
         });
         expect(before.getPermutation().getToken("theme.text")?.references[0]?.pointsToToken).toBe(
@@ -201,8 +201,8 @@ describe("a reread of every file", () => {
         expect(all.getPermutation().getToken("space.sm")).toBe(
             before.getPermutation().getToken("space.sm"),
         );
-        expect(all.getPermutation().getToken("color.red")?.resolved).toStrictEqual(
-            after.getPermutation().getToken("color.red")?.resolved,
+        expect(all.getPermutation().getToken("color.red")?.resolvedValue).toStrictEqual(
+            after.getPermutation().getToken("color.red")?.resolvedValue,
         );
     });
 
@@ -233,12 +233,14 @@ describe("a reread and where a deprecation comes from", () => {
         });
         const second = first.reread({ "tokens.json": marked({}) });
 
-        expect(first.getPermutation().getToken("outer.inner.n")?.deprecatedByGroup).toBe(
+        expect(first.getPermutation().getToken("outer.inner.n")?.deprecatedFrom?.path).toBe(
             "outer.inner",
         );
         expect(second.getPermutation().getToken("outer.inner.n")?.deprecated).toBe("Use gap");
-        expect(second.getPermutation().getToken("outer.inner.n")?.deprecatedByGroup).toBe("outer");
-        expect(second.getPermutation().getGroup("outer.inner")?.deprecatedByGroup).toBe("outer");
+        expect(second.getPermutation().getToken("outer.inner.n")?.deprecatedFrom?.path).toBe(
+            "outer",
+        );
+        expect(second.getPermutation().getGroup("outer.inner")?.deprecatedFrom?.path).toBe("outer");
     });
 });
 
@@ -257,10 +259,10 @@ describe("a reread and a group in a file that didn't change", () => {
         });
         const second = first.reread({ "a.json": a({}) });
 
-        expect(first.getPermutation().getGroup("outer.mid.inner")?.deprecatedByGroup).toBe(
+        expect(first.getPermutation().getGroup("outer.mid.inner")?.deprecatedFrom?.path).toBe(
             "outer.mid",
         );
-        expect(second.getPermutation().getGroup("outer.mid.inner")?.deprecatedByGroup).toBe(
+        expect(second.getPermutation().getGroup("outer.mid.inner")?.deprecatedFrom?.path).toBe(
             "outer",
         );
     });

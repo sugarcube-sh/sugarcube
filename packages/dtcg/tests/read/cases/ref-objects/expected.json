@@ -10,9 +10,10 @@
         {
           "path": "alias",
           "type": "number",
+          "typeFrom": null,
           "description": "Same as base",
-          "original": { "value": { "$ref": "#/base/$value" }, "type": "number" },
-          "resolved": 4,
+
+          "resolvedValue": 4,
           "definitions": [
             { "source": 0, "span": { "file": "tokens.json", "valueAfter": "\"alias\":" } }
           ]
@@ -21,18 +22,20 @@
         {
           "path": "blue-red",
           "type": "number",
-          "original": { "value": { "$ref": "#/blue/$value/components/0" }, "type": "number" },
-          "resolved": 0.2
+          "typeFrom": null,
+
+          "resolvedValue": 0.2
         },
         {
           "path": "untyped",
           "type": "number",
-          "value": { "syntax": "json-pointer", "pointer": "#/base/$value" },
-          "resolved": 4
+          "typeFrom": { "path": "base", "via": "reference" },
+          "parsedValue": { "syntax": "json-pointer", "pointer": "#/base/$value" },
+          "resolvedValue": 4
         },
         { "path": "stops-at-token" },
         { "path": "points-at-group" },
-        { "path": "both", "type": "number", "resolved": 5 },
+        { "path": "both", "type": "number", "typeFrom": null, "resolvedValue": 5 },
         { "path": "nowhere" },
         { "path": "elsewhere" }
       ],

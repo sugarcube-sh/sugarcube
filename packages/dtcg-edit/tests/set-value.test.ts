@@ -16,11 +16,12 @@ describe("setValue, the shared value", () => {
             },
         ]);
         const after = committed(demo, result);
-        expect(after.getPermutation().getToken("color.text.brand")?.original?.value).toBe(
-            "{color.brand.800}",
-        );
         expect(
-            after.getPermutation({ mode: "dark" }).getToken("color.text.brand")?.original?.value,
+            after.getPermutation().getToken("color.text.brand")?.winningDefinition.local.value,
+        ).toBe("{color.brand.800}");
+        expect(
+            after.getPermutation({ mode: "dark" }).getToken("color.text.brand")?.winningDefinition
+                .local.value,
         ).toBe("{color.brand.300}");
     });
 
@@ -190,11 +191,13 @@ describe("setValue, for one context", () => {
             },
         ]);
         const after = committed(demo, result);
-        expect(after.getPermutation({ mode: "dark" }).getToken("radius.md")?.resolved).toEqual({
-            value: 0.5,
-            unit: "rem",
-        });
-        expect(after.getPermutation().getToken("radius.md")?.resolved).toEqual({
+        expect(after.getPermutation({ mode: "dark" }).getToken("radius.md")?.resolvedValue).toEqual(
+            {
+                value: 0.5,
+                unit: "rem",
+            },
+        );
+        expect(after.getPermutation().getToken("radius.md")?.resolvedValue).toEqual({
             value: 0.25,
             unit: "rem",
         });
@@ -589,9 +592,9 @@ describe("setValue, what it can't change", () => {
 
         expect(setValue(opened(files), "danger.bg", "#ff0000")).toEqual({
             refusal: {
-                kind: "inherited",
+                kind: "extended",
                 path: "danger.bg",
-                from: "button",
+                from: "button.bg",
                 reason: expect.any(String),
             },
         });
@@ -781,8 +784,8 @@ describe("setValue, at a place it is written", () => {
         expect(place?.span).toEqual(tokens.getDefinitions("button.bg")[0]?.span);
         expect(setValue(tokens, "danger.bg", "#ff0000", { at: place!.span }).refusal).toMatchObject(
             {
-                kind: "inherited",
-                from: "button",
+                kind: "extended",
+                from: "button.bg",
             },
         );
     });

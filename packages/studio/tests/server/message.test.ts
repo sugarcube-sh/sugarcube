@@ -33,7 +33,7 @@ describe("toStudioMessage", () => {
         const message = toStudioMessage({ config, tokens, configProblems: [] });
         const there = readFromMemory(message, createReadOptions(getSugarcubeSettings(message)));
 
-        expect(there.getTokenPaths()).toEqual(tokens.getTokenPaths());
+        expect(there.tokenPaths).toEqual(tokens.tokenPaths);
     });
 
     it("sends sugarcube's adapter, with the config as its settings", async () => {

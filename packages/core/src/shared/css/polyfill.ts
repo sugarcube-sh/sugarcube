@@ -23,7 +23,7 @@ export function findFallbacks(from: Token, isPrivate: (each: Token) => boolean):
         if (followReference(part.ref)) return;
         switch (part.type) {
             case "color": {
-                const { colorSpace, hex } = part.resolved;
+                const { colorSpace, hex } = part.resolvedValue;
                 if (colorSpace === "srgb" || colorSpace === "hsl") return;
                 if (!found.spaces.includes(colorSpace)) found.spaces.push(colorSpace);
                 if (hex === undefined) found.missing.push({ token: owner, colorSpace });

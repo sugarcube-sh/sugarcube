@@ -51,19 +51,19 @@ export interface Source {
      */
     readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**
-     * The contexts that read the source.
+     * The contexts that list this file, such as `dark`. Absent when the file is always read.
      *
      * @example
      * // The base set in resolutionOrder lists color.json
      * light.sources[0]!.contexts
-     * // => "every-context"
+     * // => undefined
      *
      * @example
      * // Only the dark context lists dark.json
      * dark.sources[1]!.contexts
      * // => [{ name: "dark", … }]
      */
-    readonly contexts: "every-context" | readonly ResolverContext[];
+    readonly contexts?: readonly ResolverContext[];
 }
 
 /**

@@ -20,7 +20,15 @@ import {
 import { toPointerSteps } from "./target.js";
 import { similarName } from "../diagnostics/similar.js";
 import type { LoadedSource } from "../resolver/sources.js";
-import { isTokenKey, OTHER_SPEC_KEYS, OWN_PROPERTIES, type OwnProperty } from "./spec-keys.js";
+import {
+    EXPECTED,
+    isProperty,
+    isTokenKey,
+    OTHER_SPEC_KEYS,
+    OWN_PROPERTIES,
+    type OwnProperty,
+    readProperty,
+} from "./spec-keys.js";
 
 export interface Properties {
     type?: TokenType | "invalid";
@@ -91,23 +99,11 @@ type Owner = "token" | "group";
 
 type NonObjectKind = DiagnosticDetailByKind["invalid-member"]["found"];
 
-type Property = Exclude<
-    DiagnosticDetailByKind["invalid-property"]["property"],
-    "$extends" | "$ref"
->;
-
 const OWN: ReadonlySet<string> = new Set(OWN_PROPERTIES);
 
 const PROPERTY_BY_BARE_NAME = new Map(
     OWN_PROPERTIES.map((property) => [property.slice(1), property]),
 );
-
-const EXPECTED: Record<Property, DiagnosticDetailByKind["invalid-property"]["expected"]> = {
-    $type: "string",
-    $description: "string",
-    $deprecated: "boolean-or-string",
-    $extensions: "object",
-};
 
 export interface WalkResult {
     contents?: SourceContents;
@@ -314,19 +310,19 @@ function readProperties(
 ): Properties & { extensionsLocation?: ExtensionsLocation } {
     const properties: Properties & { extensionsLocation?: ExtensionsLocation } = {};
     for (const { key, value } of entries) {
-        const raw: unknown = value.value;
-        if (key === "$type" && typeof raw === "string") {
-            properties.type = readType(walk, path, value, raw);
-        } else if (key === "$description" && typeof raw === "string") {
-            properties.description = raw;
-        } else if (key === "$deprecated" && (typeof raw === "string" || typeof raw === "boolean")) {
-            properties.deprecated = raw;
-        } else if (key === "$extensions" && value.type === "object") {
-            properties.extensions = toPlainObject(value);
-            properties.extensionsLocation = { json: walk.json, node: value };
-        } else if (isProperty(key)) {
+        if (!isProperty(key)) continue;
+        const raw = value.type === "object" ? toPlainObject(value) : value.value;
+        if (readProperty(key, raw) === undefined) {
             walk.report("invalid-property", { property: key, expected: EXPECTED[key] }, value);
             if (key === "$type") properties.type = "invalid";
+            continue;
+        }
+        if (key === "$type") properties.type = readType(walk, path, value, raw as string);
+        else if (key === "$description") properties.description = raw as string;
+        else if (key === "$deprecated") properties.deprecated = raw as boolean | string;
+        else {
+            properties.extensions = raw as Record<string, JsonValue>;
+            properties.extensionsLocation = { json: walk.json, node: value };
         }
     }
     return properties;
@@ -449,10 +445,6 @@ function findNonObjectKind(node: Node): NonObjectKind | undefined {
 function suggestReference(value: unknown): string | undefined {
     if (typeof value !== "string" || value === "" || /[{}#]/.test(value)) return undefined;
     return `{${value}}`;
-}
-
-function isProperty(key: string): key is Property {
-    return Object.hasOwn(EXPECTED, key);
 }
 
 function isOwnProperty(key: string): key is OwnProperty {

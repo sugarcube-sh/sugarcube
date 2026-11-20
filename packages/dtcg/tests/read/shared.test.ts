@@ -96,8 +96,8 @@ describe("a token that differs between permutations", () => {
 
     it("is two objects when a JSON Pointer reaches inside a value that differs", () => {
         expect(same("level.red")).toBe(false);
-        expect(light.getToken("level.red")?.resolved).toBe(1);
-        expect(dark.getToken("level.red")?.resolved).toBe(0.5);
+        expect(light.getToken("level.red")?.resolvedValue).toBe(1);
+        expect(dark.getToken("level.red")?.resolvedValue).toBe(0.5);
     });
 
     it("is two objects when what it takes from its group differs", () => {

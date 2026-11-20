@@ -4,29 +4,6 @@ import type { PermutationGroup } from "../model/reference.js";
 import { makePermutations } from "../model/permutations.js";
 import { sameList } from "../model/location.js";
 
-/**
- * Groups the permutations by what `fn` returns in each.
- *
- * Permutations where `fn` returns the same result share a group. Have it return a string or a
- * number, so equal results match.
- *
- * @param tokens - The tokens whose permutations to group.
- * @param fn - Run in each permutation, such as
- * `(p) => toCSSValue(p.getToken("color.primary"))`.
- *
- * @example
- * // color.primary differs, so two groups
- * groupPermutationsBy(tokens, (p) => toCSSValue(p.getToken("color.primary")))
- * // => [
- * //     { result: "rgb(51 102 204)", permutations: [light] },
- * //     { result: "rgb(102 153 255)", permutations: [dark] },
- * // ]
- *
- * @example
- * // color.blue.500 is the same in both, so one group
- * groupPermutationsBy(tokens, (p) => toCSSValue(p.getToken("color.blue.500")))
- * // => [{ result: "rgb(51 102 204)", permutations: [light, dark] }]
- */
 export function groupPermutationsBy<Result>(
     tokens: DesignTokens,
     fn: (permutation: Permutation) => Result,

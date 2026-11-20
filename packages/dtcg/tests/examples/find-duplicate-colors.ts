@@ -13,7 +13,11 @@ for (let i = 0; i < colors.length; i++) {
     for (let j = i + 1; j < colors.length; j++) {
         const a = colors[i];
         const b = colors[j];
-        if (a?.resolved && b?.resolved && isEquivalentValue("color", a.resolved, b.resolved)) {
+        if (
+            a?.resolvedValue &&
+            b?.resolvedValue &&
+            isEquivalentValue("color", a.resolvedValue, b.resolvedValue)
+        ) {
             comment(`${a.path} and ${b.path} are the same colour; alias one to the other`);
         }
     }

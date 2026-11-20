@@ -3,6 +3,10 @@ import type { Properties } from "./walk.js";
 
 export type Settings = Properties &
     Pick<MergedGroup, "extensionLocations"> & {
+        /** The group these settings' `type` comes from. */
+        typeBy?: string;
+        /** The group these settings' `description` comes from. */
+        descriptionBy?: string;
         /** The group these settings' `deprecated` comes from. */
         deprecatedBy?: string;
     };
@@ -42,10 +46,9 @@ export function findSettings(merged: Merged, group: MergedGroup): Settings {
 function getOwnSettings(group: MergedGroup): Settings {
     const { type, description, deprecated, extensions, extensionLocations } = group;
     return {
-        ...(type !== undefined && { type }),
-        ...(description !== undefined && { description }),
-        ...(deprecated !== undefined && { deprecated }),
-        ...(deprecated !== undefined && { deprecatedBy: group.path }),
+        ...(type !== undefined && { type, typeBy: group.path }),
+        ...(description !== undefined && { description, descriptionBy: group.path }),
+        ...(deprecated !== undefined && { deprecated, deprecatedBy: group.path }),
         ...(extensions && { extensions }),
         ...(extensionLocations && { extensionLocations }),
     };

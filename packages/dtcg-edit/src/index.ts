@@ -167,7 +167,7 @@ export type OperationResult =
  * - `override-instead` - the token is shared. Change it for `input` with {@link setValue}.
  * - `invalid-name` - `character` can't be in a name. It's absent for an empty name.
  * - `generated` - a generator makes the token, from `extension` on the group `from`.
- * - `inherited` - the token or group comes from the group `from`, through `$extends`.
+ * - `extended` - the token or group is a copy of `from`, through `$extends`. Change `from` instead.
  * - `no-permutation` - there is no permutation for `input`. `cause` says why.
  * - `several-contexts` - `input` names two contexts away from their defaults.
  * - `no-file-for-context` - no whole file is read by that context alone.
@@ -197,7 +197,7 @@ export type Refusal = {
     | { kind: "override-instead"; path: string; input: Input }
     | { kind: "invalid-name"; name: string; character?: "$" | "." | "{" | "}" }
     | { kind: "generated"; path: string; from: string; extension: readonly [string, ...string[]] }
-    | { kind: "inherited"; path: string; from: string }
+    | { kind: "extended"; path: string; from: string }
     | {
           kind: "no-permutation";
           input: Input;

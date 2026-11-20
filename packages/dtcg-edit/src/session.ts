@@ -267,5 +267,5 @@ function getMoves(steps: readonly EditStep[]): Move[] {
 }
 
 function getAllPaths(tokens: DesignTokens): Set<string> {
-    return new Set([...tokens.getGroupPaths(), ...tokens.getTokenPaths()]);
+    return new Set([...tokens.groupPaths, ...tokens.tokenPaths]);
 }

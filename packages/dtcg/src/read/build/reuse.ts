@@ -4,20 +4,33 @@ import type { Definition } from "../../model/definition.js";
 import type { Target } from "../../model/reference.js";
 import type { Resolver } from "../../model/resolver.js";
 import type { Source } from "../../model/source.js";
-import type { Token } from "../../model/token.js";
+import type { InheritedFrom, Token } from "../../model/token.js";
 import type { TokenType } from "../../model/value.js";
+import type { EffectiveSettings } from "../merge/inherit.js";
 import type { MergedGroup, MergedToken } from "../merge/merge.js";
-import { type Properties, toValidType } from "../merge/walk.js";
+import { toValidType } from "../merge/walk.js";
 import { isEqualJson } from "../../values/same-value.js";
 
 export interface TokenBuildFields {
     type: TokenType;
-    value: unknown;
-    resolved: unknown;
+    parsedValue: unknown;
+    resolvedValue: unknown;
     invalid: true | undefined;
+    typeFrom: InheritedFrom | undefined;
     deprecated: boolean | string | undefined;
-    deprecatedByGroup: string | undefined;
+    deprecatedFrom: InheritedFrom | undefined;
     definitions: readonly Definition[];
+}
+
+export interface GroupBuildFields {
+    settings: EffectiveSettings;
+    typeFrom: InheritedFrom | undefined;
+    descriptionFrom: InheritedFrom | undefined;
+    deprecatedFrom: InheritedFrom | undefined;
+    definitions: readonly Definition[];
+    extensionDefinitions: Readonly<Record<string, Definition>>;
+    children: (Token | Group)[];
+    extending: Group | undefined;
 }
 
 export function sameToken(
@@ -27,11 +40,12 @@ export function sameToken(
     targets: readonly Target[],
 ): boolean {
     if (earlier.type !== now.type || earlier.deprecated !== now.deprecated) return false;
-    if (earlier.deprecatedByGroup !== now.deprecatedByGroup) return false;
+    if (!sameInheritedFrom(earlier.typeFrom, now.typeFrom)) return false;
+    if (!sameInheritedFrom(earlier.deprecatedFrom, now.deprecatedFrom)) return false;
     if (!sameList(earlier.definitions, now.definitions)) return false;
-    if (earlier.generated?.from !== current.generated?.from) return false;
-    if (earlier.generated?.extension !== current.generated?.extension) return false;
-    if (earlier.inherited?.from !== current.inherited?.from) return false;
+    if (earlier.generatedFrom?.path !== current.generatedFrom?.path) return false;
+    if (earlier.generatedFrom?.extension !== current.generatedFrom?.extension) return false;
+    if (earlier.extendedFrom?.path !== current.extendedFrom?.path) return false;
     const { references } = earlier;
     if (references.length !== targets.length) return false;
     for (const [index, { path, token }] of targets.entries()) {
@@ -39,9 +53,9 @@ export function sameToken(
         if (!reference || reference.pointsToToken !== token || reference.pointsToPath !== path)
             return false;
     }
-    if (!current.generated) return true;
+    if (!current.generatedFrom) return true;
     return (
-        isEqualJson(earlier.value, now.value) &&
+        isEqualJson(earlier.parsedValue, now.parsedValue) &&
         earlier.description === current.description &&
         isEqualJson(earlier.extensions, current.extensions)
     );
@@ -50,21 +64,33 @@ export function sameToken(
 export function sameGroup(
     earlier: Group,
     current: MergedGroup,
-    applies: Properties,
-    deprecatedByGroup: string | undefined,
-    definitions: readonly Definition[],
-    children: readonly (Token | Group)[],
-    extending: Group | undefined,
+    { settings, typeFrom, descriptionFrom, deprecatedFrom, ...fields }: GroupBuildFields,
 ): boolean {
     return (
-        earlier.extends === extending &&
-        earlier.type === toValidType(applies.type) &&
-        earlier.deprecated === applies.deprecated &&
-        earlier.deprecatedByGroup === deprecatedByGroup &&
-        earlier.inherited?.from === current.inherited?.from &&
-        sameList(earlier.definitions, definitions) &&
-        sameList(earlier.children, children)
+        earlier.extends === fields.extending &&
+        earlier.type === toValidType(settings.type) &&
+        earlier.deprecated === settings.deprecated &&
+        sameInheritedFrom(earlier.typeFrom, typeFrom) &&
+        sameInheritedFrom(earlier.descriptionFrom, descriptionFrom) &&
+        sameInheritedFrom(earlier.deprecatedFrom, deprecatedFrom) &&
+        earlier.extendedFrom?.path === current.extendedFrom?.path &&
+        sameExtensionDefinitions(earlier.extensionDefinitions, fields.extensionDefinitions) &&
+        sameList(earlier.definitions, fields.definitions) &&
+        sameList(earlier.children, fields.children)
     );
+}
+
+function sameInheritedFrom(a: InheritedFrom | undefined, b: InheritedFrom | undefined): boolean {
+    return a?.path === b?.path && a?.via === b?.via;
+}
+
+function sameExtensionDefinitions(
+    a: Readonly<Record<string, Definition>>,
+    b: Readonly<Record<string, Definition>>,
+): boolean {
+    if (a === b) return true;
+    const keys = Object.keys(a);
+    return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
 }
 
 export function sameResolver(was: Resolver, now: Resolver): boolean {
@@ -83,6 +109,6 @@ export function sameSource(was: Source, now: Source): boolean {
 }
 
 function sameContexts(was: Source["contexts"], now: Source["contexts"]): boolean {
-    if (was === "every-context" || now === "every-context") return was === now;
+    if (was === undefined || now === undefined) return was === now;
     return sameList(was, now);
 }

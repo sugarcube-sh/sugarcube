@@ -23,7 +23,6 @@
           }
         }
       ],
-      "contexts": "every-context",
       "extensions": {
         "sh.sugarcube": {
           "emit": false
@@ -36,8 +35,7 @@
         {
           "name": "semantic"
         }
-      ],
-      "contexts": "every-context"
+      ]
     }
   ]
 }

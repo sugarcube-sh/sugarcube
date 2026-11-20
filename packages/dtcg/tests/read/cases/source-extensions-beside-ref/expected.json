@@ -18,7 +18,6 @@
           "name": "base"
         }
       ],
-      "contexts": "every-context",
       "extensions": {
         "sh.sugarcube": {
           "emit": false
@@ -31,8 +30,7 @@
         {
           "name": "base"
         }
-      ],
-      "contexts": "every-context"
+      ]
     }
   ]
 }

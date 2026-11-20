@@ -7,9 +7,9 @@ const tokens = await read("tokens/tokens.resolver.json");
 const light = tokens.getPermutation({ theme: "light" });
 const dark = tokens.getPermutation({ theme: "dark" });
 
-for (const path of tokens.getTokenPaths()) {
+for (const path of tokens.tokenPaths) {
     const inLight = light.getToken(path);
     const inDark = dark.getToken(path);
     const users = new Set(tokens.getReferencesTo(path).flatMap(({ ownerPaths }) => ownerPaths));
-    row(path, (inLight ?? inDark)?.type, inLight?.resolved, inDark?.resolved, [...users]);
+    row(path, (inLight ?? inDark)?.type, inLight?.resolvedValue, inDark?.resolvedValue, [...users]);
 }

@@ -12,12 +12,8 @@
         },
         {
           "path": "g.sub.x",
-          "original": {
-            "value": 1
-          },
-          "inherited": {
-            "from": "t"
-          }
+
+          "extendedFrom": { "path": "t.sub.x" }
         }
       ]
     }

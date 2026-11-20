@@ -10,26 +10,30 @@
         {
           "path": "color.danger",
           "type": "color",
-          "value": {
+          "typeFrom": { "path": "color", "via": "group" },
+          "parsedValue": {
             "syntax": "curly-brace",
             "path": "color.brnad"
           },
-          "resolved": null
+          "resolvedValue": null
         },
         {
           "path": "color.warning",
           "type": "color",
-          "resolved": null
+          "typeFrom": { "path": "color", "via": "group" },
+          "resolvedValue": null
         },
         {
           "path": "color.group-ref",
           "type": "color",
-          "resolved": null
+          "typeFrom": { "path": "color", "via": "group" },
+          "resolvedValue": null
         },
         {
           "path": "color.wrong",
           "type": "dimension",
-          "resolved": {
+          "typeFrom": { "path": "space.sm", "via": "reference" },
+          "resolvedValue": {
             "value": 4,
             "unit": "px"
           }
@@ -37,7 +41,8 @@
         {
           "path": "color.typed-wrong",
           "type": "color",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "space.sm"
@@ -45,7 +50,8 @@
         {
           "path": "edge",
           "type": "border",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "shadow.one"
@@ -55,7 +61,7 @@
         },
         {
           "path": "shadow.uses-one",
-          "resolved": [
+          "resolvedValue": [
             {
               "color": {
                 "colorSpace": "srgb",
@@ -109,7 +115,8 @@
         {
           "path": "shadow.uses-two",
           "type": "shadow",
-          "resolved": null
+          "typeFrom": { "path": "shadow", "via": "group" },
+          "resolvedValue": null
         }
       ]
     }

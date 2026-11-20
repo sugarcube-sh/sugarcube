@@ -24,8 +24,8 @@ export interface SourceSpan {
 export interface MergedToken extends SourceToken {
     source: number;
     overridden?: SourceSpan[];
-    inherited?: { from: string };
-    generated?: { from: string; extension: readonly [string, ...string[]] };
+    extendedFrom?: { path: string };
+    generatedFrom?: { path: string; extension: readonly [string, ...string[]] };
 }
 
 export interface MergedGroup extends Properties {
@@ -35,7 +35,7 @@ export interface MergedGroup extends Properties {
     extends?: GroupReference & { source: number };
     extendsGroup?: string;
     inheritsFrom?: string;
-    inherited?: { from: string };
+    extendedFrom?: { path: string };
 }
 
 export interface Merged {
@@ -74,7 +74,12 @@ function createMerged(): Merged {
         order: new Set([""]),
         children: new Map(),
         settings: new Map(),
-        inheritanceCache: { type: new Map(), deprecated: new Map(), deprecatedBy: new Map() },
+        inheritanceCache: {
+            type: new Map(),
+            typeBy: new Map(),
+            deprecated: new Map(),
+            deprecatedBy: new Map(),
+        },
     };
 }
 

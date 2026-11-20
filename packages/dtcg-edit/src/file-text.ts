@@ -1,4 +1,12 @@
-import type { DesignTokens, JsonPath, Definition, Span, JsonValue } from "@sugarcube-sh/dtcg";
+import type {
+    DesignTokens,
+    JsonPath,
+    Definition,
+    LocalGroup,
+    LocalToken,
+    Span,
+    JsonValue,
+} from "@sugarcube-sh/dtcg";
 import type { FileOp } from "./index.js";
 import { type Node, findNodeAtOffset, parseTree } from "jsonc-parser";
 import { getJsonAt, getJsonPath, getSpan } from "@sugarcube-sh/dtcg/editor";
@@ -7,6 +15,7 @@ export interface Member {
     span: Span;
     jsonPath: JsonPath;
     json: JsonValue;
+    local: LocalToken & LocalGroup;
 }
 
 const treesByTokens = new WeakMap<DesignTokens, Map<string, Node | undefined>>();
@@ -49,6 +58,7 @@ export function toMember(tokens: DesignTokens, definition: Definition): Member {
         span: getSpan(tokens, definition),
         jsonPath: getJsonPath(tokens, definition),
         json: definition.json,
+        local: definition.local,
     };
 }
 

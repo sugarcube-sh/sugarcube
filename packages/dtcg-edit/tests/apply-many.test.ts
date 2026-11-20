@@ -109,7 +109,7 @@ describe("applying many edits to one file", () => {
             let oneByOne = tokens;
             const ops: FileOp[] = [];
             for (let step = 0; step < 2 + pick(3); step++) {
-                const paths = oneByOne.getTokenPaths();
+                const paths = oneByOne.tokenPaths;
                 const path = paths[pick(paths.length)];
                 if (path === undefined) break;
                 const choice = pick(3);
@@ -130,9 +130,7 @@ describe("applying many edits to one file", () => {
     });
 
     it("removes every unused token of the demo in one step without breaking a file", () => {
-        const unused = demo
-            .getTokenPaths()
-            .filter((path) => demo.getReferencesTo(path).length === 0);
+        const unused = demo.tokenPaths.filter((path) => demo.getReferencesTo(path).length === 0);
         const done = commit(
             demo,
             combine(

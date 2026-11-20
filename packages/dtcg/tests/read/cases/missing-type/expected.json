@@ -7,34 +7,39 @@
         {
           "path": "size.base",
           "type": "number",
-          "resolved": 4
+          "typeFrom": null,
+          "resolvedValue": 4
         },
         {
           "path": "size.alias",
           "type": "number",
-          "value": {
+          "typeFrom": { "path": "size.base", "via": "reference" },
+          "parsedValue": {
             "syntax": "curly-brace",
             "path": "size.base"
           },
-          "resolved": 4
+          "resolvedValue": 4
         },
         {
           "path": "size.pointer",
           "type": "number",
-          "value": {
+          "typeFrom": { "path": "size.base", "via": "reference" },
+          "parsedValue": {
             "syntax": "json-pointer",
             "pointer": "#/size/base/$value"
           },
-          "resolved": 4
+          "resolvedValue": 4
         },
         {
           "path": "space.md",
-          "type": "dimension"
+          "type": "dimension",
+          "typeFrom": { "path": "space", "via": "group" }
         },
         {
           "path": "space.scale",
           "type": "number",
-          "resolved": 4
+          "typeFrom": { "path": "size.base", "via": "reference" },
+          "resolvedValue": 4
         }
       ],
       "groups": [

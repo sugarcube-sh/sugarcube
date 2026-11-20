@@ -32,7 +32,8 @@ describe("createSession", () => {
         ]);
         expect(session.unsavedEdits).not.toHaveProperty("files");
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.winningDefinition.local
+                .value,
         ).toEqual(red);
         expect(session.savedTokens).toBe(demo);
     });
