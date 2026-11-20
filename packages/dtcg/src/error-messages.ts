@@ -135,7 +135,7 @@ export const exceptionMessages = {
             : [inputHeadline(detail), inputHelp(detail)].filter(Boolean).join(": "),
     severalPermutations: ({ member, modifiers, example }: SeveralPermutationsDetail) => {
         const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${formatList(modifiers, "and")}`;
-        return `tokens.${member} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${formatInput(example)}), or group them with groupPermutationsBy(tokens, …)`;
+        return `tokens.${member} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${formatInput(example)}), or group them with tokens.groupPermutationsBy(…)`;
     },
     entryFile: ({ reason, files }: EntryFileErrorDetail) => {
         const named = files.map((file) => `\`${file}\``).join(", ");

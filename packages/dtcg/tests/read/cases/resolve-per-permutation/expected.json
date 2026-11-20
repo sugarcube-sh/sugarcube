@@ -6,7 +6,7 @@
       "tokens": [
         {
           "path": "color.brand",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [1, 0, 0],
             "alpha": 1
@@ -14,7 +14,7 @@
         },
         {
           "path": "color.danger",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [1, 0, 0],
             "alpha": 1
@@ -31,7 +31,7 @@
         },
         {
           "path": "color.accent",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [1, 0, 0],
             "alpha": 1
@@ -53,7 +53,7 @@
       "tokens": [
         {
           "path": "color.brand",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "oklch",
             "components": [0.7, 0.2, 20],
             "alpha": 1
@@ -61,7 +61,7 @@
         },
         {
           "path": "color.danger",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "oklch",
             "components": [0.7, 0.2, 20],
             "alpha": 1
@@ -79,11 +79,12 @@
         {
           "path": "color.accent",
           "type": "color",
-          "value": {
+          "typeFrom": { "path": "color", "via": "group" },
+          "parsedValue": {
             "syntax": "curly-brace",
             "path": "color.highlight"
           },
-          "resolved": null,
+          "resolvedValue": null,
           "references": [
             {
               "parsed": { "syntax": "curly-brace", "path": "color.highlight" },

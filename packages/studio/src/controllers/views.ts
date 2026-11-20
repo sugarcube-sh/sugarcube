@@ -165,7 +165,7 @@ export function getGroupPageView(state: StudioState, group: Group): GroupPageVie
     const view = getGroupView(group, getShownValue);
     const noTokens =
         view.tokens.length > 0 ? undefined : view.groups.length > 0 ? "directly" : "at-all";
-    const editable = group.inherited === undefined;
+    const editable = group.extendedFrom === undefined;
     return {
         ...view,
         form: getForm(group),
@@ -181,7 +181,7 @@ export function toTokenRow(token: Token, name: string, value: BuildOutput["getVa
         path: token.path,
         name,
         type: token.type,
-        originalValue: token.original?.value,
+        originalValue: token.winningDefinition.local.value,
         css: value(token),
     };
 }
@@ -260,7 +260,7 @@ export function getReferenceTargets(
     type: TokenType,
     path: string | undefined,
 ): string[] {
-    return tokens.getTokenPaths().filter((each) => {
+    return tokens.tokenPaths.filter((each) => {
         if (each === path) return false;
         const node = findTokenOrGroup(tokens, showing, each)?.node;
         return node?.kind !== "group" && node?.type === type;

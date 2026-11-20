@@ -10,8 +10,8 @@
         { "path": "space.2" },
         {
           "path": "space.1",
-          "resolved": { "value": 1, "unit": "rem" },
-          "generated": { "from": "space", "extension": ["com.example", "steps"] }
+          "resolvedValue": { "value": 1, "unit": "rem" },
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
         }
       ],
       "groups": [{ "path": "" }, { "path": "space" }]

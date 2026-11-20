@@ -11,6 +11,9 @@ type InvalidCharacter = "$" | (typeof FORBIDDEN)[number];
  * These follow the spec's rules. So `color.bluegrey` isn't inside `color.blue`. The top level of a
  * file is the group at `""`.
  *
+ * It's one object, as Node's `path` is: on their own, names such as `join` and `contains` wouldn't
+ * say what they work on.
+ *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#path-construction | Format 6.7.2, Path Construction}
  *
  * @example
@@ -130,28 +133,11 @@ export const tokenPath = {
         return path.endsWith(".$root") ? path.slice(0, -".$root".length) : path;
     },
     /**
-     * Finds the character that stops a name being valid.
-     *
-     * It returns `undefined` if the name is valid. A name can't start with `$`, unless it's
-     * `$root`. It can't have `.`, `{` or `}` anywhere.
-     *
-     * @param name - A token or group name, such as `"500"`.
-     * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
-     *
-     * @example
-     * // A dot in a name
-     * tokenPath.findInvalidCharacter("blue.500")
-     * // => "."
-     */
-    findInvalidCharacter(name: string): InvalidCharacter | undefined {
-        if (name.startsWith("$") && name !== "$root") return "$";
-        return FORBIDDEN.find((each) => name.includes(each));
-    },
-    /**
      * Finds what stops a name being valid, as the facts an `invalid-name` problem gives.
      *
-     * It returns `undefined` if the name is valid. A name can't be empty, which gives `{}`, and
-     * can't have a character {@link findInvalidCharacter} finds, which gives that `character`.
+     * It returns `undefined` if the name is valid. A name can't be empty, which gives `{}`. It
+     * can't start with `$`, unless it's `$root`, or have `.`, `{` or `}` anywhere, which gives that
+     * `character`.
      *
      * @param name - A token or group name, such as `"500"`.
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
@@ -163,24 +149,9 @@ export const tokenPath = {
      */
     findNameProblem(name: string): { readonly character?: InvalidCharacter } | undefined {
         if (name === "") return {};
-        const character = tokenPath.findInvalidCharacter(name);
+        if (name.startsWith("$") && name !== "$root") return { character: "$" };
+        const character = FORBIDDEN.find((each) => name.includes(each));
         return character === undefined ? undefined : { character };
-    },
-    /**
-     * Tells whether a token or group can have this name.
-     *
-     * It's `true` when {@link findNameProblem} finds nothing.
-     *
-     * @param name - A token or group name, such as `"500"`.
-     * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
-     *
-     * @example
-     * // An empty name
-     * tokenPath.isValidName("")
-     * // => false
-     */
-    isValidName(name: string): boolean {
-        return tokenPath.findNameProblem(name) === undefined;
     },
     /**
      * Works out where a path is after some moves.

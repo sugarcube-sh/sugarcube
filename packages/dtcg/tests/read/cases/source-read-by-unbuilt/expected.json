@@ -26,8 +26,7 @@
         {
           "name": "base"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "shared.json",
@@ -35,8 +34,7 @@
         {
           "name": "base"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "both.json",

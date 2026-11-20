@@ -34,7 +34,7 @@ export interface DefinitionRow {
 export function getDefinitionRows(tokens: DesignTokens, path: string): DefinitionRow[] {
     return tokens.getDefinitions(path).map((definition) => ({
         label: getDefinitionLabel(definition),
-        value: isJsonObject(definition.json) ? definition.json.$value : undefined,
+        value: definition.local.value,
         span: definition.span,
     }));
 }
@@ -74,7 +74,7 @@ export function getValueView(
     path: string,
     adding: readonly string[],
 ): ValueView {
-    if (tokens.permutations.some((perm) => perm.getToken(path)?.generated)) {
+    if (tokens.permutations.some((perm) => perm.getToken(path)?.generatedFrom)) {
         return { rows: [], overridableContexts: [], editable: false };
     }
     const places = getDefinitionRows(tokens, path);
@@ -106,13 +106,12 @@ export function getValueView(
         }
         const context = overridable.find((each) => each.label === label);
         if (!context) return [];
-        const winningJson = tokens.getPermutation(context.input).getToken(path)
-            ?.winningDefinition.json;
+        const winning = tokens.getPermutation(context.input).getToken(path)?.winningDefinition;
         return [
             {
                 key,
                 label,
-                value: isJsonObject(winningJson) ? winningJson.$value : undefined,
+                value: winning?.local.value,
                 isNew: true,
                 valueOptions: { input: context.input },
             },
@@ -137,8 +136,8 @@ export function getGenerationSource(
     showing: Permutation,
     getForm: StudioState["getForm"],
 ): GenerationSource | undefined {
-    if (!token.generated) return undefined;
-    const { from } = token.generated;
+    if (!token.generatedFrom) return undefined;
+    const { path: from } = token.generatedFrom;
     if (from === "") return { kind: "top-level" };
     const group = showing.getGroup(from);
     const by = group && getForm(group)?.label.toLowerCase();
@@ -184,7 +183,7 @@ export function getTokenPageView(
 ): TokenPageView {
     const { tokens, shownPermutation, getValue, getForm } = state;
     const view = getValueView(tokens, token.path, adding);
-    const editable = view.editable && token.inherited === undefined;
+    const editable = view.editable && token.extendedFrom === undefined;
     return {
         row: toTokenRow(token, token.path, getValue),
         rows: view.rows.map((row) => toTokenPageRow(row, token, getForm)),

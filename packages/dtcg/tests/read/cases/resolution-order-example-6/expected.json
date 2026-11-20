@@ -39,8 +39,7 @@
         {
           "name": "size"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "foundation/typography.json",
@@ -48,8 +47,7 @@
         {
           "name": "typography"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "foundation/animation.json",
@@ -57,8 +55,7 @@
         {
           "name": "animation"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "theme/light.json",

@@ -6,7 +6,8 @@
       "tokens": [
         {
           "path": "odd.inner.b",
-          "type": "number"
+          "type": "number",
+          "typeFrom": { "path": "odd.inner", "via": "group" }
         }
       ],
       "groups": [
@@ -16,7 +17,8 @@
         },
         {
           "path": "odd.inner",
-          "type": "number"
+          "type": "number",
+          "typeFrom": null
         }
       ]
     }

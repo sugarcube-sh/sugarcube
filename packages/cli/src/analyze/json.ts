@@ -17,7 +17,7 @@ export function toImpactJSON({ path, definitions, dependents, uses }: Impact) {
     return {
         token: path,
         definitions: definitions.map(({ token, file, permutations }) => ({
-            value: token.original?.value,
+            value: token.winningDefinition.local.value,
             type: token.type,
             file,
             permutations: permutations.inputs,

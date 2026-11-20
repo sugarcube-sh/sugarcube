@@ -1,21 +1,15 @@
-import type {
-    Change,
-    GroupProperty,
-    Move,
-    TokenProperty,
-    OriginalGroup,
-    OriginalToken,
-} from "../model/change.js";
+import type { Change, GroupProperty, Move, TokenProperty } from "../model/change.js";
+import type { LocalGroup, LocalProperties } from "../model/definition.js";
 import type { Group } from "../model/group.js";
 import type { JsonPath } from "../model/location.js";
 import type { JsonValue } from "../model/json.js";
 import type { Permutation } from "../model/permutation.js";
 import { type Permutations, makePermutations } from "../model/permutations.js";
-import type { Token, OriginalProperties } from "../model/token.js";
+import type { Token } from "../model/token.js";
 import { tokenPath } from "../path.js";
 import { isJsonObject } from "../values/json.js";
 import { isReference, applyMovesToReference } from "../values/references.js";
-import { type ComparableValue, isEqualJson, hasEquivalentValue } from "../values/same-value.js";
+import { isEqualJson, hasEquivalentValue } from "../values/same-value.js";
 
 type Pair<T> =
     | { before: T; after: T }
@@ -49,21 +43,16 @@ export function pairByPath<T extends Token | Group>(
 }
 
 export function diffGroup({ before, after }: Pair<Group>, moves: Move[]): ChangeEntry | undefined {
-    const inherited = (after ?? before)?.inherited;
-    const flags = inherited ? { inherited } : {};
+    const extendedFrom = (after ?? before)?.extendedFrom;
+    const flags = extendedFrom ? { extendedFrom } : {};
     if (!before)
-        return { kind: "group-added", path: after.path, after: toOriginalGroup(after), ...flags };
+        return { kind: "group-added", path: after.path, after: after.local ?? {}, ...flags };
     if (!after) {
-        return {
-            kind: "group-removed",
-            path: before.path,
-            before: toOriginalGroup(before),
-            ...flags,
-        };
+        return { kind: "group-removed", path: before.path, before: before.local ?? {}, ...flags };
     }
     const properties = groupDifferences(before, after, moves);
     const { path } = after;
-    const snapshots = { before: toOriginalGroup(before), after: toOriginalGroup(after), ...flags };
+    const snapshots = { before: before.local ?? {}, after: after.local ?? {}, ...flags };
     if (before.path !== path) {
         return { kind: "group-renamed", from: before.path, path, properties, ...snapshots };
     }
@@ -72,15 +61,27 @@ export function diffGroup({ before, after }: Pair<Group>, moves: Move[]): Change
 }
 
 export function diffToken({ before, after }: Pair<Token>, moves: Move[]): ChangeEntry | undefined {
-    const { generated, inherited } = after ?? before ?? {};
-    const flags = { ...(generated && { generated }), ...(inherited && { inherited }) };
+    const { generatedFrom, extendedFrom } = after ?? before ?? {};
+    const flags = {
+        ...(generatedFrom && { generatedFrom }),
+        ...(extendedFrom && { extendedFrom }),
+    };
     if (!before)
-        return { kind: "added", path: after.path, after: toOriginalToken(after), ...flags };
+        return { kind: "added", path: after.path, after: after.winningDefinition.local, ...flags };
     if (!after)
-        return { kind: "removed", path: before.path, before: toOriginalToken(before), ...flags };
+        return {
+            kind: "removed",
+            path: before.path,
+            before: before.winningDefinition.local,
+            ...flags,
+        };
     const properties = tokenDifferences(before, after, moves);
     const { path } = after;
-    const snapshots = { before: toOriginalToken(before), after: toOriginalToken(after), ...flags };
+    const snapshots = {
+        before: before.winningDefinition.local,
+        after: after.winningDefinition.local,
+        ...flags,
+    };
     if (before.path !== path) {
         return { kind: "renamed", from: before.path, path, properties, ...snapshots };
     }
@@ -88,43 +89,9 @@ export function diffToken({ before, after }: Pair<Token>, moves: Move[]): Change
     return { kind: "changed", path, properties, ...snapshots };
 }
 
-function toOriginalToken({ original, description, extensions }: Token): OriginalToken {
-    if (!original) return {};
-    return {
-        value: original.value,
-        ...pickDefinedFields({ ...original, description, extensions }),
-    };
-}
-
-function toOriginalGroup(group: Group): OriginalGroup {
-    const extended = getExtendsPath(group);
-    return {
-        ...pickDefinedFields(group.original ?? {}),
-        ...(extended !== undefined && { extends: extended }),
-    };
-}
-
-function getExtendsPath(group: Group): string | undefined {
-    return group.references[0]?.pointsToPath;
-}
-
-function pickDefinedFields({
-    type,
-    description,
-    deprecated,
-    extensions,
-}: OriginalProperties): OriginalProperties {
-    return {
-        ...(type !== undefined && { type }),
-        ...(description !== undefined && { description }),
-        ...(deprecated !== undefined && { deprecated }),
-        ...(extensions && { extensions }),
-    };
-}
-
 function tokenDifferences(before: Token, after: Token, moves: Move[]): TokenProperty[] {
     const same: Record<TokenProperty, boolean> = {
-        value: hasEquivalentValue(getValueAfterMoves(before, moves), after),
+        value: isSameValue(before, after, moves),
         type: getDeclaredType(before) === getDeclaredType(after),
         description: before.description === after.description,
         deprecated: getDeclaredDeprecation(before) === getDeclaredDeprecation(after),
@@ -134,18 +101,20 @@ function tokenDifferences(before: Token, after: Token, moves: Move[]): TokenProp
 }
 
 function groupDifferences(before: Group, after: Group, moves: Move[]): GroupProperty[] {
-    const extended = getExtendsPath(before);
+    const earlier: LocalGroup = before.local ?? {};
+    const later: LocalGroup = after.local ?? {};
+    const extended = earlier.extends;
     return getChangedKeys({
-        ...compareOriginalProperties(before.original ?? {}, after.original ?? {}),
+        ...compareLocalProperties(earlier, later),
         extends:
             (extended === undefined ? undefined : tokenPath.applyMoves(extended, moves)) ===
-            getExtendsPath(after),
+            later.extends,
     });
 }
 
-function compareOriginalProperties(
-    before: OriginalProperties,
-    after: OriginalProperties,
+function compareLocalProperties(
+    before: LocalProperties,
+    after: LocalProperties,
 ): Record<Exclude<GroupProperty, "extends">, boolean> {
     return {
         type: before.type === after.type,
@@ -160,11 +129,11 @@ function getChangedKeys<P extends string>(same: Record<P, boolean>): P[] {
 }
 
 function getDeclaredType(token: Token): string | undefined {
-    return token.original ? token.original.type : token.type;
+    return token.generatedFrom ? token.type : token.winningDefinition.local.type;
 }
 
-function getDeclaredDeprecation(token: Token): OriginalProperties["deprecated"] {
-    return token.original ? token.original.deprecated : token.deprecated;
+function getDeclaredDeprecation(token: Token): LocalProperties["deprecated"] {
+    return token.generatedFrom ? token.deprecated : token.winningDefinition.local.deprecated;
 }
 
 export class Changes {
@@ -194,14 +163,25 @@ export class Changes {
     }
 }
 
-function getValueAfterMoves(token: Token, moves: Move[]): ComparableValue {
-    if (token.value !== undefined) return { value: applyMovesToValue(token.value, moves) };
-    if (!token.original) return token;
-    let value: unknown = token.original.value;
-    for (const reference of token.references) {
-        value = replaceAtPath(value, reference.property ?? [], reference.applyMoves(moves));
+function isSameValue(before: Token, after: Token, moves: Move[]): boolean {
+    if (before.parsedValue === undefined || after.parsedValue === undefined) {
+        return (
+            before.parsedValue === after.parsedValue &&
+            isEqualJson(
+                getWrittenValueAfterMoves(before, moves),
+                after.winningDefinition.local.value,
+            )
+        );
     }
-    return { original: { value } };
+    return hasEquivalentValue(applyMovesToValue(before.parsedValue, moves), after.parsedValue);
+}
+
+function getWrittenValueAfterMoves(token: Token, moves: Move[]): unknown {
+    let value: unknown = token.winningDefinition.local.value;
+    for (const reference of token.references) {
+        value = replaceAtPath(value, reference.ownerProperty ?? [], reference.applyMoves(moves));
+    }
+    return value;
 }
 
 function replaceAtPath(value: unknown, [step, ...rest]: JsonPath, replacement: JsonValue): unknown {

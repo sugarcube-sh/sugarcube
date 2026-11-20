@@ -16,7 +16,7 @@ import { applyMovesToReference } from "../values/references.js";
  *
  * @example
  * // button.background's value
- * light.getToken("button.background")!.value
+ * light.getToken("button.background")!.parsedValue
  * // => { syntax: "curly-brace", path: "color.primary" }
  */
 export interface CurlyBraceReference {
@@ -72,7 +72,7 @@ export interface ReferenceBase {
      * The path the reference names, such as `"color.primary"`.
      *
      * For a group's `$extends`, it's the group's path. For a JSON Pointer inside a value, it's the
-     * path of that value's token. It's absent for a pointer that names no path, such as `#/`.
+     * path of that value's token. It's `undefined` for a pointer that names no path, such as `#/`.
      */
     readonly pointsToPath?: string;
     /**
@@ -98,18 +98,30 @@ export interface ReferenceBase {
     /**
      * Where in the token's value a JSON Pointer points.
      *
-     * For example, `["components", 0]`. It's absent when the reference points to the whole value.
+     * For example, `["components", 0]`. It's `undefined` when the reference points to the whole value.
      *
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#property-level-references | Format 7.3, Property-level references}
      */
     readonly pointsToProperty?: JsonPath;
     /**
-     * Where in {@link TokenBase.value | value} the reference is.
+     * Where in {@link TokenBase.parsedValue | parsedValue} the reference is.
      *
      * For example, `["components", 0]`, or `[0, "color"]` in a single shadow, which is read as an
-     * array of one. It's absent for a reference that is the whole value.
+     * array of one. It's `undefined` for a reference that is the whole value.
      */
-    readonly property?: JsonPath;
+    readonly ownerProperty?: JsonPath;
+    /**
+     * Set when a {@link Generator} wrote the reference, as its token's
+     * {@link TokenBase.generatedFrom | generatedFrom}.
+     *
+     * The reference is in no file. Renaming what it points to leaves it to the generator.
+     *
+     * @example
+     * // A generator on space makes space.2 with the value "{space.base}"
+     * light.getToken("space.2")!.references[0]!.generatedFrom
+     * // => { path: "space", extension: ["com.example", "steps"] }
+     */
+    readonly generatedFrom?: Token["generatedFrom"];
     /**
      * Rewrites the reference after some moves, such as a rename.
      *
@@ -151,7 +163,7 @@ export type ReferenceInPermutations = Omit<
     applyMoves(moves: readonly Move[]): JsonValue;
 };
 
-/** One group from {@link groupPermutationsBy}. */
+/** One group from {@link DesignTokens.groupPermutationsBy}. */
 export interface PermutationGroup<Result> {
     /** What the function returned, such as `"rgb(51 102 204)"`. */
     readonly result: Result;
@@ -185,12 +197,13 @@ export interface ReferenceWithTarget extends Target {
 }
 
 class ReferenceObject {
-    declare readonly pointsToProperty?: JsonPath | undefined;
     readonly pointsToPath: string | undefined;
     readonly owner: Token | Group;
     readonly pointsToToken: Token | undefined;
     readonly pointsToWholeToken: Token | undefined;
-    readonly property: JsonPath | undefined;
+    readonly ownerProperty: JsonPath | undefined;
+    readonly pointsToProperty: JsonPath | undefined;
+    readonly generatedFrom: Token["generatedFrom"];
     readonly #parsed: ParsedReference;
     readonly #span: Span;
     readonly #isBarePointer: boolean;
@@ -202,8 +215,9 @@ class ReferenceObject {
         this.owner = from;
         this.pointsToToken = token;
         this.pointsToWholeToken = pointsToProperty === undefined ? token : undefined;
-        this.property = property.length > 0 ? property : undefined;
-        if (reference.syntax === "json-pointer") Object.assign(this, { pointsToProperty });
+        this.ownerProperty = property.length > 0 ? property : undefined;
+        this.pointsToProperty = reference.syntax === "json-pointer" ? pointsToProperty : undefined;
+        this.generatedFrom = from.kind === "token" ? from.generatedFrom : undefined;
         this.#parsed = reference;
         this.#span = span;
         this.#isBarePointer = isBarePointer;
@@ -239,7 +253,7 @@ class ReferenceObject {
     }
 
     toJSON() {
-        return { parsed: this.#parsed, property: this.property };
+        return { parsed: this.#parsed, ownerProperty: this.ownerProperty };
     }
 }
 
@@ -248,7 +262,8 @@ class ReferenceInPermutationsObject {
     readonly ownerPaths: readonly string[];
     readonly pointsToProperty: JsonPath | undefined;
     readonly span: Span;
-    readonly property: JsonPath | undefined;
+    readonly ownerProperty: JsonPath | undefined;
+    readonly generatedFrom: Token["generatedFrom"];
     readonly permutations: Permutations;
     readonly #parsed: ParsedReference;
     readonly #jsonPath: () => JsonPath;
@@ -267,7 +282,8 @@ class ReferenceInPermutationsObject {
         this.ownerPaths = ownerPaths;
         this.pointsToProperty = reference.pointsToProperty;
         this.span = span;
-        this.property = reference.property;
+        this.ownerProperty = reference.ownerProperty;
+        this.generatedFrom = reference.generatedFrom;
         this.permutations = permutations;
         this.#parsed = parsed;
         this.#jsonPath = jsonPath;

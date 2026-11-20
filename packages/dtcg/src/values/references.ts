@@ -60,11 +60,11 @@ export function parseReference(raw: unknown): ParsedReference | undefined {
  * For an entry in a token's `references`, check its `parsed`. For JSON as written in a file,
  * use {@link parseReference}.
  *
- * @param value - A value dtcg has read, such as `token.value`.
+ * @param value - A value dtcg has read, such as `token.parsedValue`.
  *
  * @example
  * // button.background is written "{color.primary}"
- * isReference(light.getToken("button.background")?.value)
+ * isReference(light.getToken("button.background")?.parsedValue)
  * // => true
  */
 export function isReference(value: unknown): value is ParsedReference {

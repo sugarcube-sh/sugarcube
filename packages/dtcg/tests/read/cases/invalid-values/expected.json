@@ -7,14 +7,8 @@
         {
           "path": "red",
           "type": "color",
-          "invalid": true,
-          "original": {
-            "value": {
-              "colorSpace": "srgb",
-              "components": [2, 0, 0]
-            },
-            "type": "color"
-          }
+          "typeFrom": null,
+          "invalid": true
         },
         {
           "path": "space",

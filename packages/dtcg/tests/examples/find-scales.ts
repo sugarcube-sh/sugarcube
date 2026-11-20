@@ -10,7 +10,7 @@ for (const group of tokens.getPermutation().groups) {
         continue;
     }
     const steps = group.childTokens;
-    if (steps.length > 1 && steps.every((t) => t.type === "dimension" && !t.generated)) {
+    if (steps.length > 1 && steps.every((t) => t.type === "dimension" && !t.generatedFrom)) {
         row(group.path, "written by hand");
     }
 }

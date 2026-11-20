@@ -67,7 +67,7 @@ describe("clashes", () => {
         expect(studio.state.clashes).toEqual([]);
         expect(
             studio.state.tokens.getPermutation({ mode: "dark" }).getToken("color.text.default")
-                ?.value,
+                ?.parsedValue,
         ).toEqual({ syntax: "curly-brace", path: "color.neutral.100" });
         expect(studio.state.changes.map(({ path }) => path)).toEqual(["color.text.default"]);
     });
@@ -85,7 +85,7 @@ describe("clashes", () => {
         expect(studio.state.clashes).toEqual([]);
         expect(
             studio.state.tokens.getPermutation({ mode: "dark" }).getToken("color.text.default")
-                ?.value,
+                ?.parsedValue,
         ).toEqual({ syntax: "curly-brace", path: "color.neutral.200" });
         expect(studio.state.changes).toEqual([]);
     });

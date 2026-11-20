@@ -7,14 +7,14 @@ import { isJsonObject } from "../values/json.js";
 import { type ArraySyntax, type Syntax, chooseByKind, getSyntax } from "../values/syntax.js";
 
 export function buildParts(token: Token): Part | undefined {
-    if (token.resolved === undefined) return undefined;
-    return buildPart(token, token.type, token.resolved, []) as Part;
+    if (token.resolvedValue === undefined) return undefined;
+    return buildPart(token, token.type, token.resolvedValue, []) as Part;
 }
 
 type PartObject = Record<string, unknown>;
 
 function buildPart(token: Token, type: TokenType, resolved: unknown, property: JsonPath): unknown {
-    const part = attachLocation(token, property, { type, resolved });
+    const part = attachLocation(token, property, { type, resolvedValue: resolved });
     addParts(token, part, syntaxes[type], resolved, property);
     return part;
 }
@@ -81,7 +81,7 @@ function listParts(
         case "elements":
             return items.map((item, index) => {
                 const where = [...property, index];
-                const element = attachLocation(token, where, { resolved: item });
+                const element = attachLocation(token, where, { resolvedValue: item });
                 addParts(token, element, syntax.item, item, where);
                 return element;
             });
@@ -97,8 +97,7 @@ function listParts(
 }
 
 function attachLocation(token: Token, property: JsonPath, part: PartObject): PartObject {
-    if (property.length > 0) part.property = property;
-    const ref = token.getReferenceAt(property);
-    if (ref) part.ref = ref;
+    part.property = property.length > 0 ? property : undefined;
+    part.ref = token.getReferenceAt(property);
     return part;
 }

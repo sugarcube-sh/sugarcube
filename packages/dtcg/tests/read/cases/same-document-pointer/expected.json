@@ -18,8 +18,7 @@
         {
           "name": "base"
         }
-      ],
-      "contexts": "every-context"
+      ]
     }
   ]
 }

@@ -6,37 +6,45 @@
       "tokens": [
         {
           "path": "color.missing",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.swapped",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.capital",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.described",
           "type": "color",
+          "typeFrom": { "path": "color", "via": "group" },
           "description": "red"
         },
         {
           "path": "color.unknown",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.named.value",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.text",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color.missing", "via": "reference" }
         },
         {
           "path": "color.both",
           "type": "color",
-          "resolved": {
+          "typeFrom": { "path": "color", "via": "group" },
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [0, 1, 1],
             "alpha": 1
@@ -44,7 +52,8 @@
         },
         {
           "path": "space.sm",
-          "type": "dimension"
+          "type": "dimension",
+          "typeFrom": { "path": "space", "via": "group" }
         }
       ]
     },
@@ -52,37 +61,45 @@
       "tokens": [
         {
           "path": "color.missing",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.swapped",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.capital",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.described",
           "type": "color",
+          "typeFrom": { "path": "color", "via": "group" },
           "description": "red"
         },
         {
           "path": "color.unknown",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.named.value",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color", "via": "group" }
         },
         {
           "path": "color.text",
-          "type": "color"
+          "type": "color",
+          "typeFrom": { "path": "color.missing", "via": "reference" }
         },
         {
           "path": "color.both",
           "type": "color",
-          "resolved": {
+          "typeFrom": { "path": "color", "via": "group" },
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [0, 1, 1],
             "alpha": 1
@@ -90,7 +107,8 @@
         },
         {
           "path": "space.sm",
-          "type": "dimension"
+          "type": "dimension",
+          "typeFrom": { "path": "space", "via": "group" }
         }
       ]
     }

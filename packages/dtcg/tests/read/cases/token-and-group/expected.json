@@ -6,7 +6,8 @@
       "tokens": [
         {
           "path": "color.brand",
-          "type": "number"
+          "type": "number",
+          "typeFrom": { "path": "color", "via": "group" }
         }
       ],
       "groups": [

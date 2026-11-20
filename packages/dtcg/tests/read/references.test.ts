@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type Span, isReference, readFromMemory } from "../../src/index.js";
+import { type Span, readFromMemory } from "../../src/index.js";
+import { isReference } from "../../src/values.js";
 import { getSpan } from "../../src/editor.js";
 import { lightDark, oneFile } from "../token-files.js";
 
@@ -53,7 +54,7 @@ describe("a token's references", () => {
         expect(reference?.owner).toBe(inLight("color.brand"));
         expect(reference?.pointsToToken).toBe(inLight("color.red"));
         expect(reference?.pointsToWholeToken).toBe(inLight("color.red"));
-        expect(reference?.property).toBeUndefined();
+        expect(reference?.ownerProperty).toBeUndefined();
         expect(reference && written(getSpan(tokens, reference))).toBe('"{color.red}"');
     });
 
@@ -66,7 +67,7 @@ describe("a token's references", () => {
         expect(reference?.pointsToPath).toBe("color.brand");
         expect(reference?.owner).toBe(inLight("border.focus"));
         expect(reference?.pointsToToken).toBe(inLight("color.brand"));
-        expect(reference?.property).toStrictEqual(["color"]);
+        expect(reference?.ownerProperty).toStrictEqual(["color"]);
         expect(reference && written(getSpan(tokens, reference))).toBe(
             '{"$ref":"#/color/brand/$value"}',
         );
@@ -81,7 +82,7 @@ describe("a token's references", () => {
         expect(reference?.pointsToToken).toBe(inLight("color.red"));
         expect(reference?.pointsToWholeToken).toBeUndefined();
         expect(reference?.pointsToProperty).toStrictEqual(["components", 0]);
-        expect(reference?.property).toStrictEqual(["components", 0]);
+        expect(reference?.ownerProperty).toStrictEqual(["components", 0]);
     });
 
     it("reference nothing when a pointer names a property the value doesn't have", () => {
@@ -148,23 +149,23 @@ describe("a token's references", () => {
 
 describe("a reference in a value", () => {
     it("is written the way the file writes it, in the spec's syntax names", () => {
-        expect(inLight("color.brand")?.value).toStrictEqual({
+        expect(inLight("color.brand")?.parsedValue).toStrictEqual({
             syntax: "curly-brace",
             path: "color.red",
         });
         const focus = inLight("border.focus");
-        if (focus?.type !== "border" || !focus.value || isReference(focus.value)) {
+        if (focus?.type !== "border" || !focus.parsedValue || isReference(focus.parsedValue)) {
             throw new Error("border.focus is not a border written as a value");
         }
-        expect(focus.value.color).toStrictEqual({
+        expect(focus.parsedValue.color).toStrictEqual({
             syntax: "json-pointer",
             pointer: "#/color/brand/$value",
         });
     });
 
     it("is told apart from a value by isReference", () => {
-        expect(isReference(inLight("color.brand")?.value)).toBe(true);
-        expect(isReference(inLight("color.red")?.value)).toBe(false);
+        expect(isReference(inLight("color.brand")?.parsedValue)).toBe(true);
+        expect(isReference(inLight("color.red")?.parsedValue)).toBe(false);
         expect(isReference(inLight("border.focus")?.references[0]?.parsed)).toBe(true);
     });
 });
@@ -446,7 +447,7 @@ describe("the plain form", () => {
 
     it("writes a JSON Pointer as written, with the part of the value it is written in", () => {
         const [pointer] = plain(inLight("color.tint")).references;
-        expect(Object.keys(pointer).sort()).toStrictEqual(["parsed", "property"]);
+        expect(Object.keys(pointer).sort()).toStrictEqual(["ownerProperty", "parsed"]);
         expect(pointer.parsed.syntax).toBe("json-pointer");
     });
 

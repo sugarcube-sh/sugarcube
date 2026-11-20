@@ -12,6 +12,7 @@ import {
     getReferenceSpan,
     toReferenceInPermutations,
     type Reference,
+    type PermutationGroup,
 } from "./reference.js";
 import type { Resolver } from "./resolver.js";
 import type { Source } from "./source.js";
@@ -21,6 +22,7 @@ import { createDiagnosticFilter } from "../lookup/diagnostics.js";
 import { getSpan, SPAN_OF } from "../lookup/editor.js";
 import { findJsonPath } from "../lookup/json-path.js";
 import { findPermutation, getOnlyPermutation, PermutationError } from "../lookup/permutation.js";
+import { groupPermutationsBy } from "../lookup/group-permutations.js";
 import { createKnownFiles, type KnownFiles, withChanges } from "../read/files/known.js";
 import { samePropertyPath } from "./location.js";
 import type { Span } from "./location.js";
@@ -72,8 +74,11 @@ export interface DesignTokens {
     /**
      * Finds every reference to a token or group, in any file.
      *
-     * Each is listed once, with the tokens that write it and the permutations it applies in. To
-     * follow chains of references, use {@link Permutation.getReferencesTo}.
+     * Each is listed once, with the tokens that write it and the permutations it applies in.
+     *
+     * Chained references are a question for one permutation, since what refers to what can differ
+     * between them; ask a permutation, or every one with
+     * {@link DesignTokens.groupPermutationsBy | groupPermutationsBy}.
      *
      * @param path - The token or group, such as `"color.primary"`.
      *
@@ -120,98 +125,67 @@ export interface DesignTokens {
      */
     getPermutationsReading(file: string): Permutations;
     /**
-     * Gets the token at a path, when the read has one permutation.
+     * Gets the permutations that have a token or group at a path.
      *
-     * It's {@link Permutation.getToken} for that permutation.
+     * A path can be a token in some permutations, a group in others, and missing in the rest.
      *
-     * @param path - The token's path, such as `"color.primary"`.
-     * @throws {@link SeveralPermutationsError} If the read has several permutations.
+     * @param path - The path, such as `"space.lg"`.
+     * @param kind - `"token"` or `"group"`, to count only that. Without it, either counts.
+     *
+     * @example
+     * // space.lg is a token in light, and missing in dark
+     * tokens.getPermutationsWith("space.lg", "token").label
+     * // => "mode: light"
+     * tokens.getPermutationsWith("space.lg", "group").length
+     * // => 0
      */
+    getPermutationsWith(path: string, kind?: "token" | "group"): Permutations;
+    /**
+     * Groups the permutations by what `fn` returns in each.
+     *
+     * Permutations where `fn` returns the same result share a group. Have it return a string or a
+     * number, so equal results match.
+     *
+     * @param fn - Run in each permutation, such as
+     * `(p) => toCSSValue(p.getToken("color.primary"))`.
+     *
+     * @example
+     * // color.primary differs, so two groups
+     * tokens.groupPermutationsBy((p) => toCSSValue(p.getToken("color.primary")))
+     * // => [
+     * //     { result: "rgb(51 102 204)", permutations: [light] },
+     * //     { result: "rgb(102 153 255)", permutations: [dark] },
+     * // ]
+     *
+     * @example
+     * // color.blue.500 is the same in both, so one group
+     * tokens.groupPermutationsBy((p) => toCSSValue(p.getToken("color.blue.500")))
+     * // => [{ result: "rgb(51 102 204)", permutations: [light, dark] }]
+     */
+    groupPermutationsBy<Result>(
+        fn: (permutation: Permutation) => Result,
+    ): readonly PermutationGroup<Result>[];
+    /** {@link Permutation.getToken}, if the read has one permutation; else it throws. */
     getToken(path: string): Token | undefined;
-    /**
-     * Gets the group at a path, when the read has one permutation.
-     *
-     * It's {@link Permutation.getGroup} for that permutation.
-     *
-     * @param path - The group's path, such as `"color.blue"`, or `""` for the top level.
-     * @throws {@link SeveralPermutationsError} If the read has several permutations.
-     */
+    /** {@link Permutation.getGroup}, if the read has one permutation; else it throws. */
     getGroup(path: string): Group | undefined;
-    /**
-     * Gets the token or group at a path, when the read has one permutation.
-     *
-     * It's {@link Permutation.getTokenOrGroup} for that permutation.
-     *
-     * @param path - The token or group, such as `"color.primary"`.
-     * @throws {@link SeveralPermutationsError} If the read has several permutations.
-     */
+    /** {@link Permutation.getTokenOrGroup}, if the read has one permutation; else it throws. */
     getTokenOrGroup(path: string): Token | Group | undefined;
-    /**
-     * Finds what refers to a token or group, when the read has one permutation.
-     *
-     * It's {@link Permutation.getDependents} for that permutation. To check every permutation, use
-     * {@link DesignTokens.getReferencesTo | getReferencesTo}.
-     *
-     * @param path - The token or group, such as `"color.primary"`.
-     * @param options - `{ chained: true }` to follow references through other tokens too.
-     * @throws {@link SeveralPermutationsError} If the read has several permutations.
-     */
+    /** {@link Permutation.getDependents}, if the read has one permutation; else it throws. */
     getDependents(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
-    /**
-     * Finds what a token or group refers to, when the read has one permutation.
-     *
-     * It's {@link Permutation.getDependencies} for that permutation.
-     *
-     * @param path - The token or group, such as `"color.primary"`.
-     * @param options - `{ chained: true }` to follow references through other tokens too.
-     * @throws {@link SeveralPermutationsError} If the read has several permutations.
-     */
+    /** {@link Permutation.getDependencies}, if the read has one permutation; else it throws. */
     getDependencies(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
-     * Every token, when the read has one permutation.
-     *
-     * It's {@link Permutation.tokens} for that permutation.
-     *
-     * @throws {@link SeveralPermutationsError} If the read has several permutations.
-     */
-    readonly tokens: readonly Token[];
-    /**
-     * Every group, when the read has one permutation.
-     *
-     * It's {@link Permutation.groups} for that permutation.
-     *
-     * @throws {@link SeveralPermutationsError} If the read has several permutations.
-     */
-    readonly groups: readonly Group[];
-    /**
-     * The tokens and groups at the top of the files, when the read has one permutation.
-     *
-     * It's {@link Permutation.children} for that permutation.
-     *
-     * @throws {@link SeveralPermutationsError} If the read has several permutations.
-     */
-    readonly children: readonly (Token | Group)[];
-    /**
-     * The top level of the files, the group at `""`, when the read has one permutation.
-     *
-     * It's {@link Permutation.topLevel} for that permutation.
-     *
-     * @throws {@link SeveralPermutationsError} If the read has several permutations.
-     */
-    readonly topLevel: Group;
-    /**
-     * Gets every token's path, in any permutation, each once.
+     * Every token's path, in any permutation, each once.
      *
      * @example
      * // Every token path
-     * tokens.getTokenPaths()
+     * tokens.tokenPaths
      * // => ["color.blue.500", "color.blue.300", "color.primary", "button.background"]
      */
-    getTokenPaths(): readonly string[];
-    /**
-     * Gets every group's path, in any permutation, each once, starting with the top level's `""`.
-     */
-    getGroupPaths(): readonly string[];
+    readonly tokenPaths: readonly string[];
+    /** Every group's path, in any permutation, each once, starting with the top level's `""`. */
+    readonly groupPaths: readonly string[];
     /**
      * Checks whether a token or group is at a path, in any permutation.
      *
@@ -246,7 +220,7 @@ export interface DesignTokens {
      * @example
      * // dark.json now points color.primary at color.blue.500
      * const next = tokens.reread({ "dark.json": text });
-     * next.getPermutation({ mode: "dark" }).getToken("color.primary")?.value
+     * next.getPermutation({ mode: "dark" }).getToken("color.primary")?.parsedValue
      * // => { syntax: "curly-brace", path: "color.blue.500" }
      */
     reread(changed: Readonly<Record<string, string | null>>): DesignTokens;
@@ -320,6 +294,8 @@ type DesignTokensFields = Omit<DesignTokens, keyof DesignTokensObject>;
 
 class DesignTokensObject {
     readonly #state: ReadState;
+    #tokenPaths: readonly string[] | undefined;
+    #groupPaths: readonly string[] | undefined;
 
     constructor(fields: DesignTokensFields, state: ReadState) {
         Object.assign(this, fields);
@@ -335,7 +311,7 @@ class DesignTokensObject {
                 let atSpan = merged.get(span);
                 if (!atSpan) merged.set(span, (atSpan = []));
                 let entry = atSpan.find((each) =>
-                    samePropertyPath(each.reference.property, reference.property ?? []),
+                    samePropertyPath(each.reference.ownerProperty, reference.ownerProperty ?? []),
                 );
                 if (!entry) {
                     entry = {
@@ -348,7 +324,7 @@ class DesignTokensObject {
                 }
                 if (!entry.permutations.includes(permutation)) entry.permutations.push(permutation);
                 const { owner } = reference;
-                (owner.inherited ? entry.inheritedPaths : entry.ownerPaths).add(owner.path);
+                (owner.extendedFrom ? entry.inheritedPaths : entry.ownerPaths).add(owner.path);
             }
         }
         return [...merged].flatMap(([span, entries]) =>
@@ -399,6 +375,9 @@ class DesignTokensObject {
             get json() {
                 return first.json;
             },
+            get local() {
+                return first.local;
+            },
             sources,
             permutations: makePermutations(permutations, tokens.permutations),
             winningPermutations: makePermutations(
@@ -423,6 +402,17 @@ class DesignTokensObject {
         return permutations.select(({ sources }) => sources.some((source) => source.file === file));
     }
 
+    getPermutationsWith(path: string, kind?: "token" | "group") {
+        return this.#self.permutations.select((permutation) => {
+            const found = permutation.getTokenOrGroup(path);
+            return found !== undefined && (kind === undefined || found.kind === kind);
+        });
+    }
+
+    groupPermutationsBy<Result>(fn: (permutation: Permutation) => Result) {
+        return groupPermutationsBy(this.#self, fn);
+    }
+
     getToken(path: string) {
         return getOnlyPermutation(this.#self, "getToken()").getToken(path);
     }
@@ -439,32 +429,18 @@ class DesignTokensObject {
         return getOnlyPermutation(this.#self, "getDependencies()").getDependencies(path, options);
     }
 
-    get tokens() {
-        return getOnlyPermutation(this.#self, "tokens").tokens;
-    }
-
-    get groups() {
-        return getOnlyPermutation(this.#self, "groups").groups;
-    }
-
-    get children() {
-        return getOnlyPermutation(this.#self, "children").children;
-    }
-
-    get topLevel() {
-        return getOnlyPermutation(this.#self, "topLevel").topLevel;
-    }
-
     getTokenOrGroup(path: string) {
         return getOnlyPermutation(this.#self, "getTokenOrGroup()").getTokenOrGroup(path);
     }
 
-    getTokenPaths() {
-        return allPaths(this.#self, "tokens");
+    get tokenPaths(): readonly string[] {
+        this.#tokenPaths ??= Object.freeze(allPaths(this.#self, "tokens"));
+        return this.#tokenPaths;
     }
 
-    getGroupPaths() {
-        return allPaths(this.#self, "groups");
+    get groupPaths(): readonly string[] {
+        this.#groupPaths ??= Object.freeze(allPaths(this.#self, "groups"));
+        return this.#groupPaths;
     }
 
     toJSON() {

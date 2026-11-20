@@ -25,8 +25,7 @@
             }
           }
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "blue.json",
@@ -42,8 +41,7 @@
             }
           }
         }
-      ],
-      "contexts": "every-context"
+      ]
     }
   ]
 }

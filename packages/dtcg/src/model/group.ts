@@ -1,7 +1,8 @@
 import type { Definition } from "./definition.js";
 import type { JsonValue } from "./json.js";
 import type { Reference } from "./reference.js";
-import type { OriginalProperties, Token } from "./token.js";
+import type { LocalGroup } from "./definition.js";
+import type { InheritedFrom, Token } from "./token.js";
 import type { TokenType } from "./value.js";
 
 /** A group of tokens. */
@@ -25,22 +26,54 @@ export interface Group {
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#type-inheritance | Format 6.7.3, Type Inheritance}
      */
     readonly type?: TokenType;
+    /**
+     * Where the group's type comes from, when it doesn't write `$type` itself.
+     *
+     * `via` is `"extends"` when it comes through its `$extends`, and `"group"` when a group it's
+     * inside gives it. `path` names the group that writes the `$type`, `""` for the top of the file.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#type-inheritance | Format 6.7.3, Type Inheritance}
+     *
+     * @example
+     * // cta writes "$extends": "{button}", and button writes "$type": "dimension"
+     * light.getGroup("cta")!.typeFrom
+     * // => { path: "button", via: "extends" }
+     */
+    readonly typeFrom?: InheritedFrom;
     /** The group's `$description`, or else the one of the group it extends. */
     readonly description?: string;
     /**
+     * Where the group's description comes from, when it doesn't write `$description` itself.
+     *
+     * A description comes only through `$extends`, so `via` is always `"extends"`. `path` names
+     * the group that writes it, which can be further along a chain of `$extends`.
+     *
+     * @example
+     * // cta extends button, and button writes "$description": "Every button"
+     * light.getGroup("cta")!.descriptionFrom
+     * // => { path: "button", via: "extends" }
+     */
+    readonly descriptionFrom?: InheritedFrom;
+    /**
      * `true`, or a message saying what to use instead.
      *
-     * It can come from the group it extends, or the group it's inside. It's absent when the group
+     * It can come from the group it extends, or the group it's inside. It's `undefined` when the group
      * isn't deprecated, even if it writes `"$deprecated": false`.
      */
     readonly deprecated?: true | string;
     /**
-     * The group whose `$deprecated` applies to this one.
+     * Where the group's deprecation comes from, when it doesn't write `$deprecated` itself.
      *
-     * It's the group it extends, or else the nearest group above; `""` when it's the top of the
-     * file. It's absent when the group writes its own, or when there's none.
+     * `via` is `"extends"` when it comes through its `$extends`, and `"group"` when a group it's
+     * inside gives it. `path` names the group that writes the `$deprecated`, `""` for the top of
+     * the file.
+     *
+     * @example
+     * // cta extends button, and button writes "$deprecated": "Use action"
+     * light.getGroup("cta")!.deprecatedFrom
+     * // => { path: "button", via: "extends" }
      */
-    readonly deprecatedByGroup?: string;
+    readonly deprecatedFrom?: InheritedFrom;
     /**
      * The group's `$extensions`, and any from the group it extends.
      *
@@ -50,9 +83,9 @@ export interface Group {
     /**
      * The group this one extends, through `$extends`.
      *
-     * It's absent if the reference doesn't reach a group. The reference is in
+     * It's `undefined` if the reference doesn't reach a group. The reference is in
      * {@link Group.references | references}. The tokens it brings are marked
-     * {@link TokenBase.inherited | inherited}.
+     * {@link TokenBase.extendedFrom | extendedFrom}.
      *
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#extending-groups | Format 6.4, Extending Groups}
      */
@@ -67,33 +100,39 @@ export interface Group {
      * Every place a file writes the group, in the order read.
      *
      * A group can be spread across files, so there can be several. A group that's only
-     * {@link Group.inherited | inherited} has none.
+     * {@link Group.extendedFrom | inherited} has none.
      */
     readonly definitions: readonly Definition[];
     /**
-     * Where each of the group's own `$extensions` keys is written.
+     * Where each of the group's `$extensions` keys is written, its own or through `$extends`.
      *
      * When several files write a key, it's the last one read. Its value for that key is used whole.
-     * Keys from a group it extends are left out.
+     * Where the group and a group it extends both write a key, the group's own wins.
      */
     readonly extensionDefinitions: Readonly<Record<string, Definition>>;
     /**
-     * Set when the group is here only through `$extends`.
+     * Set when the group is here only through `$extends`, as a copy.
      *
-     * `from` is the group it comes from.
-     */
-    readonly inherited?: { readonly from: string };
-    /**
-     * The `$type`, `$description`, `$deprecated` and `$extensions` written on the group.
-     *
-     * It leaves out what comes from other groups. It's absent when the files write none of them.
+     * `path` names the group it's a copy of, where it's written.
      *
      * @example
-     * // The color group writes its own $type
-     * dark.getGroup("color")!.original
-     * // => { type: "color" }
+     * // cta extends button, which has a group sizes inside
+     * light.getGroup("cta.sizes")!.extendedFrom
+     * // => { path: "button.sizes" }
      */
-    readonly original?: OriginalProperties;
+    readonly extendedFrom?: { readonly path: string };
+    /**
+     * The properties the files write on the group itself, not inherited.
+     *
+     * A group can be written in several files. This combines them, the later file winning each
+     * property. It's `undefined` when the files write none of them.
+     *
+     * @example
+     * // cta writes "$extends": "{button}" and nothing else
+     * light.getGroup("cta")!.local
+     * // => { extends: "button" }
+     */
+    readonly local?: LocalGroup;
     /**
      * The group's tokens and groups, one level down, in the order written.
      *
@@ -144,7 +183,23 @@ class GroupObject {
     #tokens: readonly Token[] | undefined;
 
     constructor(fields: GroupFields) {
-        Object.assign(this, fields);
+        const self = this as unknown as Record<string, unknown>;
+        self.path = fields.path;
+        self.type = fields.type;
+        self.typeFrom = fields.typeFrom;
+        self.description = fields.description;
+        self.descriptionFrom = fields.descriptionFrom;
+        self.deprecated = fields.deprecated;
+        self.deprecatedFrom = fields.deprecatedFrom;
+        self.extensions = fields.extensions;
+        self.extends = fields.extends;
+        self.references = fields.references;
+        self.definitions = fields.definitions;
+        self.extensionDefinitions = fields.extensionDefinitions;
+        self.extendedFrom = fields.extendedFrom;
+        self.local = fields.local;
+        self.children = fields.children;
+        self.rootToken = fields.rootToken;
     }
 
     get childTokens(): readonly Token[] {

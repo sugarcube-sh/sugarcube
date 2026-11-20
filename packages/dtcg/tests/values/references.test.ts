@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isReference } from "../../src/index.js";
-import { parseReference, parseValue, toReferenceTarget, toJsonPointer } from "../../src/values.js";
+import {
+    isReference,
+    parseReference,
+    parseValue,
+    toReferenceTarget,
+    toJsonPointer,
+} from "../../src/values.js";
 
 describe("isReference", () => {
     it("recognises the references a parser reads, in either syntax", () => {
@@ -97,9 +102,9 @@ describe("toReferenceTarget", () => {
 });
 
 describe("the /values entry", () => {
-    it("leaves isReference to the root entry, where Token is", async () => {
+    it("has every reference helper, isReference included", async () => {
         const values = await import("../../src/values.js");
-        expect("isReference" in values).toBe(false);
+        expect("isReference" in values).toBe(true);
         expect("writtenColor" in values).toBe(false);
     });
 });

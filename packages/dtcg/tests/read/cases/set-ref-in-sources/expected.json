@@ -69,8 +69,7 @@
             }
           }
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "semantic.json",
@@ -78,8 +77,7 @@
         {
           "name": "base"
         }
-      ],
-      "contexts": "every-context"
+      ]
     }
   ]
 }

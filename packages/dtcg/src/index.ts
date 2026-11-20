@@ -1,4 +1,3 @@
-export { isReference } from "./values/references.js";
 export { PermutationError, SeveralPermutationsError } from "./lookup/permutation.js";
 export { EntryFileError } from "./read/files/entry-file-error.js";
 export { defineGenerator } from "./read/extensions/generate.js";
@@ -7,8 +6,6 @@ export { read, readFromMemory } from "./read/read.js";
 export { getFilePath } from "./read/files/paths.js";
 export { tokenPath } from "./path.js";
 export { toInputLabel } from "./lookup/permutation-label.js";
-export { groupPermutationsBy } from "./lookup/group-permutations.js";
-export { getSourceLine } from "./lookup/source-line.js";
 export { isEqualJson, isEquivalentValue } from "./values/same-value.js";
 export type { ValueErrorCode, ValueErrorDetail } from "./values/value-errors.js";
 
@@ -104,8 +101,9 @@ export type {
     UnresolvedValue,
     ValueByType,
     ValueError,
-    OriginalProperties,
-    OriginalGroup,
+    LocalProperties,
+    LocalGroup,
+    InheritedFrom,
     ParsedReference,
-    OriginalToken,
+    LocalToken,
 } from "./model/index.js";

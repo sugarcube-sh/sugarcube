@@ -65,7 +65,7 @@ const tokenAt = (path: string) => {
     if (!found) throw new Error(`no token ${path}`);
     return found;
 };
-const placed = ({ property, pointsToPath }: Reference) => ({
+const placed = ({ ownerProperty: property, pointsToPath }: Reference) => ({
     ...(property && { property }),
     pointsToPath,
 });

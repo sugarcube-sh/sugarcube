@@ -322,7 +322,7 @@ describe("getChangesSince", () => {
         );
     });
 
-    it("gives a group starting to extend another, and the tokens it takes, marked as inherited", () => {
+    it("gives a group starting to extend another, and the tokens it takes, each naming the token it copies", () => {
         const button = (primary: object) => ({
             button: { $type: "dimension", base: { pad: px(4) }, primary },
         });
@@ -337,7 +337,7 @@ describe("getChangesSince", () => {
             properties: ["extends"],
             after: { extends: "button.base" },
         });
-        expect(changes[1]).toMatchObject({ inherited: { from: "button.base" } });
+        expect(changes[1]).toMatchObject({ extendedFrom: { path: "button.base.pad" } });
     });
 
     it("gives a group's $extends changing as written, though it reaches no group", () => {
@@ -440,7 +440,10 @@ describe("getChangesSince", () => {
             ["group-changed", "space"],
             ["changed", "space.1"],
         ]);
-        expect(changes[1]).toMatchObject({ properties: ["value"], generated: { from: "space" } });
+        expect(changes[1]).toMatchObject({
+            properties: ["value"],
+            generatedFrom: { path: "space" },
+        });
         expect(
             changes[1]?.kind === "changed" && [changes[1].before, changes[1].after],
         ).toStrictEqual([{}, {}]);
@@ -610,17 +613,5 @@ describe("isEquivalentValue", () => {
         boolean,
     ][])("%s", ([, type, a, b, equal]) => {
         expect(isEquivalentValue(type, a, b)).toBe(equal);
-    });
-
-    it("compares two tokens by type and by the value they say, not where it leads", () => {
-        const tokens = read();
-        const sm = tokens.getPermutation().getToken("space.sm");
-        const gap = tokens.getPermutation().getToken("space.gap");
-        const body = tokens.getPermutation().getToken("typography.body");
-        if (!sm || !gap || !body) throw new Error("missing token");
-        expect(isEquivalentValue(sm, structuredClone(sm))).toBe(true);
-        expect(isEquivalentValue(sm, gap)).toBe(false);
-        expect(isEquivalentValue(sm, body)).toBe(false);
-        expect(isEquivalentValue(sm, { ...sm, type: "number" } as typeof sm)).toBe(false);
     });
 });

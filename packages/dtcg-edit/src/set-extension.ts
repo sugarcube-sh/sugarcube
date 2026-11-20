@@ -101,7 +101,7 @@ function findSettingPlacement(
     chosenFile: string | undefined,
 ): SettingPlacement {
     const pathKeys = path.split(".");
-    if (!tokens.permutations.some((perm) => perm.getToken(path))) {
+    if (tokens.getPermutationsWith(path, "token").length === 0) {
         const placement = findExtensionPlacement(tokens, path, key, options, chosenFile);
         if (!("into" in placement)) return placement;
         const { into, currentExtension, affectedPermutations } = placement;

@@ -6,7 +6,7 @@
       "tokens": [
         {
           "path": "brand",
-          "value": {
+          "parsedValue": {
             "colorSpace": "oklch",
             "components": [0.7, 0.2, 20],
             "alpha": 1
@@ -14,34 +14,26 @@
         },
         {
           "path": "space",
-          "value": {
+          "parsedValue": {
             "value": 16,
             "unit": "px"
           }
         },
         {
           "path": "body",
-          "value": ["Inter"],
-          "original": {
-            "value": "Inter",
-            "type": "fontFamily"
-          }
+          "parsedValue": ["Inter"]
         },
         {
           "path": "heavy",
-          "value": 700,
-          "original": {
-            "value": "bold",
-            "type": "fontWeight"
-          }
+          "parsedValue": 700
         },
         {
           "path": "line",
-          "value": "solid"
+          "parsedValue": "solid"
         },
         {
           "path": "card",
-          "value": [
+          "parsedValue": [
             {
               "color": {
                 "syntax": "curly-brace",
@@ -69,7 +61,7 @@
         },
         {
           "path": "fade",
-          "value": [
+          "parsedValue": [
             {
               "color": {
                 "syntax": "curly-brace",
@@ -88,7 +80,7 @@
         },
         {
           "path": "text",
-          "value": {
+          "parsedValue": {
             "fontFamily": ["Inter", "sans-serif"],
             "fontSize": {
               "syntax": "curly-brace",
@@ -104,7 +96,7 @@
         },
         {
           "path": "accent",
-          "value": {
+          "parsedValue": {
             "syntax": "curly-brace",
             "path": "brand"
           }

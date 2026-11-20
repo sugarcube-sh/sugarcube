@@ -1,6 +1,7 @@
 import type { Group } from "./group.js";
 import type { Permutations } from "./permutations.js";
-import type { OriginalProperties, Token } from "./token.js";
+import type { LocalGroup, LocalToken } from "./definition.js";
+import type { Token } from "./token.js";
 
 /** A token or group's new path, such as `{ from: "color.blue", to: "color.azure" }`. */
 export interface Move {
@@ -13,24 +14,6 @@ export type TokenProperty = "value" | "type" | "description" | "deprecated" | "e
 
 /** A property a file can set on a group, without its `$`, such as `"extends"`. */
 export type GroupProperty = "type" | "description" | "deprecated" | "extensions" | "extends";
-
-/**
- * What a file writes for a token.
- *
- * `value` is exactly as written, such as `"{color.blue.500}"`.
- */
-export interface OriginalToken extends OriginalProperties {
-    readonly value?: unknown;
-}
-
-/**
- * What a file writes for a group.
- *
- * `extends` is the path its `$extends` names, such as `"base"`.
- */
-export interface OriginalGroup extends OriginalProperties {
-    readonly extends?: string;
-}
 
 /**
  * One difference between two reads, as {@link DesignTokens.getChangesSince} returns it.
@@ -54,68 +37,68 @@ export type Change =
     | ({
           readonly kind: "added";
           readonly path: string;
-          readonly after: OriginalToken;
+          readonly after: LocalToken;
       } & TokenChange)
     | ({
           readonly kind: "removed";
           readonly path: string;
-          readonly before: OriginalToken;
+          readonly before: LocalToken;
       } & TokenChange)
     | ({
           readonly kind: "changed";
           readonly path: string;
           readonly properties: readonly TokenProperty[];
-          readonly before: OriginalToken;
-          readonly after: OriginalToken;
+          readonly before: LocalToken;
+          readonly after: LocalToken;
       } & TokenChange)
     | ({
           readonly kind: "renamed";
           readonly from: string;
           readonly path: string;
           readonly properties: readonly TokenProperty[];
-          readonly before: OriginalToken;
-          readonly after: OriginalToken;
+          readonly before: LocalToken;
+          readonly after: LocalToken;
       } & TokenChange)
     | ({
           readonly kind: "group-added";
           readonly path: string;
-          readonly after: OriginalGroup;
+          readonly after: LocalGroup;
       } & GroupChange)
     | ({
           readonly kind: "group-removed";
           readonly path: string;
-          readonly before: OriginalGroup;
+          readonly before: LocalGroup;
       } & GroupChange)
     | ({
           readonly kind: "group-changed";
           readonly path: string;
           readonly properties: readonly GroupProperty[];
-          readonly before: OriginalGroup;
-          readonly after: OriginalGroup;
+          readonly before: LocalGroup;
+          readonly after: LocalGroup;
       } & GroupChange)
     | ({
           readonly kind: "group-renamed";
           readonly from: string;
           readonly path: string;
           readonly properties: readonly GroupProperty[];
-          readonly before: OriginalGroup;
-          readonly after: OriginalGroup;
+          readonly before: LocalGroup;
+          readonly after: LocalGroup;
       } & GroupChange);
 
 /** What every change to a token has, as well as `before` and `after`. */
 export interface TokenChange {
     /** The permutations the change is in. */
     readonly permutations: Permutations;
-    /** Set when a {@link Generator} makes the token, as {@link TokenBase.generated}. */
-    readonly generated?: Token["generated"];
-    /** Set when the token is here only through `$extends`, as {@link TokenBase.inherited}. */
-    readonly inherited?: Token["inherited"];
+    /** Set when a {@link Generator} makes the token, as {@link TokenBase.generatedFrom}. */
+    readonly generatedFrom?: Token["generatedFrom"];
+    /** Set when the token is here only through `$extends`, as {@link TokenBase.extendedFrom}. */
+    readonly extendedFrom?: Token["extendedFrom"];
 }
 
 /** What every change to a group has, as well as `before` and `after`. */
 export interface GroupChange {
     /** The permutations the change is in. */
     readonly permutations: Permutations;
-    /** Set when the group is here only through `$extends`, as {@link Group.inherited}. */
-    readonly inherited?: Group["inherited"];
+    /** Set when the group is here only through `$extends`, as {@link Group.extendedFrom}. */
+    readonly extendedFrom?: Group["extendedFrom"];
 }

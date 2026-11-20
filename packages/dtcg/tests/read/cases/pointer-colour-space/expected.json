@@ -9,11 +9,11 @@
         },
         {
           "path": "tint",
-          "resolved": null
+          "resolvedValue": null
         },
         {
           "path": "shade",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "hsl",
             "components": [100, 50, 50],
             "alpha": 1

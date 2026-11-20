@@ -9,19 +9,16 @@
       "tokens": [
         {
           "path": "color.brand",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [0.8823529411764706, 0.11372549019607843, 0.2823529411764706],
             "alpha": 1,
             "hex": "#e11d48"
-          },
-          "original": {
-            "value": "#e11d48"
           }
         },
         {
           "path": "color.loud",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [0.8823529411764706, 0.11372549019607843, 0.2823529411764706],
             "alpha": 1,
@@ -30,7 +27,7 @@
         },
         {
           "path": "color.scrim",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [0, 0, 0],
             "alpha": 0.5019607843137255,
@@ -47,7 +44,7 @@
         },
         {
           "path": "color.danger",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [0.8823529411764706, 0.11372549019607843, 0.2823529411764706],
             "alpha": 1,
@@ -56,7 +53,7 @@
         },
         {
           "path": "edge",
-          "resolved": {
+          "resolvedValue": {
             "color": {
               "colorSpace": "srgb",
               "components": [0, 0, 0],
@@ -72,7 +69,7 @@
         },
         {
           "path": "lift",
-          "resolved": [
+          "resolvedValue": [
             {
               "color": {
                 "colorSpace": "srgb",
@@ -102,7 +99,7 @@
         },
         {
           "path": "fade",
-          "resolved": [
+          "resolvedValue": [
             {
               "color": {
                 "colorSpace": "srgb",

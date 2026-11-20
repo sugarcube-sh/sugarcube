@@ -1,4 +1,3 @@
-import type { Token } from "../model/token.js";
 import type { TokenType, UnresolvedValue } from "../model/value.js";
 import { isJsonObject } from "./json.js";
 
@@ -23,40 +22,12 @@ export function isEquivalentValue<T extends TokenType>(
     type: T,
     a: UnresolvedValue<T>,
     b: UnresolvedValue<T>,
-): boolean;
-/**
- * Checks whether two tokens have the same type and value.
- *
- * References aren't followed. To compare final values, pass each token's `resolved` value and the
- * type.
- *
- * @param a - The first token, such as `light.getToken("color.primary")`.
- * @param b - The second token.
- *
- * @example
- * // color.primary differs between mode: light and mode: dark
- * isEquivalentValue(light.getToken("color.primary")!, dark.getToken("color.primary")!)
- * // => false
- */
-export function isEquivalentValue(a: Token, b: Token): boolean;
-export function isEquivalentValue(
-    ...values: [TokenType, unknown, unknown] | [Token, Token]
 ): boolean {
-    if (values.length === 3) return deepEqual(values[1], values[2], valueRules);
-    const [a, b] = values;
-    return a.type === b.type && hasEquivalentValue(a, b);
+    return hasEquivalentValue(a, b);
 }
 
-export interface ComparableValue {
-    value?: unknown;
-    original?: { value: unknown } | undefined;
-}
-
-export function hasEquivalentValue(a: ComparableValue, b: ComparableValue): boolean {
-    if (a.value === undefined || b.value === undefined) {
-        return a.value === b.value && isEqualJson(a.original?.value, b.original?.value);
-    }
-    return deepEqual(a.value, b.value, valueRules);
+export function hasEquivalentValue(a: unknown, b: unknown): boolean {
+    return deepEqual(a, b, valueRules);
 }
 
 /**

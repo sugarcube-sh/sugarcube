@@ -9,7 +9,12 @@ export {
 } from "./values/keywords.js";
 export { tokenTypes } from "./values/token-types.js";
 export { type ParseValueOptions, parseValue } from "./values/parse-value.js";
-export { toJsonPointer, parseReference, toReferenceTarget } from "./values/references.js";
+export {
+    isReference,
+    toJsonPointer,
+    parseReference,
+    toReferenceTarget,
+} from "./values/references.js";
 export { type ExtensionReader, createExtensionReader } from "./values/extension-reader.js";
 export type { ExtensionResult } from "./model/index.js";
 export { isJsonObject } from "./values/json.js";

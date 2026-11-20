@@ -55,7 +55,7 @@ type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 function getMemberPath(op: FileOp): JsonPath {
     if (!("jsonPath" in op)) return [];
     const end = op.jsonPath.findIndex(
-        (step) => typeof step === "string" && tokenPath.findInvalidCharacter(step) === "$",
+        (step) => typeof step === "string" && tokenPath.findNameProblem(step)?.character === "$",
     );
     return end === -1 ? op.jsonPath : op.jsonPath.slice(0, end);
 }
@@ -69,7 +69,7 @@ function applyYours(text: string | undefined, op: FileOp): string | undefined {
 function getPathByMember(versions: DesignTokens[], files: Set<string>): Map<string, string> {
     const pathByMember = new Map<string, string>();
     for (const tokens of versions) {
-        for (const path of [...tokens.getTokenPaths(), ...tokens.getGroupPaths()]) {
+        for (const path of [...tokens.tokenPaths, ...tokens.groupPaths]) {
             for (const { span, jsonPath } of tokens.getDefinitions(path)) {
                 if (!files.has(span.file)) continue;
                 const key = toMemberKey(span.file, jsonPath);

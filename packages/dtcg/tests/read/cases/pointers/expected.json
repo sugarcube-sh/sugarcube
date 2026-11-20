@@ -21,7 +21,7 @@
         },
         {
           "path": "semantic.primary",
-          "value": {
+          "parsedValue": {
             "colorSpace": "srgb",
             "components": [
               {
@@ -36,7 +36,7 @@
             ],
             "alpha": 1
           },
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [0.2, 0.4, 0.7],
             "alpha": 1
@@ -44,14 +44,14 @@
         },
         {
           "path": "semantic.small",
-          "resolved": {
+          "resolvedValue": {
             "value": 16,
             "unit": "rem"
           }
         },
         {
           "path": "semantic.h1",
-          "resolved": {
+          "resolvedValue": {
             "fontFamily": ["Helvetica", "Arial", "sans-serif"],
             "fontSize": {
               "value": 32,
@@ -68,14 +68,15 @@
         {
           "path": "semantic.whole",
           "type": "dimension",
-          "resolved": {
+          "typeFrom": { "path": "base.spacing", "via": "reference" },
+          "resolvedValue": {
             "value": 16,
             "unit": "px"
           }
         },
         {
           "path": "semantic.shadow-color",
-          "resolved": {
+          "resolvedValue": {
             "colorSpace": "srgb",
             "components": [0, 0, 0],
             "alpha": 1
@@ -84,37 +85,44 @@
         {
           "path": "semantic.shadow-listed",
           "type": "color",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "semantic.through-alias",
           "type": "number",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "semantic.wrong-type-part",
           "type": "border",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "semantic.wrong-type-whole",
           "type": "color",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "semantic.wrong-kind",
           "type": "color",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "loop.a",
           "type": "number",
-          "resolved": null
+          "typeFrom": { "path": "loop.b", "via": "reference" },
+          "resolvedValue": null
         },
         {
           "path": "loop.b",
           "type": "number",
-          "resolved": null
+          "typeFrom": { "path": "loop", "via": "group" },
+          "resolvedValue": null
         }
       ]
     }

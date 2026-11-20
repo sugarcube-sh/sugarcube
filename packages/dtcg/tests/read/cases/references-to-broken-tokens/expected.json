@@ -7,29 +7,32 @@
         {
           "path": "a",
           "type": "number",
-          "value": {
+          "typeFrom": null,
+          "parsedValue": {
             "syntax": "curly-brace",
             "path": "odd"
           },
-          "resolved": null
+          "resolvedValue": null
         },
         {
           "path": "b",
           "type": "number",
-          "value": {
+          "typeFrom": null,
+          "parsedValue": {
             "syntax": "curly-brace",
             "path": "loose"
           },
-          "resolved": null
+          "resolvedValue": null
         },
         {
           "path": "d",
           "type": "number",
-          "value": {
+          "typeFrom": null,
+          "parsedValue": {
             "syntax": "json-pointer",
             "pointer": "#/odd/$value"
           },
-          "resolved": null
+          "resolvedValue": null
         }
       ]
     }

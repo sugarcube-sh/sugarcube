@@ -58,9 +58,9 @@ export function toPublicResolver(
     const { file, version, name, description } = resolver;
     return {
         file: file.path,
-        ...(version !== undefined && { version }),
-        ...(name !== undefined && { name }),
-        ...(description !== undefined && { description }),
+        version,
+        name,
+        description,
         sets: sortByDocumentOrder([...sets.values()]).map((set) => publicSet(resolver, set)),
         modifiers: sortByDocumentOrder(modifiers).map((each) => publicModifier(resolver, each)),
         resolutionOrder: resolver.resolutionOrder.map((item) =>
@@ -70,24 +70,22 @@ export function toPublicResolver(
 }
 
 function publicSet(resolver: CheckedResolver, set: SetDefinition): ResolverSet {
-    const extensions = set.extensions && toPlainObject(set.extensions);
     return {
         name: set.name,
-        ...(set.description !== undefined && { description: set.description }),
-        ...(extensions && { extensions }),
+        description: set.description,
+        extensions: set.extensions && toPlainObject(set.extensions),
         sources: toSourceRefs(resolver, set.sources),
         span: toSpan(resolver.file, set.declared),
     };
 }
 
 function publicModifier(resolver: CheckedResolver, modifier: ModifierDefinition): ResolverModifier {
-    const extensions = modifier.extensions && toPlainObject(modifier.extensions);
     const result: Mutable<ResolverModifier> = createModifier({
         name: modifier.name,
-        ...(modifier.description !== undefined && { description: modifier.description }),
-        ...(extensions && { extensions }),
+        description: modifier.description,
+        extensions: modifier.extensions && toPlainObject(modifier.extensions),
         contexts: [],
-        ...(modifier.default !== undefined && { default: modifier.default }),
+        default: modifier.default,
         span: toSpan(resolver.file, modifier.declared),
     });
     result.contexts = [...modifier.contexts].map(([context, { sources, declared }]) =>

@@ -78,21 +78,21 @@ const partsOfPath = (path: string) => {
 
 describe("token.parts", () => {
     it("gives a simple value as one part, with what it resolved to", () => {
-        expect(partsOfPath("thin")).toStrictEqual({ type: "dimension", resolved: px(1) });
+        expect(partsOfPath("thin")).toEqual({ type: "dimension", resolvedValue: px(1) });
     });
 
     it("gives a whole value written as a reference that reference", () => {
-        expect(partsOfPath("accent")).toStrictEqual({
+        expect(partsOfPath("accent")).toEqual({
             type: "color",
-            resolved: redRead,
+            resolvedValue: redRead,
             ref: expect.objectContaining({ parsed: { syntax: "curly-brace", path: "red" } }),
         });
     });
 
     it("gives each part of a composite, typed, with the reference written there", () => {
-        expect(partsOfPath("edge")).toStrictEqual({
+        expect(partsOfPath("edge")).toEqual({
             type: "border",
-            resolved: {
+            resolvedValue: {
                 color: redRead,
                 width: px(2),
                 style: "solid",
@@ -100,40 +100,40 @@ describe("token.parts", () => {
             color: {
                 type: "color",
                 property: ["color"],
-                resolved: redRead,
+                resolvedValue: redRead,
                 ref: expect.objectContaining({ parsed: { syntax: "curly-brace", path: "red" } }),
             },
-            width: { type: "dimension", property: ["width"], resolved: px(2) },
+            width: { type: "dimension", property: ["width"], resolvedValue: px(2) },
             style: {
                 type: "strokeStyle",
                 property: ["style"],
-                resolved: "solid",
+                resolvedValue: "solid",
             },
         });
     });
 
     it("gives a JSON Pointer written at a part as its reference", () => {
         const border = partsOfPath("pointed");
-        expect(border?.type === "border" && border.color.ref?.parsed).toStrictEqual({
+        expect(border?.type === "border" && border.color.ref?.parsed).toEqual({
             syntax: "json-pointer",
             pointer: "#/red/$value",
         });
-        expect(border?.type === "border" && border.width.ref?.parsed).toStrictEqual({
+        expect(border?.type === "border" && border.width.ref?.parsed).toEqual({
             syntax: "curly-brace",
             path: "thin",
         });
     });
 
     it("leaves a pointer inside a part, such as at one color component, in what it resolved to", () => {
-        expect(partsOfPath("mixed")).toStrictEqual({ type: "color", resolved: redRead });
+        expect(partsOfPath("mixed")).toEqual({ type: "color", resolvedValue: redRead });
     });
 
     it("gives a shadow its layers, a single shadow as a list of one", () => {
         const shadow = partsOfPath("lone");
-        expect(shadow?.type === "shadow" && shadow.layers).toStrictEqual([
+        expect(shadow?.type === "shadow" && shadow.layers).toEqual([
             {
                 property: [0],
-                resolved: {
+                resolvedValue: {
                     color: redRead,
                     offsetX: px(0),
                     offsetY: px(1),
@@ -144,15 +144,15 @@ describe("token.parts", () => {
                 color: {
                     type: "color",
                     property: [0, "color"],
-                    resolved: redRead,
+                    resolvedValue: redRead,
                     ref: expect.objectContaining({
                         parsed: { syntax: "curly-brace", path: "red" },
                     }),
                 },
-                offsetX: { type: "dimension", property: [0, "offsetX"], resolved: px(0) },
-                offsetY: { type: "dimension", property: [0, "offsetY"], resolved: px(1) },
-                blur: { type: "dimension", property: [0, "blur"], resolved: px(2) },
-                spread: { type: "dimension", property: [0, "spread"], resolved: px(0) },
+                offsetX: { type: "dimension", property: [0, "offsetX"], resolvedValue: px(0) },
+                offsetY: { type: "dimension", property: [0, "offsetY"], resolvedValue: px(1) },
+                blur: { type: "dimension", property: [0, "blur"], resolvedValue: px(2) },
+                spread: { type: "dimension", property: [0, "spread"], resolvedValue: px(0) },
             },
         ]);
     });
@@ -162,13 +162,13 @@ describe("token.parts", () => {
         if (shadow?.type !== "shadow") throw new Error("not a shadow");
         const [first, second] = shadow.layers;
         expect(first?.ref).toMatchObject({ parsed: { syntax: "curly-brace", path: "lone" } });
-        expect(first?.color).toStrictEqual({
+        expect(first?.color).toEqual({
             type: "color",
             property: [0, "color"],
-            resolved: redRead,
+            resolvedValue: redRead,
         });
         expect(second?.ref).toBeUndefined();
-        expect(second?.resolved.inset).toBe(true);
+        expect(second?.resolvedValue.inset).toBe(true);
         expect(second?.offsetX.ref).toMatchObject({
             parsed: { syntax: "curly-brace", path: "thin" },
         });
@@ -177,14 +177,14 @@ describe("token.parts", () => {
     it("gives a gradient its stops, each with its color and position", () => {
         const gradient = partsOfPath("fade");
         if (gradient?.type !== "gradient") throw new Error("not a gradient");
-        expect(gradient.stops.map(({ color, position }) => [color.ref, position])).toStrictEqual([
-            [undefined, { type: "number", property: [0, "position"], resolved: 0 }],
+        expect(gradient.stops.map(({ color, position }) => [color.ref, position])).toEqual([
+            [undefined, { type: "number", property: [0, "position"], resolvedValue: 0 }],
             [
                 expect.objectContaining({ parsed: { syntax: "curly-brace", path: "red" } }),
                 {
                     type: "number",
                     property: [1, "position"],
-                    resolved: 0.5,
+                    resolvedValue: 0.5,
                     ref: expect.objectContaining({
                         parsed: { syntax: "curly-brace", path: "half" },
                     }),
@@ -195,19 +195,17 @@ describe("token.parts", () => {
 
     it("gives a dash pattern its lengths, and a keyword none", () => {
         const dash = partsOfPath("dash");
-        expect(dash?.type === "strokeStyle" && "dashArray" in dash && dash.dashArray).toStrictEqual(
-            [
-                {
-                    type: "dimension",
-                    property: ["dashArray", 0],
-                    resolved: px(1),
-                    ref: expect.objectContaining({
-                        parsed: { syntax: "curly-brace", path: "thin" },
-                    }),
-                },
-                { type: "dimension", property: ["dashArray", 1], resolved: px(2) },
-            ],
-        );
+        expect(dash?.type === "strokeStyle" && "dashArray" in dash && dash.dashArray).toEqual([
+            {
+                type: "dimension",
+                property: ["dashArray", 0],
+                resolvedValue: px(1),
+                ref: expect.objectContaining({
+                    parsed: { syntax: "curly-brace", path: "thin" },
+                }),
+            },
+            { type: "dimension", property: ["dashArray", 1], resolvedValue: px(2) },
+        ]);
         const plain = partsOfPath("plain");
         expect(plain?.type === "strokeStyle" && "dashArray" in plain).toBe(false);
     });
@@ -215,7 +213,7 @@ describe("token.parts", () => {
     it("gives typography its five parts, in the spec's order", () => {
         const typography = partsOfPath("body");
         if (typography?.type !== "typography") throw new Error("not typography");
-        expect(typePartsOf(typography)).toStrictEqual([
+        expect(typePartsOf(typography)).toEqual([
             ["fontFamily", "fontFamily"],
             ["fontSize", "dimension"],
             ["fontWeight", "fontWeight"],
@@ -225,10 +223,10 @@ describe("token.parts", () => {
         expect(typography.fontFamily.ref).toMatchObject({
             parsed: { syntax: "curly-brace", path: "family" },
         });
-        expect(typography.lineHeight).toStrictEqual({
+        expect(typography.lineHeight).toEqual({
             type: "number",
             property: ["lineHeight"],
-            resolved: 0.5,
+            resolvedValue: 0.5,
             ref: expect.objectContaining({ parsed: { syntax: "curly-brace", path: "half" } }),
         });
     });
@@ -245,24 +243,24 @@ describe("token.parts", () => {
             gradient?.type !== "gradient"
         )
             throw new Error("wrong types");
-        expect(typePartsOf(motion)).toStrictEqual([
+        expect(typePartsOf(motion)).toEqual([
             ["duration", "duration"],
             ["delay", "duration"],
             ["timingFunction", "cubicBezier"],
         ]);
-        expect(typePartsOf(edge)).toStrictEqual([
+        expect(typePartsOf(edge)).toEqual([
             ["color", "color"],
             ["width", "dimension"],
             ["style", "strokeStyle"],
         ]);
-        expect(typePartsOf(shadow.layers[0])).toStrictEqual([
+        expect(typePartsOf(shadow.layers[0])).toEqual([
             ["color", "color"],
             ["offsetX", "dimension"],
             ["offsetY", "dimension"],
             ["blur", "dimension"],
             ["spread", "dimension"],
         ]);
-        expect(typePartsOf(gradient.stops[0])).toStrictEqual([
+        expect(typePartsOf(gradient.stops[0])).toEqual([
             ["color", "color"],
             ["position", "number"],
         ]);

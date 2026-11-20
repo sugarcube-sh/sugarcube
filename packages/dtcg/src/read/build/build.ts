@@ -7,11 +7,12 @@ import type { JsonPath, Span } from "../../model/location.js";
 import type { ParseResult } from "../../model/parse.js";
 import {
     type Definition,
+    type LocalGroup,
     NO_EXTENSION_DEFINITIONS,
     NO_DEFINITIONS,
 } from "../../model/definition.js";
 import type { Source } from "../../model/source.js";
-import { type Token, type OriginalProperties, createTokenObject } from "../../model/token.js";
+import { type InheritedFrom, type Token, createTokenObject } from "../../model/token.js";
 import type { TokenType } from "../../model/value.js";
 import { tokenPath } from "../../path.js";
 import { getReferencePath, toReferenceTarget } from "../../values/references.js";
@@ -24,9 +25,11 @@ import {
 import {
     type EffectiveSettings,
     getEffectiveSettings,
-    findDeprecatingGroup,
+    findDeprecatedFrom,
     findDeprecation,
-    getInheritedProperty,
+    findGroupDescriptionFrom,
+    findGroupTypeFrom,
+    findTokenType,
 } from "../merge/inherit.js";
 import { NO_REFERENCES, type ReferenceWithTarget, createReference } from "../../model/reference.js";
 import type { DefinitionTracker } from "./definition-tracker.js";
@@ -43,7 +46,7 @@ import {
     toValuePointer,
 } from "../merge/target.js";
 import { type ResolveContext, UNRESOLVED, resolveValue } from "./resolve-value.js";
-import { type TokenBuildFields, sameGroup, sameToken } from "./reuse.js";
+import { type GroupBuildFields, type TokenBuildFields, sameGroup, sameToken } from "./reuse.js";
 import { type Properties, toValidType } from "../merge/walk.js";
 
 interface Context {
@@ -73,9 +76,15 @@ interface Resolved {
     read: ParseResult<unknown>;
     references: LocatedReference[];
     resolved?: unknown;
+    typeFrom: InheritedFrom | undefined;
 }
 
 type ResolveResult = Resolved | "untyped";
+
+interface DeclaredType {
+    type: TokenType;
+    typeFrom: InheritedFrom | undefined;
+}
 
 interface TokenToBuild {
     path: string;
@@ -89,21 +98,13 @@ type TargetLocation =
     | { occurrence: Occurrence; isToken: true; path: string; pointsToProperty?: JsonPath }
     | { occurrence: Occurrence; isToken: false; path: string | undefined };
 
-interface GroupBuildFields {
-    settings: EffectiveSettings;
-    deprecatedByGroup: string | undefined;
-    definitions: readonly Definition[];
-    children: (Token | Group)[];
-    extending: Group | undefined;
-}
-
 interface NewToken {
     token: Mutable<Token>;
     tokenToBuild: TokenToBuild;
 }
 
 type AliasTarget =
-    | { kind: "token"; value: ResolveResult | undefined }
+    | { kind: "token"; path: string; value: ResolveResult | undefined }
     | { kind: "part" }
     | { kind: "unreachable" };
 
@@ -224,16 +225,18 @@ function getTokenBuildFields(
     const deprecated = findDeprecation(mergedToken, context.merged);
     const shared = {
         type: resolved.type,
+        typeFrom: resolved.typeFrom,
         deprecated,
-        deprecatedByGroup: findDeprecatingGroup(context.merged, mergedToken, deprecated),
+        deprecatedFrom: findDeprecatedFrom(context.merged, mergedToken, deprecated),
         definitions: getTokenDefinitions(path, mergedToken, context),
     };
 
     const { read } = resolved;
-    if (!read.ok) return { ...shared, value: undefined, resolved: undefined, invalid: true };
+    if (!read.ok)
+        return { ...shared, parsedValue: undefined, resolvedValue: undefined, invalid: true };
 
     const resolvedValue = "resolved" in resolved ? resolved.resolved : undefined;
-    return { ...shared, value: read.value, resolved: resolvedValue, invalid: undefined };
+    return { ...shared, parsedValue: read.value, resolvedValue: resolvedValue, invalid: undefined };
 }
 
 function getTokenDefinitions(
@@ -359,21 +362,11 @@ function listChildren(
 
 function findReusableGroup(
     mergedGroup: MergedGroup,
-    { settings, deprecatedByGroup, definitions, children, extending }: GroupBuildFields,
+    fields: GroupBuildFields,
     context: PermutationContext,
 ): Group | undefined {
     const candidates = context.reusable.groups.get(mergedGroup.path);
-    const reused = candidates?.find((group) =>
-        sameGroup(
-            group,
-            mergedGroup,
-            settings,
-            deprecatedByGroup,
-            definitions,
-            children,
-            extending,
-        ),
-    );
+    const reused = candidates?.find((group) => sameGroup(group, mergedGroup, fields));
     if (!reused) return undefined;
 
     if (mergedGroup.extends)
@@ -383,17 +376,17 @@ function findReusableGroup(
 
 function createGroup(
     mergedGroup: MergedGroup,
-    { settings, deprecatedByGroup, definitions, children, extending }: GroupBuildFields,
+    fields: GroupBuildFields,
     tokens: ReadonlyMap<string, Token>,
     context: PermutationContext,
 ): Group {
-    const fields = toGroupFields(mergedGroup, settings, deprecatedByGroup, definitions);
-    const group: Mutable<Group> = createGroupObject(fields);
+    const { children, extending } = fields;
+    const group: Mutable<Group> = createGroupObject(toGroupFields(mergedGroup, fields));
     group.children = children;
 
     const rootToken = findRootToken(children);
-    if (rootToken) group.rootToken = rootToken;
-    if (extending) group.extends = extending;
+    group.rootToken = rootToken;
+    group.extends = extending;
     if (mergedGroup.extends) {
         const { reference, steps, span } = mergedGroup.extends;
         const occurrence = { reference, steps, span, property: [] };
@@ -413,14 +406,23 @@ function getGroupBuildFields(
 ): GroupBuildFields {
     const { merged } = context;
     const settings = getEffectiveSettings(merged, mergedGroup);
-    const deprecatedByGroup = findDeprecatingGroup(
+    const deprecatedFrom = findDeprecatedFrom(
         merged,
         mergedGroup,
         settings.deprecated,
         settings.deprecatedBy,
     );
     const definitions = toDefinitions(mergedGroup.locations, mergedGroup.path, context);
-    return { settings, deprecatedByGroup, definitions, children, extending };
+    return {
+        settings,
+        typeFrom: findGroupTypeFrom(merged, mergedGroup),
+        descriptionFrom: findGroupDescriptionFrom(merged, mergedGroup),
+        deprecatedFrom,
+        definitions,
+        extensionDefinitions: getExtensionDefinitions(settings, context),
+        children,
+        extending,
+    };
 }
 
 function toPermutation(
@@ -485,57 +487,59 @@ class TokenValues implements ResolveContext {
     }
 
     #resolveUncached(token: MergedToken): ResolveResult {
-        const declaredType = this.#findDeclaredType(token);
-        if (declaredType === "untyped") return "untyped";
+        const declared = this.#findDeclaredType(token);
+        if (declared === "untyped") return "untyped";
 
         const alias = createAliasOccurrence(token);
-        if (alias) return this.#resolveAlias(token, alias, declaredType);
+        if (alias) return this.#resolveAlias(token, alias, declared);
 
-        if (declaredType === undefined) return "untyped";
-        return this.#readAndResolve(token, declaredType);
+        if (declared === undefined) return "untyped";
+        return this.#readAndResolve(token, declared.type, declared.typeFrom);
     }
 
-    #findDeclaredType(token: MergedToken): TokenType | "untyped" | undefined {
+    #findDeclaredType(token: MergedToken): DeclaredType | "untyped" | undefined {
         if (token.type === undefined && token.reference) return undefined;
 
-        const type = getInheritedProperty(token, this.merged, "type");
+        const { type, typeFrom } = findTokenType(this.merged, token);
         if (type === "invalid") return "untyped";
         if (type === undefined) {
             this.report("missing-type", {}, token.path, token.nameSpan);
             return "untyped";
         }
-        return type;
+        return { type, typeFrom };
     }
 
     #resolveAlias(
         token: MergedToken,
         alias: Occurrence,
-        declaredType: TokenType | undefined,
+        declared: DeclaredType | undefined,
     ): ResolveResult {
         const target = this.#followAlias(token, alias);
 
         if (target.kind === "unreachable") {
             this.reportUnreachable(alias, token.path, alias.span);
-            return this.#readWithFallbackType(token, declaredType);
+            return this.#readWithFallbackType(token, declared);
         }
 
         if (target.kind === "part") {
-            const type = declaredType ?? this.#findGroupType(token);
-            if (type === undefined) {
+            const found = declared ?? this.#findGroupType(token);
+            if (found === undefined) {
                 this.report("missing-type", {}, token.path, token.nameSpan);
                 return "untyped";
             }
-            return this.#readAndResolve(token, type);
+            return this.#readAndResolve(token, found.type, found.typeFrom);
         }
 
         const targetValue = target.value;
         if (targetValue === undefined || targetValue === "untyped") {
-            return this.#readWithFallbackType(token, declaredType);
+            return this.#readWithFallbackType(token, declared);
         }
 
-        const type = declaredType ?? targetValue.type;
-        if (!("resolved" in targetValue)) return this.#readWithoutResolving(token, type);
-        return this.#readAndResolve(token, type);
+        const type = declared?.type ?? targetValue.type;
+        const typeFrom: InheritedFrom | undefined =
+            declared === undefined ? { path: target.path, via: "reference" } : undefined;
+        if (!("resolved" in targetValue)) return this.#readWithoutResolving(token, type, typeFrom);
+        return this.#readAndResolve(token, type, typeFrom);
     }
 
     #followAlias(token: MergedToken, alias: Occurrence): AliasTarget {
@@ -543,13 +547,13 @@ class TokenValues implements ResolveContext {
         if (reference.syntax === "curly-brace") {
             const value = this.resolveDependency(reference.path, token.path, alias.span);
             if (value === undefined) return { kind: "unreachable" };
-            return { kind: "token", value };
+            return { kind: "token", path: reference.path, value };
         }
 
         const target = followReference(alias, this.merged);
         if (target.kind === "token") {
             const value = this.resolveDependency(target.path, token.path, alias.span);
-            return { kind: "token", value };
+            return { kind: "token", path: target.path, value };
         }
         if (target.kind === "part") return { kind: "part" };
         return { kind: "unreachable" };
@@ -565,13 +569,17 @@ class TokenValues implements ResolveContext {
         return result;
     }
 
-    #readAndResolve(token: MergedToken, type: TokenType): ResolveResult {
+    #readAndResolve(
+        token: MergedToken,
+        type: TokenType,
+        typeFrom: InheritedFrom | undefined,
+    ): ResolveResult {
         const {
             result: read,
             references,
             deferredReads,
         } = this.readValue.read(token, type, this.input);
-        const unresolved = { type, read, references };
+        const unresolved = { type, read, references, typeFrom };
         if (!read.ok) return unresolved;
         if (references.length === 0) return { ...unresolved, resolved: read.value };
 
@@ -580,19 +588,25 @@ class TokenValues implements ResolveContext {
         return { ...unresolved, resolved: value };
     }
 
-    #readWithFallbackType(token: MergedToken, declaredType: TokenType | undefined): ResolveResult {
-        const type = declaredType ?? this.#findGroupType(token);
-        if (type === undefined) return "untyped";
-        return this.#readWithoutResolving(token, type);
+    #readWithFallbackType(token: MergedToken, declared: DeclaredType | undefined): ResolveResult {
+        const found = declared ?? this.#findGroupType(token);
+        if (found === undefined) return "untyped";
+        return this.#readWithoutResolving(token, found.type, found.typeFrom);
     }
 
-    #readWithoutResolving(token: MergedToken, type: TokenType): ResolveResult {
+    #readWithoutResolving(
+        token: MergedToken,
+        type: TokenType,
+        typeFrom: InheritedFrom | undefined,
+    ): ResolveResult {
         const { result: read, references } = this.readValue.read(token, type, this.input);
-        return { type, read, references };
+        return { type, read, references, typeFrom };
     }
 
-    #findGroupType(token: MergedToken): TokenType | undefined {
-        return toValidType(getInheritedProperty(token, this.merged, "type"));
+    #findGroupType(token: MergedToken): DeclaredType | undefined {
+        const { type, typeFrom } = findTokenType(this.merged, token);
+        const valid = toValidType(type);
+        return valid === undefined ? undefined : { type: valid, typeFrom };
     }
 
     #reportLoop(path: string): void {
@@ -693,37 +707,53 @@ function locateTarget(occurrence: Occurrence, merged: Merged): TargetLocation {
 
 function toGroupFields(
     group: MergedGroup,
-    settings: EffectiveSettings,
-    deprecatedByGroup: string | undefined,
-    definitions: readonly Definition[],
+    {
+        settings,
+        typeFrom,
+        descriptionFrom,
+        deprecatedFrom,
+        definitions,
+        extensionDefinitions,
+    }: GroupBuildFields,
 ): Parameters<typeof createGroupObject>[0] {
-    const { path, inherited: inheritedFrom } = group;
-    const own = pickPublicProperties(group);
+    const { path, extendedFrom } = group;
+    const local = getLocalGroup(group);
     return {
         path,
         ...pickPublicProperties(settings),
-        ...(deprecatedByGroup !== undefined && { deprecatedByGroup }),
+        typeFrom,
+        descriptionFrom,
+        deprecatedFrom,
         definitions,
-        extensionDefinitions: getExtensionDefinitions(group, definitions),
+        extensionDefinitions,
         children: [],
         references: NO_REFERENCES,
-        ...(inheritedFrom && { inherited: inheritedFrom }),
-        ...(Object.keys(own).length > 0 && { original: own }),
+        extendedFrom,
+        local: Object.keys(local).length > 0 ? local : undefined,
+    };
+}
+
+function getLocalGroup(group: MergedGroup): LocalGroup {
+    const extended = group.extends && getReferencePath(group.extends.reference);
+    return {
+        ...pickPublicProperties(group),
+        ...(extended !== undefined && { extends: extended }),
     };
 }
 
 function getExtensionDefinitions(
-    { extensionLocations, locations }: MergedGroup,
-    definitions: readonly Definition[],
+    { extensionLocations }: EffectiveSettings,
+    { merged, tracker, sources }: PermutationContext,
 ): Readonly<Record<string, Definition>> {
     if (!extensionLocations) return NO_EXTENSION_DEFINITIONS;
 
     const byKey: Record<string, Definition> = {};
-    for (const [key, { source }] of Object.entries(extensionLocations)) {
-        locations.forEach((location, index) => {
-            const definition = definitions[index];
-            if (location.source === source && definition) byKey[key] = definition;
-        });
+    for (const [key, { source, group }] of Object.entries(extensionLocations)) {
+        const writer = merged.groups.get(group);
+        const location = writer?.locations.findLast((each) => each.source === source);
+        if (writer && location) {
+            byKey[key] = tracker.at(sources[source] as Source, location.span, writer.path);
+        }
     }
     return Object.freeze(byKey);
 }
@@ -734,8 +764,8 @@ function pickPublicProperties<Deprecated extends Properties["deprecated"]>({
     deprecated,
     extensions,
 }: Omit<Properties, "deprecated"> & { deprecated?: Deprecated }): Omit<
-    OriginalProperties,
-    "deprecated"
+    LocalGroup,
+    "deprecated" | "extends"
 > & {
     deprecated?: Deprecated;
 } {
@@ -752,27 +782,20 @@ function toTokenFields(
     token: MergedToken,
     fields: TokenBuildFields,
 ): Parameters<typeof createTokenObject>[0] {
-    const original = token.generated
-        ? undefined
-        : {
-              value: token.originalValue,
-              ...pickPublicProperties({ type: token.type, deprecated: token.deprecated }),
-          };
-
     return {
         path: token.path,
         type: fields.type,
+        typeFrom: fields.typeFrom,
         references: NO_REFERENCES,
         definitions: fields.definitions,
-        value: fields.value,
-        resolved: fields.resolved,
+        parsedValue: fields.parsedValue,
+        resolvedValue: fields.resolvedValue,
         invalid: fields.invalid,
         description: token.description,
         deprecated: fields.deprecated,
-        deprecatedByGroup: fields.deprecatedByGroup,
+        deprecatedFrom: fields.deprecatedFrom,
         extensions: token.extensions,
-        original,
-        generated: token.generated,
-        inherited: token.inherited,
+        generatedFrom: token.generatedFrom,
+        extendedFrom: token.extendedFrom,
     } as Parameters<typeof createTokenObject>[0];
 }

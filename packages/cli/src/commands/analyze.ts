@@ -70,7 +70,7 @@ const unusedCommand = new Command()
                 return;
             }
             if (answer.unused.length > 0) {
-                log.message(formatUnusedTable(answer, built.tokens.getTokenPaths()));
+                log.message(formatUnusedTable(answer, built.tokens.tokenPaths));
             }
             outro(formatUnusedSummary(answer, uses));
         } catch (error) {

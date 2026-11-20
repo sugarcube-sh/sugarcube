@@ -18,7 +18,6 @@
           "name": "base"
         }
       ],
-      "contexts": "every-context",
       "extensions": {
         "com.example": {
           "layer": "outer"
@@ -32,7 +31,6 @@
           "name": "base"
         }
       ],
-      "contexts": "every-context",
       "extensions": {
         "com.example": {
           "layer": "inner"

@@ -8,8 +8,7 @@
         {
           "name": "base"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "brand.json",
@@ -17,8 +16,7 @@
         {
           "name": "base"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "dark.json",
@@ -38,15 +36,10 @@
         {
           "path": "color.brand",
           "type": "color",
+          "typeFrom": { "path": "color", "via": "group" },
           "description": "The brand color",
-          "original": {
-            "value": {
-              "colorSpace": "srgb",
-              "components": [0.882, 0.114, 0.282],
-              "hex": "#e11d48"
-            }
-          },
-          "value": {
+
+          "parsedValue": {
             "colorSpace": "srgb",
             "components": [0.882, 0.114, 0.282],
             "alpha": 1,
@@ -65,12 +58,8 @@
         {
           "path": "color.muted",
           "type": "color",
-          "original": {
-            "value": {
-              "colorSpace": "srgb",
-              "components": [0.4, 0.4, 0.4]
-            }
-          },
+          "typeFrom": { "path": "color", "via": "group" },
+
           "definitions": [
             {
               "source": 0,
@@ -94,7 +83,9 @@
         {
           "path": "color",
           "type": "color",
+          "typeFrom": null,
           "description": "Brand colors",
+          "descriptionFrom": null,
           "extensions": {
             "com.example": {
               "tier": 1
@@ -133,13 +124,9 @@
         {
           "path": "color.brand",
           "type": "color",
-          "original": {
-            "value": {
-              "colorSpace": "oklch",
-              "components": [0.7, 0.2, 20]
-            }
-          },
-          "value": {
+          "typeFrom": { "path": "color", "via": "group" },
+
+          "parsedValue": {
             "colorSpace": "oklch",
             "components": [0.7, 0.2, 20],
             "alpha": 1
@@ -164,12 +151,8 @@
         {
           "path": "color.muted",
           "type": "color",
-          "original": {
-            "value": {
-              "colorSpace": "srgb",
-              "components": [0.4, 0.4, 0.4]
-            }
-          },
+          "typeFrom": { "path": "color", "via": "group" },
+
           "definitions": [
             {
               "source": 0,
@@ -193,7 +176,9 @@
         {
           "path": "color",
           "type": "color",
+          "typeFrom": null,
           "description": "Brand colors",
+          "descriptionFrom": null,
           "extensions": {
             "com.example": {
               "mode": "dark"

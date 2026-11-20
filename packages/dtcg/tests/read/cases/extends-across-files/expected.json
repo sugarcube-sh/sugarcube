@@ -13,12 +13,9 @@
         {
           "path": "card.raised",
           "type": "number",
-          "original": {
-            "value": 1
-          },
-          "inherited": {
-            "from": "surface"
-          },
+          "typeFrom": { "path": "surface", "via": "group" },
+
+          "extendedFrom": { "path": "surface.raised" },
           "definitions": [
             {
               "source": 0,
@@ -42,12 +39,9 @@
         {
           "path": "card.raised",
           "type": "number",
-          "original": {
-            "value": 2
-          },
-          "inherited": {
-            "from": "surface"
-          },
+          "typeFrom": { "path": "surface", "via": "group" },
+
+          "extendedFrom": { "path": "surface.raised" },
           "definitions": [
             {
               "source": 2,

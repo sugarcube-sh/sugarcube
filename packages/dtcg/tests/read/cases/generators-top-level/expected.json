@@ -9,7 +9,7 @@
       "tokens": [
         {
           "path": "gap",
-          "resolved": {
+          "resolvedValue": {
             "value": 1,
             "unit": "rem"
           }
@@ -17,15 +17,13 @@
         {
           "path": "2",
           "type": "dimension",
-          "resolved": {
+          "typeFrom": { "path": "", "via": "group" },
+          "resolvedValue": {
             "value": 2,
             "unit": "rem"
           },
-          "generated": {
-            "from": "",
-            "extension": ["com.example", "steps"]
-          },
-          "original": null,
+          "generatedFrom": { "path": "", "extension": ["com.example", "steps"] },
+
           "definitions": [
             {
               "source": 0,
@@ -38,10 +36,7 @@
         },
         {
           "path": "1",
-          "generated": {
-            "from": "",
-            "extension": ["com.example", "steps"]
-          }
+          "generatedFrom": { "path": "", "extension": ["com.example", "steps"] }
         }
       ]
     }

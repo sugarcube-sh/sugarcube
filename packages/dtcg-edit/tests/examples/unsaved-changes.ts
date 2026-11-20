@@ -9,13 +9,13 @@ for (const change of session.getChanges()) {
     const where = change.permutations.label;
     switch (change.kind) {
         case "added":
-            if (!change.generated) row("added", change.path, where);
+            if (!change.generatedFrom) row("added", change.path, where);
             break;
         case "removed":
-            if (!change.generated) row("removed", change.path, where);
+            if (!change.generatedFrom) row("removed", change.path, where);
             break;
         case "changed":
-            if (change.generated) break;
+            if (change.generatedFrom) break;
             row(
                 change.path,
                 change.properties.join(", "),

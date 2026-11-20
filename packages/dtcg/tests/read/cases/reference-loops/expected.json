@@ -7,36 +7,42 @@
         {
           "path": "a",
           "type": "number",
-          "value": {
+          "typeFrom": null,
+          "parsedValue": {
             "syntax": "curly-brace",
             "path": "b"
           },
-          "resolved": null
+          "resolvedValue": null
         },
         {
           "path": "b",
           "type": "number",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "c",
           "type": "number",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "d",
           "type": "number",
-          "resolved": null
+          "typeFrom": null,
+          "resolvedValue": null
         },
         {
           "path": "x",
           "type": "number",
-          "resolved": 16
+          "typeFrom": null,
+          "resolvedValue": 16
         },
         {
           "path": "y",
           "type": "typography",
-          "resolved": {
+          "typeFrom": null,
+          "resolvedValue": {
             "fontFamily": ["Inter"],
             "fontSize": {
               "value": 16,

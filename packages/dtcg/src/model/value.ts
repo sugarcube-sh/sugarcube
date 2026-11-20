@@ -37,7 +37,7 @@ export type ColorComponent = number | "none";
  *
  * @example
  * // color.blue.500
- * light.getToken("color.blue.500")!.value
+ * light.getToken("color.blue.500")!.parsedValue
  * // => { colorSpace: "srgb", components: [0.2, 0.4, 0.8], alpha: 1 }
  */
 export interface ColorValue {
@@ -346,12 +346,12 @@ export interface UnresolvedValueByType {
 /**
  * A value of type `T`, with its references not followed yet.
  *
- * It's the type of {@link TokenBase.value | Token.value}.
- * {@link TokenBase.resolved | Token.resolved} has the references followed.
+ * It's the type of {@link TokenBase.parsedValue | Token.parsedValue}.
+ * {@link TokenBase.resolvedValue | Token.resolvedValue} has the references followed.
  *
  * @example
  * // color.primary in dark
- * dark.getToken("color.primary")!.value
+ * dark.getToken("color.primary")!.parsedValue
  * // => { syntax: "curly-brace", path: "color.blue.300" }
  */
 export type UnresolvedValue<T extends TokenType> = UnresolvedValueByType[T];

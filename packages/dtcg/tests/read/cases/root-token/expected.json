@@ -7,16 +7,19 @@
         {
           "path": "size.$root",
           "type": "number",
+          "typeFrom": { "path": "size", "via": "group" },
           "deprecated": "use space"
         },
         {
           "path": "size.lg",
           "type": "number",
+          "typeFrom": { "path": "size", "via": "group" },
           "deprecated": "use space"
         },
         {
           "path": "accent.$root",
-          "type": "color"
+          "type": "color",
+          "typeFrom": null
         }
       ],
       "groups": [

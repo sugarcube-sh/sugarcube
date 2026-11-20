@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 6.4 (Examples 13 and 14): a group that extends another gets its tokens and properties, a local token with the same path replaces the inherited one whole, and groups merge deeply. What is inherited is marked with the group it came from; a chain follows the target's own $extends first",
+  "spec": "Format 6.4 (Examples 13 and 14): a group that extends another gets its tokens and properties, a local token with the same path replaces the inherited one whole, and groups merge deeply. Each copy names the token or group it copies, where that is written, so a copy of a copy names the first; a chain follows the target's own $extends first",
   "permutations": [
     {
       "tokens": [
@@ -19,6 +19,7 @@
         {
           "path": "button-primary.background",
           "type": "number",
+          "typeFrom": { "path": "button", "via": "group" },
           "definitions": [
             {
               "source": 0,
@@ -33,23 +34,19 @@
         {
           "path": "button-primary.state.hover",
           "type": "number",
-          "original": {
-            "value": 30
-          }
+          "typeFrom": { "path": "button", "via": "group" }
         },
         {
           "path": "button-primary.state.focus",
           "type": "number",
-          "inherited": {
-            "from": "button"
-          }
+          "typeFrom": { "path": "button", "via": "group" },
+          "extendedFrom": { "path": "button.state.focus" }
         },
         {
           "path": "button-primary.text",
           "type": "number",
-          "inherited": {
-            "from": "button"
-          },
+          "typeFrom": { "path": "button", "via": "group" },
+          "extendedFrom": { "path": "button.text" },
           "definitions": [
             {
               "source": 0,
@@ -62,37 +59,26 @@
         },
         {
           "path": "button-large.padding",
-          "type": "number"
+          "type": "number",
+          "typeFrom": { "path": "button", "via": "group" }
         },
         {
           "path": "button-large.background",
-          "original": {
-            "value": 9
-          },
-          "inherited": {
-            "from": "button-primary"
-          }
+
+          "extendedFrom": { "path": "button-primary.background" }
         },
         {
           "path": "button-large.state.hover",
-          "original": {
-            "value": 30
-          },
-          "inherited": {
-            "from": "button-primary"
-          }
+
+          "extendedFrom": { "path": "button-primary.state.hover" }
         },
         {
           "path": "button-large.state.focus",
-          "inherited": {
-            "from": "button-primary"
-          }
+          "extendedFrom": { "path": "button.state.focus" }
         },
         {
           "path": "button-large.text",
-          "inherited": {
-            "from": "button-primary"
-          }
+          "extendedFrom": { "path": "button.text" }
         }
       ],
       "groups": [
@@ -108,7 +94,9 @@
           "path": "button-primary",
           "extends": null,
           "type": "number",
+          "typeFrom": { "path": "button", "via": "extends" },
           "description": "Buttons",
+          "descriptionFrom": { "path": "button", "via": "extends" },
           "references": [
             {
               "parsed": { "syntax": "curly-brace", "path": "button" },
@@ -144,7 +132,9 @@
         {
           "path": "button-large",
           "type": "number",
+          "typeFrom": { "path": "button", "via": "extends" },
           "description": "Buttons",
+          "descriptionFrom": { "path": "button", "via": "extends" },
           "references": [
             {
               "parsed": { "syntax": "curly-brace", "path": "button-primary" },
@@ -158,9 +148,7 @@
         },
         {
           "path": "button-large.state",
-          "inherited": {
-            "from": "button-primary"
-          },
+          "extendedFrom": { "path": "button-primary.state" },
           "definitions": []
         }
       ]

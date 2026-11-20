@@ -8,9 +8,9 @@ const tokens = await read("tokens.resolver.json", {
 });
 
 row("", ...tokens.permutations.map((p) => p.label));
-for (const path of tokens.getTokenPaths()) {
+for (const path of tokens.tokenPaths) {
     const each = tokens.permutations.map((p) => p.getToken(path));
-    if (each.some((t) => t?.type === "color")) row(path, ...each.map((t) => t?.resolved));
+    if (each.some((t) => t?.type === "color")) row(path, ...each.map((t) => t?.resolvedValue));
 }
 const darkOcean = tokens.getPermutation({ theme: "dark", brand: "ocean" });
 showMessage(`${darkOcean.tokens.length} tokens in ${darkOcean.label}`);

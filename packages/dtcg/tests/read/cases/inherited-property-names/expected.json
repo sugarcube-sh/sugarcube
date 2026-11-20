@@ -6,11 +6,13 @@
       "tokens": [
         {
           "path": "__proto__",
-          "type": "number"
+          "type": "number",
+          "typeFrom": null
         },
         {
           "path": "toString.__proto__",
-          "type": "number"
+          "type": "number",
+          "typeFrom": { "path": "toString", "via": "group" }
         }
       ],
       "groups": [

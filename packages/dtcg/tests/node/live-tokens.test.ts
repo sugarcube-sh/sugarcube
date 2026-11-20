@@ -74,8 +74,10 @@ function live(
     return { current, errors, reads, watcher, added, save };
 }
 
-const hexOf = (opened: DesignTokens) =>
-    JSON.stringify(opened.getPermutation().getToken("color.ink"));
+const hexOf = (opened: DesignTokens) => {
+    const ink = opened.getPermutation().getToken("color.ink");
+    return JSON.stringify([ink, ink?.winningDefinition.local]);
+};
 
 describe("design tokens kept current with their files", () => {
     it("reads at once, and reads again when a file it lists is saved", async () => {

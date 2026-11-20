@@ -51,7 +51,7 @@ function setValueInFile(
     const part = options.part ?? [];
     if ("at" in placement) {
         const { at, affectedPermutations } = placement;
-        const currentValue = isJsonObject(at.json) ? at.json.$value : undefined;
+        const currentValue = at.local.value;
         const newValue = replacePart(path, currentValue, part, value);
         if ("refusal" in newValue) return newValue;
         return {

@@ -61,7 +61,7 @@ describe("createReadOptions", () => {
 
     it("reads a hex-string color as sRGB, keeping the hex", () => {
         const brand = readWith().tokens.permutations[0]?.tokens[0];
-        expect(brand?.resolved).toMatchObject({ colorSpace: "srgb", hex: "#e11d48" });
+        expect(brand?.resolvedValue).toMatchObject({ colorSpace: "srgb", hex: "#e11d48" });
     });
 
     it("makes the steps a scale recipe asks for", () => {
@@ -74,8 +74,8 @@ describe("createReadOptions", () => {
             { files: { "size-demo.json": recipe } },
             createReadOptions(config),
         );
-        const made = tokens.permutations[0]?.tokens.filter(({ generated }) => generated);
+        const made = tokens.permutations[0]?.tokens.filter(({ generatedFrom }) => generatedFrom);
         expect(made?.length).toBe(13);
-        expect(made?.every(({ generated }) => generated?.from === "size.step")).toBe(true);
+        expect(made?.every(({ generatedFrom }) => generatedFrom?.path === "size.step")).toBe(true);
     });
 });

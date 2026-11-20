@@ -19,7 +19,7 @@
                 "file": "tokens.json",
                 "text": "\"{color.ink}\""
               },
-              "property": [0, "color"]
+              "ownerProperty": [0, "color"]
             },
             {
               "parsed": { "syntax": "json-pointer", "pointer": "#/space/sm/$value" },
@@ -27,7 +27,7 @@
                 "file": "tokens.json",
                 "text": "{ \"$ref\": \"#/space/sm/$value\" }"
               },
-              "property": [0, "offsetX"]
+              "ownerProperty": [0, "offsetX"]
             },
             {
               "parsed": { "syntax": "curly-brace", "path": "color.ink" },
@@ -36,7 +36,7 @@
                 "text": "\"{color.ink}\"",
                 "occurrence": 2
               },
-              "property": [0, "offsetY"]
+              "ownerProperty": [0, "offsetY"]
             },
             {
               "parsed": { "syntax": "curly-brace", "path": "space.missing" },
@@ -44,7 +44,7 @@
                 "file": "tokens.json",
                 "text": "\"{space.missing}\""
               },
-              "property": [0, "blur"]
+              "ownerProperty": [0, "blur"]
             }
           ]
         }

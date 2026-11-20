@@ -128,7 +128,7 @@ export function formatImpactHeading({ path, definitions }: Impact): string {
     const values = [
         ...new Set(
             definitions.flatMap(({ token }) => {
-                const value = token.original?.value;
+                const value = token.winningDefinition.local.value;
                 return typeof value === "string" ? [value] : [];
             }),
         ),

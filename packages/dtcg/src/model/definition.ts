@@ -2,7 +2,50 @@ import type { JsonValue } from "./json.js";
 import type { JsonPath, Span } from "./location.js";
 import type { Permutations } from "./permutations.js";
 import { type Source, SourceObject } from "./source.js";
+import type { TokenType } from "./value.js";
 import { parse } from "jsonc-parser";
+import { readLocal } from "../lookup/local.js";
+
+/**
+ * The properties a token or group writes itself, not those it gets from a group it's inside or a
+ * group it extends.
+ */
+export interface LocalProperties {
+    /** Its `$type`, when that's a type the spec defines. */
+    readonly type?: TokenType;
+    /** Its `$description`. */
+    readonly description?: string;
+    /** Its `$deprecated`, `false` included. */
+    readonly deprecated?: boolean | string;
+    /** Its `$extensions`. */
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
+}
+
+/**
+ * The properties a file writes for a token itself, such as its `value`.
+ *
+ * @example
+ * // color.primary in dark.json
+ * dark.getToken("color.primary")!.winningDefinition.local
+ * // => { value: "{color.blue.300}", type: "color" }
+ */
+export interface LocalToken extends LocalProperties {
+    /** Its `$value`, exactly as written, such as `"{color.blue.500}"`. */
+    readonly value?: JsonValue;
+}
+
+/**
+ * The properties a file writes for a group itself, such as its `extends`.
+ *
+ * @example
+ * // cta writes "$extends": "{button}" and nothing else
+ * light.getGroup("cta")!.local
+ * // => { extends: "button" }
+ */
+export interface LocalGroup extends LocalProperties {
+    /** The path its `$extends` names, such as `"button"`. */
+    readonly extends?: string;
+}
 
 /**
  * A place where a token or group is written.
@@ -28,6 +71,20 @@ export interface Definition {
      * For a token, that's its whole object, such as `{ "$value": "{color.blue.500}" }`.
      */
     readonly json: JsonValue;
+    /**
+     * The properties written here, not inherited: `value` for a token, `extends` for a group.
+     *
+     * A token's written properties are its {@link TokenBase.winningDefinition | winningDefinition}'s,
+     * since a later file replaces a token whole.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#ordering | Resolver 6.2, Ordering}
+     *
+     * @example
+     * // color.primary in dark.json
+     * dark.getToken("color.primary")!.winningDefinition.local
+     * // => { value: "{color.blue.300}", type: "color" }
+     */
+    readonly local: LocalToken & LocalGroup;
 }
 
 /**
@@ -42,6 +99,8 @@ export interface DefinitionInPermutations {
     readonly jsonPath: JsonPath;
     /** The JSON written there, exactly as written. */
     readonly json: JsonValue;
+    /** The properties written here, not inherited, as {@link Definition.local}. */
+    readonly local: LocalToken & LocalGroup;
     /** The sources that read it. */
     readonly sources: readonly Source[];
     /** The permutations that read it. */
@@ -73,6 +132,7 @@ export class DefinitionObject {
     #text: string | undefined;
     #textAt: Span;
     #json: JsonValue | undefined;
+    #local: (LocalToken & LocalGroup) | undefined;
 
     constructor(source: Source, span: Span, text: string | undefined) {
         this.source = source;
@@ -87,6 +147,11 @@ export class DefinitionObject {
             this.#text = undefined;
         }
         return this.#json as JsonValue;
+    }
+
+    get local(): LocalToken & LocalGroup {
+        this.#local ??= readLocal(this.json);
+        return this.#local;
     }
 
     static getSpan(definition: DefinitionObject): Span {

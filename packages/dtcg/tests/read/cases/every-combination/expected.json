@@ -136,8 +136,7 @@
         {
           "name": "base"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "ocean.json",

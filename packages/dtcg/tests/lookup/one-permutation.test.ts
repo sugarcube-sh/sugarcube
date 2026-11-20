@@ -34,10 +34,6 @@ describe("the design tokens of a read with one permutation", () => {
 
         expect(file.getToken("gap")).toBe(only.getToken("gap"));
         expect(file.getGroup("space")).toBe(only.getGroup("space"));
-        expect(file.tokens).toBe(only.tokens);
-        expect(file.groups).toBe(only.groups);
-        expect(file.children).toBe(only.children);
-        expect(file.topLevel).toBe(only.topLevel);
         expect(file.getTokenOrGroup("gap")).toBe(only.getToken("gap"));
         expect(file.getTokenOrGroup("space")).toBe(only.getGroup("space"));
         expect(file.getDependents("gap")).toStrictEqual(only.getDependents("gap"));
@@ -54,7 +50,7 @@ describe("the design tokens of a read with one permutation", () => {
             { inputs: [{ mode: "dark" }] },
         );
 
-        expect(dark.getToken("gap")?.resolved).toBe(4);
+        expect(dark.getToken("gap")?.resolvedValue).toBe(4);
     });
 
     it("give undefined for a path that isn't there, as a permutation does", () => {
@@ -73,18 +69,21 @@ describe("the design tokens of a read with several permutations", () => {
             example: { mode: "dark" },
         });
         expect(error.message).toBe(
-            'tokens.getToken() needs a permutation: this resolver has the modifier `mode`. Pick one with tokens.getPermutation({ mode: "dark" }), or group them with groupPermutationsBy(tokens, …)',
+            'tokens.getToken() needs a permutation: this resolver has the modifier `mode`. Pick one with tokens.getPermutation({ mode: "dark" }), or group them with tokens.groupPermutationsBy(…)',
         );
+    });
+
+    it("have no lists of tokens or groups, which belong to a permutation", () => {
+        for (const list of ["tokens", "groups", "children", "topLevel"]) {
+            expect(list in modes).toBe(false);
+            expect(list in file).toBe(false);
+        }
     });
 
     it("refuse every question that belongs to one permutation", () => {
         const asks: [string, (tokens: DesignTokens) => unknown][] = [
             ["getToken()", (tokens) => tokens.getToken("gap")],
             ["getGroup()", (tokens) => tokens.getGroup("color")],
-            ["tokens", (tokens) => tokens.tokens],
-            ["groups", (tokens) => tokens.groups],
-            ["children", (tokens) => tokens.children],
-            ["topLevel", (tokens) => tokens.topLevel],
             ["getTokenOrGroup()", (tokens) => tokens.getTokenOrGroup("gap")],
             ["getDependents()", (tokens) => tokens.getDependents("color.red")],
             ["getDependencies()", (tokens) => tokens.getDependencies("color.x")],
@@ -145,7 +144,7 @@ describe("the design tokens of a read with several permutations", () => {
     });
 
     it("keep answering what is about the files, not one permutation", () => {
-        expect(() => modes.getTokenPaths()).not.toThrow();
+        expect(() => modes.tokenPaths).not.toThrow();
         expect(() => modes.has("gap")).not.toThrow();
         expect(() => modes.getDefinitions("gap")).not.toThrow();
         expect(() => modes.getReferencesTo("color.red")).not.toThrow();
@@ -201,8 +200,21 @@ describe("what the root entry gives", () => {
         ]) {
             expect(gone in root).toBe(false);
         }
-        for (const kept of ["groupPermutationsBy", "toInputLabel", "getFilePath"]) {
+        for (const kept of ["toInputLabel", "getFilePath"]) {
             expect(kept in root).toBe(true);
         }
+    });
+
+    it("keeps each helper where its neighbours are: references in /values, positions in /editor", async () => {
+        const [root, values, editor] = await Promise.all([
+            import("../../src/index.js"),
+            import("../../src/values.js"),
+            import("../../src/editor.js"),
+        ]);
+        for (const moved of ["groupPermutationsBy", "isReference", "getSourceLine"]) {
+            expect(moved in root).toBe(false);
+        }
+        expect("isReference" in values).toBe(true);
+        expect("getSourceLine" in editor).toBe(true);
     });
 });

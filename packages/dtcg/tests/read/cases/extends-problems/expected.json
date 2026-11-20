@@ -18,9 +18,7 @@
         },
         {
           "path": "pointer-form.a",
-          "inherited": {
-            "from": "groupA"
-          }
+          "extendedFrom": { "path": "groupA.a" }
         }
       ]
     }

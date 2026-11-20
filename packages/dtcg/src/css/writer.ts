@@ -296,7 +296,7 @@ class ColorModeWriter {
     }
 
     #writeDefaultValue(token: Token): CSSResult | undefined {
-        if (token.resolved === undefined) return undefined;
+        if (token.resolvedValue === undefined) return undefined;
 
         const aliasTarget = token.getReferenceAt()?.pointsToWholeToken;
         if (aliasTarget && this.#isInlined(aliasTarget)) {

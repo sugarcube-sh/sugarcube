@@ -4,7 +4,7 @@ import { type DesignTokens } from "@sugarcube-sh/dtcg";
 
 declare const tokens: DesignTokens;
 
-const paths = tokens.getTokenPaths();
+const paths = tokens.tokenPaths;
 const references = tokens.permutations.flatMap((p) =>
     paths.flatMap((path) => p.getDependencies(path)),
 );

@@ -20,6 +20,7 @@ const tokens = oneFile({
     button: { $description: "The base.", $deprecated: "Use action", pad: { $value: 4 } },
     primary: { $extends: "{button}", gap: { $value: 2 } },
     secondary: { $extends: "{button}", $description: "Its own.", gap: { $value: 2 } },
+    tertiary: { $extends: "{primary}" },
 });
 const token = (path: string) => tokens.getPermutation().getToken(path)!;
 const group = (path: string) => tokens.getPermutation().getGroup(path)!;
@@ -43,6 +44,10 @@ describe("a description", () => {
             text: "Its own.",
             editable: true,
         });
+    });
+
+    it("names the group that writes it, at the end of an $extends chain", () => {
+        expect(getDescriptionView(group("tertiary"), true).from).toBe("button");
     });
 
     it("can't be edited where the page can't edit", () => {

@@ -133,24 +133,18 @@ function inherit(merged: Merged, group: MergedGroup, from: string): void {
 
         const path = tokenPath.join(group.path, rest);
         const token = merged.tokens.get(originalPath);
-        if (token) inheritToken(merged, group, token, path, from);
-        else if (merged.groups.has(originalPath))
-            inheritGroup(merged, group, originalPath, path, from);
+        if (token) inheritToken(merged, group, token, path);
+        else if (merged.groups.has(originalPath)) inheritGroup(merged, group, originalPath, path);
     }
 }
 
-function inheritToken(
-    merged: Merged,
-    group: MergedGroup,
-    token: MergedToken,
-    path: string,
-    from: string,
-): void {
+function inheritToken(merged: Merged, group: MergedGroup, token: MergedToken, path: string): void {
     if (merged.tokens.has(path) || merged.groups.has(path)) return;
     if (isUnderToken(merged, group, path)) return;
 
     const { overridden: _overridden, ...copied } = token;
-    merged.tokens.set(path, { ...copied, path, inherited: { from } });
+    const extendedFrom = { path: token.extendedFrom?.path ?? token.path };
+    merged.tokens.set(path, { ...copied, path, extendedFrom });
     merged.order.add(path);
 }
 
@@ -159,7 +153,6 @@ function inheritGroup(
     group: MergedGroup,
     originalPath: string,
     path: string,
-    from: string,
 ): void {
     const existing = merged.groups.get(path);
     if (existing) {
@@ -172,7 +165,7 @@ function inheritGroup(
         path,
         locations: [],
         inheritsFrom: originalPath,
-        inherited: { from },
+        extendedFrom: { path: merged.groups.get(originalPath)?.extendedFrom?.path ?? originalPath },
     });
     merged.order.add(path);
 }

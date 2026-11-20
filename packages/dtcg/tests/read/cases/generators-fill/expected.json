@@ -9,27 +9,20 @@
       "tokens": [
         {
           "path": "space.3",
-          "resolved": {
+          "resolvedValue": {
             "value": 3,
             "unit": "rem"
           },
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          },
-          "original": null
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
         },
         {
           "path": "space.2",
-          "resolved": {
+          "resolvedValue": {
             "value": 2,
             "unit": "rem"
           },
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          },
-          "original": null,
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] },
+
           "definitions": [
             {
               "source": 0,
@@ -43,19 +36,17 @@
         {
           "path": "space.1",
           "type": "dimension",
-          "value": {
+          "typeFrom": { "path": "space", "via": "group" },
+          "parsedValue": {
             "value": 1,
             "unit": "rem"
           },
-          "resolved": {
+          "resolvedValue": {
             "value": 1,
             "unit": "rem"
           },
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          },
-          "original": null,
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] },
+
           "definitions": [
             {
               "source": 0,
@@ -68,7 +59,7 @@
         },
         {
           "path": "gap",
-          "resolved": {
+          "resolvedValue": {
             "value": 3,
             "unit": "rem"
           }

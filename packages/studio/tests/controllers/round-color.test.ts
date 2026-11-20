@@ -46,7 +46,7 @@ describe("roundColor", () => {
         });
 
         expect(written.components).toEqual([0.9712, 0.0123, 258]);
-        expect(toCSSValue({ type: "color", resolved: { ...written, alpha: 1 } })).toBe(
+        expect(toCSSValue({ type: "color", resolvedValue: { ...written, alpha: 1 } })).toBe(
             "oklch(0.9712 0.0123 258)",
         );
     });

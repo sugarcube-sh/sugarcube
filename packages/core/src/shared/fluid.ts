@@ -44,7 +44,7 @@ export function findFluidRange(
     options: ParseOptions,
 ): { token: Token; range: FluidRange } | undefined {
     for (const each of from.aliasChain) {
-        if (each.type !== "dimension" || each.resolved === undefined) return undefined;
+        if (each.type !== "dimension" || each.resolvedValue === undefined) return undefined;
         const fluid = readFluid(each.extensions?.[SUGARCUBE_NAMESPACE], options);
         if (!fluid.ok) return undefined;
         if (fluid.value) return { token: each, range: fluid.value };

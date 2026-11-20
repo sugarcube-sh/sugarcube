@@ -9,14 +9,8 @@ export interface DescriptionView {
 }
 
 export function getDescriptionView(node: Token | Group, editable: boolean): DescriptionView {
-    const from = node.kind === "group" ? findDescriptionSource(node) : undefined;
+    const from = node.kind === "group" ? node.descriptionFrom?.path : undefined;
     return { text: node.description ?? "", editable, ...(from !== undefined && { from }) };
-}
-
-function findDescriptionSource(group: Group): string | undefined {
-    const isInherited =
-        group.original?.description === undefined && group.description !== undefined;
-    return isInherited ? group.extends?.path : undefined;
 }
 
 export function createDescriptionEdit(tokens: DesignTokens, path: string, text: string): Edit {
@@ -36,7 +30,8 @@ export interface DeprecationView {
 }
 
 export function getDeprecationView(node: Token | Group, editable: boolean): DeprecationView {
-    const { deprecated, deprecatedByGroup: group } = node;
+    const { deprecated } = node;
+    const group = node.deprecatedFrom?.path;
     const isDeprecated = deprecated !== undefined;
     const notice = {
         ...(group !== undefined && { group }),
@@ -51,20 +46,18 @@ function getCheckbox(
     isDeprecated: boolean,
     message: string,
 ): DeprecationView["checkbox"] {
-    if (node.original?.deprecated !== undefined || !isDeprecated) {
+    if (getWrittenDeprecation(node) !== undefined || !isDeprecated) {
         return { checked: isDeprecated, uncheckedValue: null, message };
     }
-    const group = node.deprecatedByGroup;
-    if (node.kind === "group" && group !== undefined && getExtendedPaths(node).includes(group)) {
+    if (node.deprecatedFrom?.via === "extends") {
         return { checked: true, uncheckedValue: false, message };
     }
     return undefined;
 }
 
-function getExtendedPaths(group: Group): string[] {
-    const paths: string[] = [];
-    for (let from = group.extends; from; from = from.extends) paths.push(from.path);
-    return paths;
+function getWrittenDeprecation(node: Token | Group): boolean | string | undefined {
+    if (node.kind === "group") return node.local?.deprecated;
+    return node.winningDefinition.local.deprecated;
 }
 
 export function createDeprecationEdit(

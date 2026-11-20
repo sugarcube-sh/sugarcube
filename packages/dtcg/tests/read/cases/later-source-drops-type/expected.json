@@ -6,7 +6,8 @@
       "tokens": [
         {
           "path": "space.md",
-          "type": "dimension"
+          "type": "dimension",
+          "typeFrom": null
         }
       ]
     },

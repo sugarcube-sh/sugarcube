@@ -10,7 +10,7 @@ describe("buildFromMemory", () => {
             "b.json",
         );
 
-        expect(built.tokens.getTokenPaths()).toEqual(["b"]);
+        expect(built.tokens.tokenPaths).toEqual(["b"]);
         expect(built.entryFile).toBe("b.json");
     });
 });

@@ -11,10 +11,10 @@ describe("the demo the tests edit", () => {
     });
 
     it("keeps its type sizes bound to the sizing scale", () => {
-        expect(demo.getPermutation().getToken("typography.text.base")?.original?.value).toBe(
-            "{size.step.0}",
-        );
-        expect(demo.getPermutation().getToken("typography.text.base")?.resolved).toEqual({
+        expect(
+            demo.getPermutation().getToken("typography.text.base")?.winningDefinition.local.value,
+        ).toBe("{size.step.0}");
+        expect(demo.getPermutation().getToken("typography.text.base")?.resolvedValue).toEqual({
             value: 1,
             unit: "rem",
         });

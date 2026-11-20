@@ -6,10 +6,19 @@
       "tokens": [
         { "path": "base.gap" },
         { "path": "base.pad" },
-        { "path": "pad", "resolved": 16 },
-        { "path": "gap", "type": "number", "resolved": 4, "inherited": { "from": "base" } }
+        { "path": "pad", "resolvedValue": 16 },
+        {
+          "path": "gap",
+          "type": "number",
+          "typeFrom": { "path": "base", "via": "group" },
+          "resolvedValue": 4,
+          "extendedFrom": { "path": "base.gap" }
+        }
       ],
-      "groups": [{ "path": "", "type": "number" }, { "path": "base" }]
+      "groups": [
+        { "path": "", "type": "number", "typeFrom": { "path": "base", "via": "extends" } },
+        { "path": "base" }
+      ]
     }
   ],
   "diagnostics": []

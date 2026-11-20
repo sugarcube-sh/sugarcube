@@ -1,4 +1,5 @@
-import { type DesignTokens, type Span, getFilePath, getSourceLine } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, type SourceLine, type Span, getFilePath } from "@sugarcube-sh/dtcg";
+import { getSourceLine } from "@sugarcube-sh/dtcg/editor";
 import { relative } from "pathe";
 import color from "picocolors";
 import type { AnyDiagnostic } from "../types/diagnostics.js";
@@ -47,7 +48,6 @@ export function formatProblemBlocks(
     { colors: colored, width }: PrintOptions = {},
 ): ProblemBlock[] {
     const colors = colored === undefined ? color : color.createColors(colored);
-    const files = where.tokens?.toMemory().files;
     const colorBySeverity: Record<AnyDiagnostic["severity"], (text: string) => string> = {
         error: colors.red,
         warning: colors.yellow,
@@ -73,11 +73,10 @@ export function formatProblemBlocks(
             const place = formatLocation(span);
             const heading = colorBySeverity[severity](severity) + colors.gray(`[${kind}]`);
             const permutations = getPermutationsLabel(problem, where.tokens);
-            const fileText = span && files?.[span.file];
-            const frame =
-                span && fileText !== undefined
-                    ? formatSourceLines(span, fileText, help, colorBySeverity[severity], width)
-                    : formatHelp(help);
+            const source = span && where.tokens && getSourceLine(where.tokens, span);
+            const frame = source
+                ? formatSourceLines(source, help, colorBySeverity[severity], width)
+                : formatHelp(help);
             const related = (problem.relatedInformation ?? []).map(
                 ({ message, span: at }) => `  ${formatLocation(at)}  ${message}`,
             );
@@ -119,13 +118,11 @@ function formatHelp(help: string | undefined): string[] {
 }
 
 function formatSourceLines(
-    span: Span,
-    text: string,
+    source: SourceLine,
     help: string | undefined,
     tint: (text: string) => string,
     width: number | undefined,
 ): string[] {
-    const source = getSourceLine(span, text);
     const number = String(source.line);
     const gutter = `  ${number} | `;
     const blank = `  ${" ".repeat(number.length)} | `;

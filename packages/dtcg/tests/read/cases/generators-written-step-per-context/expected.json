@@ -9,8 +9,7 @@
       "tokens": [
         {
           "path": "space.2",
-          "resolved": { "value": 2, "unit": "rem" },
-          "original": null
+          "resolvedValue": { "value": 2, "unit": "rem" }
         },
         { "path": "space.1" }
       ]
@@ -19,8 +18,7 @@
       "tokens": [
         {
           "path": "space.2",
-          "resolved": { "value": 2, "unit": "rem" },
-          "original": null
+          "resolvedValue": { "value": 2, "unit": "rem" }
         },
         { "path": "space.1" }
       ]

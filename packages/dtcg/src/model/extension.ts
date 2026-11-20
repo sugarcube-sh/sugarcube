@@ -129,7 +129,7 @@ export type ExtensionResult<V, M extends ExtensionMessages = ExtensionMessages> 
 /**
  * Makes tokens from an extension on a group, such as the steps of a spacing scale.
  *
- * Each token it makes is marked {@link TokenBase.generated | generated}. If a file writes one too,
+ * Each token it makes is marked {@link TokenBase.generatedFrom | generatedFrom}. If a file writes one too,
  * the generated token is used, and the file's is a `overridden-by-generator` error.
  */
 export interface Generator {

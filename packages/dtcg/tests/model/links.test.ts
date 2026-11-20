@@ -75,7 +75,7 @@ describe("a group's root token", () => {
         );
     });
 
-    it("is absent when the group has none", () => {
+    it("is undefined when the group has none", () => {
         expect(tokens.getPermutation().getGroup("color")?.rootToken).toBeUndefined();
     });
 });

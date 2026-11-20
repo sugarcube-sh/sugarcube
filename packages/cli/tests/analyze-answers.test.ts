@@ -205,7 +205,7 @@ describe("findDefinitions", () => {
         if (!written || written === "group") throw new Error("no color.surface");
         expect(
             written.map(({ token, file, permutations }) => [
-                token.original?.value,
+                token.winningDefinition.local.value,
                 file,
                 permutations.inputs,
             ]),

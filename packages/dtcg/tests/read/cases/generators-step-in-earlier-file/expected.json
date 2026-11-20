@@ -9,21 +9,15 @@
       "tokens": [
         {
           "path": "space.2",
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          }
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
         },
         {
           "path": "space.1",
-          "resolved": {
+          "resolvedValue": {
             "value": 1,
             "unit": "rem"
           },
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          },
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] },
           "definitions": [
             {
               "source": 1,

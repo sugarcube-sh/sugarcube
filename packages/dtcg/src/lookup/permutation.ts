@@ -57,7 +57,7 @@ export class PermutationError extends Error {
  *         error.message;
  *         // => "tokens.getToken() needs a permutation: this resolver has the modifier `mode`.
  *         // Pick one with tokens.getPermutation({ mode: \"dark\" }), or group them with
- *         // groupPermutationsBy(tokens, …)"
+ *         // tokens.groupPermutationsBy(…)"
  *         error.detail;
  *         // => { member: "getToken()", modifiers: ["mode"], example: { mode: "dark" } }
  *     }
@@ -76,12 +76,7 @@ export class SeveralPermutationsError extends Error {
 export function getOnlyPermutation(tokens: DesignTokens, member: string): Permutation {
     const [only, ...more] = tokens.permutations;
     if (only && more.length === 0) return only;
-    const nonDefault = tokens.permutations.find((each) => !each.isDefault);
-    const example = Object.fromEntries(
-        (nonDefault?.contexts ?? [])
-            .filter((context) => !context.isDefault)
-            .map((context) => [context.modifier.name, context.name]),
-    );
+    const example = tokens.permutations.find((each) => !each.isDefault)?.changedInput ?? {};
     const modifiers = allModifiers(tokens.resolver).map(({ name }) => name);
     throw new SeveralPermutationsError({ member, modifiers, example });
 }

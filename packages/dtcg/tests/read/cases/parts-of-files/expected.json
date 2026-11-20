@@ -7,6 +7,7 @@
         {
           "path": "brand",
           "type": "color",
+          "typeFrom": { "path": "", "via": "group" },
           "definitions": [
             {
               "source": 0,
@@ -20,9 +21,8 @@
         {
           "path": "size.sm",
           "type": "number",
-          "original": {
-            "value": 2
-          },
+          "typeFrom": { "path": "size", "via": "group" },
+
           "definitions": [
             {
               "source": 1,
@@ -37,6 +37,7 @@
         {
           "path": "space.md",
           "type": "number",
+          "typeFrom": { "path": "space", "via": "group" },
           "definitions": [
             {
               "source": 1,

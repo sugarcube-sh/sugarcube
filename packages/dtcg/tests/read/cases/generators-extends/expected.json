@@ -9,42 +9,31 @@
       "tokens": [
         {
           "path": "space.2",
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          }
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
         },
         {
           "path": "space.1",
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          }
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
         },
         {
           "path": "inset.2",
-          "resolved": {
+          "resolvedValue": {
             "value": 2,
             "unit": "rem"
           },
-          "generated": {
-            "from": "inset",
-            "extension": ["com.example", "steps"]
-          },
-          "inherited": null
+          "generatedFrom": { "path": "inset", "extension": ["com.example", "steps"] },
+          "extendedFrom": null
         },
         {
           "path": "inset.1",
           "type": "dimension",
-          "resolved": {
+          "typeFrom": { "path": "space", "via": "group" },
+          "resolvedValue": {
             "value": 1,
             "unit": "rem"
           },
-          "generated": {
-            "from": "inset",
-            "extension": ["com.example", "steps"]
-          },
-          "inherited": null,
+          "generatedFrom": { "path": "inset", "extension": ["com.example", "steps"] },
+          "extendedFrom": null,
           "definitions": [
             {
               "source": 0,

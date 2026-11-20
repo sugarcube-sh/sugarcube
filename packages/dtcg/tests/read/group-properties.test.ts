@@ -21,4 +21,14 @@ describe("where a group's extensions are written", () => {
             .getGroup("space");
         expect(space?.definitions).toContain(space?.extensionDefinitions["com.example"]);
     });
+
+    it("is the group that writes the key, through $extends, unless the group writes it too", () => {
+        const read = oneFile({
+            base: { $extensions: { "com.a": 1, "com.b": 2 }, n: { $type: "number", $value: 1 } },
+            copy: { $extends: "{base}", $extensions: { "com.b": 3 } },
+        }).getPermutation();
+        const [base, copy] = [read.getGroup("base"), read.getGroup("copy")];
+        expect(copy?.extensionDefinitions["com.a"]).toBe(base?.definitions[0]);
+        expect(copy?.extensionDefinitions["com.b"]).toBe(copy?.definitions[0]);
+    });
 });

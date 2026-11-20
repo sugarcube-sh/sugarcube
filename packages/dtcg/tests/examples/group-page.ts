@@ -16,5 +16,10 @@ for (const t of group?.childTokens ?? []) {
         .getDefinitions(t.path)
         .filter(({ sources }) => sources.some(({ modifier }) => modifier))
         .map(({ winningPermutations, span }) => `${winningPermutations.label} in ${span.file}`);
-    row(t.path, t.original?.value, t.winningDefinition.source.file, overrides.join(", "));
+    row(
+        t.path,
+        t.winningDefinition.local.value,
+        t.winningDefinition.source.file,
+        overrides.join(", "),
+    );
 }

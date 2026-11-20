@@ -31,8 +31,7 @@
         {
           "name": "parts"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "all.json",
@@ -41,8 +40,7 @@
         {
           "name": "parts"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "all.json",
@@ -51,8 +49,7 @@
         {
           "name": "parts"
         }
-      ],
-      "contexts": "every-context"
+      ]
     },
     {
       "file": "all.json",
@@ -60,8 +57,7 @@
         {
           "name": "parts"
         }
-      ],
-      "contexts": "every-context"
+      ]
     }
   ]
 }

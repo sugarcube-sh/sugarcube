@@ -37,6 +37,35 @@ describe("generated tokens across permutations", () => {
         ).toStrictEqual([[["g.a"], "every permutation"]]);
     });
 
+    it("says a reference a generator wrote is in no file, and one a file writes is", () => {
+        const generatedFrom = { path: "g", extension: ["com.example", "steps"] };
+        const [made] = tokens.getReferencesTo("base");
+        expect(made?.generatedFrom).toStrictEqual(generatedFrom);
+        expect(tokens.getPermutation().getToken("g.a")?.references[0]?.generatedFrom).toStrictEqual(
+            generatedFrom,
+        );
+        const written = oneFile({ base: { $type: "number", $value: 1 }, n: { $value: "{base}" } });
+        expect(written.getReferencesTo("base")[0]?.generatedFrom).toBe(undefined);
+    });
+
+    it("writes nothing of its own: its definition is the generator's setting, not its group", () => {
+        const space = oneFile(
+            {
+                space: {
+                    $type: "number",
+                    $description: "Spacing",
+                    $deprecated: "Use gap",
+                    $extensions: { "com.example": { steps: 1 } },
+                },
+                base: { $type: "number", $value: 1 },
+            },
+            { generators: [steps] },
+        );
+        const made = space.getToken("space.a");
+        expect(made?.winningDefinition.local).toStrictEqual({});
+        expect(made?.winningDefinition).not.toBe(space.getGroup("space")?.definitions[0]);
+    });
+
     it("has the same span in every permutation", () => {
         const [light, dark] = tokens.permutations;
         const [inLight, inDark] = [light?.getToken("g.a"), dark?.getToken("g.a")];

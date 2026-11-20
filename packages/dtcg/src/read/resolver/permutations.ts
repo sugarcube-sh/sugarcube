@@ -37,7 +37,7 @@ export function fromTokenFile(path: string, json: JsonFile | undefined): LoadedP
                 contexts: [],
                 sources: [
                     {
-                        source: { file: path, sets: [], contexts: "every-context" },
+                        source: { file: path, sets: [] },
                         pieces: [{ file: path, ...(json && { json, tree: json.root }) }],
                     },
                 ],
@@ -164,12 +164,13 @@ function createSourceLookup(
         listed.set(entry, byContext);
         const found = byContext.get(context);
         if (found) return found;
+        const contexts = contextsBySource.get(sourceKey(loaded));
         const source = {
             file: loaded.file,
-            ...(loaded.pointer && { pointer: loaded.pointer }),
-            ...(context && { modifier: context.modifier }),
+            pointer: loaded.pointer,
+            modifier: context?.modifier,
             sets: route(first),
-            contexts: contextsBySource.get(sourceKey(loaded)) ?? "every-context",
+            contexts: contexts === ALWAYS_READ ? undefined : contexts,
         };
         const listedSource = { source, pieces };
         byContext.set(context, listedSource);
@@ -200,19 +201,21 @@ function route({ route: steps }: SourcePiece): ParentSet[] {
     }));
 }
 
+const ALWAYS_READ = Symbol("read by every context");
+
 function getContextsBySource(
     items: ExpandedItem[],
     sources: Map<SourcePiece, LoadedSource>,
     findContext: FindContext,
-): Map<string, Source["contexts"]> {
-    const bySource = new Map<string, "every-context" | ResolverContext[]>();
+): Map<string, typeof ALWAYS_READ | readonly ResolverContext[]> {
+    const bySource = new Map<string, typeof ALWAYS_READ | ResolverContext[]>();
     const read = (entry: SourceEntry, context?: ResolverContext) => {
         const loaded = getLoadedSource(entry, sources);
         if (!loaded) return;
         const key = sourceKey(loaded);
         const existing = bySource.get(key);
-        if (!context || existing === "every-context") {
-            bySource.set(key, "every-context");
+        if (!context || existing === ALWAYS_READ) {
+            bySource.set(key, ALWAYS_READ);
             return;
         }
         const list = existing ?? [];

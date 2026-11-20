@@ -86,15 +86,14 @@ export function findNewPlacement(
 export function getDefinitionMembers(tokens: DesignTokens, path: string): DefinitionMembers {
     const editable = findEditable(tokens, path, (perm) => perm.getTokenOrGroup(path));
     if ("refusal" in editable) return editable;
-    const places = tokens.getDefinitions(path).map(({ span, jsonPath, json, permutations }) => ({
-        span,
-        jsonPath,
-        json,
-        permutationCount: permutations.length,
+    const places = tokens.getDefinitions(path).map((definition) => ({
+        span: definition.span,
+        jsonPath: definition.jsonPath,
+        json: definition.json,
+        local: definition.local,
+        permutationCount: definition.permutations.length,
     }));
-    const affectedPermutations = selectOtherPermutations(
-        tokens.permutations.select((perm) => perm.getTokenOrGroup(path) !== undefined),
-    );
+    const affectedPermutations = selectOtherPermutations(tokens.getPermutationsWith(path));
     return { kind: editable.of, members: places, affectedPermutations };
 }
 
@@ -169,17 +168,13 @@ export function findExtensionPlacement(
         : findSharedExtensionPlacement(tokens, path, key, copies.members, chosenFile);
 }
 
-function findExtendedDefinition(group: Group | undefined, key: string): Definition | undefined {
-    for (let from = group?.extends; from; from = from.extends) {
-        const definition = from.extensionDefinitions[key];
-        if (definition) return definition;
-    }
-    return undefined;
-}
-
-function getExtension(json: JsonValue | undefined, key: string): JsonValue | undefined {
-    const extensions = isJsonObject(json) ? json.$extensions : undefined;
-    return isJsonObject(extensions) ? extensions[key] : undefined;
+function findExtensionDefinition(
+    group: Group | undefined,
+    key: string,
+): { own?: Definition; extended?: Definition } {
+    const definition = group?.extensionDefinitions[key];
+    if (!group || !definition) return {};
+    return group.definitions.includes(definition) ? { own: definition } : { extended: definition };
 }
 
 function findSharedExtensionPlacement(
@@ -189,7 +184,8 @@ function findSharedExtensionPlacement(
     copies: DefinitionMember[],
     chosenFile: string | undefined,
 ): ExtensionPlacement {
-    const getOwnDefinition = (perm: Permutation) => perm.getGroup(path)?.extensionDefinitions[key];
+    const getOwnDefinition = (perm: Permutation) =>
+        findExtensionDefinition(perm.getGroup(path), key).own;
     const ownDefinitions = tokens.permutations.flatMap((perm) => getOwnDefinition(perm) ?? []);
     if (ownDefinitions.length > 0) {
         const shared = ownDefinitions.find(({ source }) => isReadByEveryContext(source));
@@ -201,19 +197,19 @@ function findSharedExtensionPlacement(
             ),
         };
     }
-    const inheritedDefinitions = tokens.permutations.flatMap(
-        (perm) => findExtendedDefinition(perm.getGroup(path), key) ?? [],
+    const extendedDefinitions = tokens.permutations.flatMap(
+        (perm) => findExtensionDefinition(perm.getGroup(path), key).extended ?? [],
     );
-    if (inheritedDefinitions.length === 0)
+    if (extendedDefinitions.length === 0)
         return findWidestPlacement(tokens, path, copies, chosenFile);
-    const [shared] = inheritedDefinitions;
-    const isSame = inheritedDefinitions.every((each) => each === shared);
+    const [shared] = extendedDefinitions;
+    const isSame = extendedDefinitions.every((each) => each === shared);
     if (!shared || !isSame || !isReadByEveryContext(shared.source)) {
         return refuse({ kind: "no-shared-value", path });
     }
     const placement = findWidestPlacement(tokens, path, copies, chosenFile);
     return "at" in placement
-        ? { ...placement, currentExtension: getExtension(shared.json, key) }
+        ? { ...placement, currentExtension: shared.local.extensions?.[key] }
         : placement;
 }
 
@@ -227,7 +223,7 @@ function findContextExtensionPlacement(
     const { permutation: perm } = chosen;
     const group = perm.getGroup(path);
     if (!group) return refuse({ kind: "not-found", path });
-    const winner = group.extensionDefinitions[key];
+    const { own: winner, extended } = findExtensionDefinition(group, key);
     const winnerSpan = winner && getSpan(tokens, winner);
     if (winner && winnerSpan && isContextSource(chosen, winner.source)) {
         const at = toMember(tokens, winner);
@@ -240,10 +236,7 @@ function findContextExtensionPlacement(
     const winnerLocation = winner && winnerSpan && { source: winner.source, span: winnerSpan };
     const into = chooseOverrideFile(path, chosen, winnerLocation, groupSpans, chosenFile);
     if (typeof into !== "string") return into;
-    const currentExtension = getExtension(
-        (winner ?? findExtendedDefinition(group, key))?.json,
-        key,
-    );
+    const currentExtension = (winner ?? extended)?.local.extensions?.[key];
     return {
         into,
         currentExtension,
@@ -432,12 +425,8 @@ export function getInputContext(
     const nonDefault = perm.contexts.filter((context) => !context.isDefault);
     const [context] = nonDefault;
     if (context === undefined) return undefined;
-    if (nonDefault.length > 1) {
-        const nonDefaultInput = Object.fromEntries(
-            nonDefault.map((each) => [each.modifier.name, each.name]),
-        );
-        return refuse({ kind: "several-contexts", input: nonDefaultInput });
-    }
+    if (nonDefault.length > 1)
+        return refuse({ kind: "several-contexts", input: perm.changedInput });
     return { permutation: perm, context };
 }
 
@@ -469,7 +458,7 @@ function chooseFile(
 }
 
 function isReadByEveryContext({ contexts }: Source): boolean {
-    return contexts === "every-context";
+    return contexts === undefined;
 }
 
 function isInAnyPermutation(tokens: DesignTokens, get: (perm: Permutation) => unknown): boolean {
@@ -485,10 +474,13 @@ function toInput({ context }: InputContext): Input {
 }
 
 function findRefusal(tokenOrGroup: Token | Group): { refusal: Refusal } | undefined {
-    const { path, inherited } = tokenOrGroup;
-    const generated = "generated" in tokenOrGroup ? tokenOrGroup.generated : undefined;
-    if (generated) return refuse({ kind: "generated", path, ...generated });
-    if (inherited) return refuse({ kind: "inherited", path, from: inherited.from });
+    const { path, extendedFrom } = tokenOrGroup;
+    const generatedFrom = tokenOrGroup.kind === "token" ? tokenOrGroup.generatedFrom : undefined;
+    if (generatedFrom) {
+        const { path: from, extension } = generatedFrom;
+        return refuse({ kind: "generated", path, from, extension });
+    }
+    if (extendedFrom) return refuse({ kind: "extended", path, from: extendedFrom.path });
     return undefined;
 }
 

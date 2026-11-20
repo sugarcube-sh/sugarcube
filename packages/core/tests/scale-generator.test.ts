@@ -38,9 +38,9 @@ describe("scale generator", () => {
         );
         expect(listed(tokens)[0]).toMatchObject({
             type: "dimension",
-            resolved: rem(0.72),
+            resolvedValue: rem(0.72),
             extensions: { "sh.sugarcube": { fluid: { min: rem(0.6944), max: rem(0.72) } } },
-            generated: { from: "size" },
+            generatedFrom: { path: "size" },
         });
         expect(listed(tokens)[0]).not.toHaveProperty("authored");
     });
@@ -52,7 +52,7 @@ describe("scale generator", () => {
             ["sm", "md", "lg", "sm-md", "md-lg"].map((step) => `size.${step}`),
         );
         expect(listed(tokens)[3]).toMatchObject({
-            resolved: rem(1.6875),
+            resolvedValue: rem(1.6875),
             extensions: { "sh.sugarcube": { fluid: { min: rem(1), max: rem(1.6875) } } },
         });
     });
@@ -60,7 +60,7 @@ describe("scale generator", () => {
     it("uses the scale's value for a token the file writes, and reports the file", () => {
         const tokens = withScale(multipliers, { md: { $value: rem(1.1) } });
         const md = listed(tokens).find((t) => t.path === "size.md");
-        expect(md).toMatchObject({ resolved: rem(1.6875), generated: { from: "size" } });
+        expect(md).toMatchObject({ resolvedValue: rem(1.6875), generatedFrom: { path: "size" } });
         expect(md).not.toHaveProperty("authored");
         expect(
             tokens.diagnostics.map(({ kind, path, message, help }) => ({

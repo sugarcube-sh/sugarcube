@@ -6,7 +6,8 @@
       "tokens": [
         {
           "path": "size",
-          "type": "number"
+          "type": "number",
+          "typeFrom": null
         }
       ],
       "groups": [{ "path": "" }]
