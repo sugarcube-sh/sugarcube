@@ -424,7 +424,14 @@ function arrowType(signature: ApiSignature): string {
 function typeCode(type: string, links: Links): string {
     const code = `\`${type}\``;
     const names = documentedNames(type, links);
-    return names.length === 1 ? `[${code}](${links.symbols.get(names[0]!)})` : code;
+    if (names.length !== 1) return code;
+    const [name] = names as [string];
+    const rest = type
+        .replace(new RegExp(`\\b${name}\\b`, "g"), "")
+        .replace(/\b(?:readonly|undefined|null|string|number|boolean)\b/g, "")
+        .replace(/\b[A-Z][\w$]*\b/g, (word) => (WRAPPERS.has(word) ? "" : word));
+    const wrapsOneName = /^[\s[\]|<>(),]*$/.test(rest);
+    return wrapsOneName ? `[${code}](${links.symbols.get(name)})` : code;
 }
 
 function cell(text: string): string {

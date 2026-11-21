@@ -167,8 +167,7 @@ export const PAGES: readonly PageConfig[] = [
         title: "Files and the resolver",
         overview:
             "Where the tokens come from: {@link DesignTokens.files}, each source, and the resolver's sets, modifiers and contexts.",
-        description: "The files a read used, and the resolver's sets, modifiers and contexts.",
-        intro: "Where the tokens come from.",
+        description: "Source files and the resolver document",
         sections: [
             { title: "Sources", names: ["Source", "SourceRef", "ParentSet"] },
             {
@@ -182,8 +181,7 @@ export const PAGES: readonly PageConfig[] = [
         title: "Token values",
         overview:
             "The value of each token type. Check a token's `type`, and TypeScript knows the shape of its `resolvedValue`. Composite values, such as a border, are also split into parts.",
-        description:
-            "The value of each token type, the parts of composite values, and the results of checking a value.",
+        description: "Each type's value, its parts, and the result of checking one.",
         intro: "Check a token's `type`, and TypeScript knows the shape of its value.",
         sections: [
             {
@@ -247,8 +245,8 @@ export const PAGES: readonly PageConfig[] = [
         title: "Problems and errors",
         overview:
             "What's in {@link DesignTokens.diagnostics}. A read never throws for a problem in the files. It throws only when you ask for something it can't answer, such as a permutation that doesn't exist.",
-        description: "What a diagnostic holds, where it is, and the errors dtcg throws.",
-        intro: "A read never throws for a problem in the files: it reports a diagnostic. It throws only for a question asked the wrong way.",
+        description: "Diagnostics, and the errors dtcg throws.",
+        intro: "A read never throws for a problem in the files. It reports a diagnostic instead. dtcg throws only when you ask for something it can't answer, such as a permutation that doesn't exist.",
         sections: [
             {
                 title: "Diagnostics",
@@ -282,8 +280,8 @@ export const PAGES: readonly PageConfig[] = [
         title: "Extensions and generators",
         overview:
             "Passed to `read` to check your own `$extensions` and to make tokens from them, such as a scale of sizes from one token.",
-        description: "Checking your own `$extensions`, and making tokens from them.",
-        intro: "Passed to `read` in `extensionValidators` and `generators`.",
+        description: "Validators and generators for your own extensions.",
+        intro: "Passed to {@link read} in `extensionValidators` and `generators`.",
         sections: [
             {
                 title: "Validators",
