@@ -43,5 +43,4 @@ jobs:
           cache: "pnpm"
       - run: pnpm install
       - run: pnpm run build
-      - run: pnpm --filter @sugarcube-sh/studio exec playwright install --with-deps --only-shell chromium
       - run: pnpm run test

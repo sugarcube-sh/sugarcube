@@ -50,7 +50,10 @@ const projects = {
     "the static starter kit (463 tokens)": await project(join(kits, "static/tokens.resolver.json")),
     "the fluid starter kit (489 tokens)": await project(join(kits, "fluid/tokens.resolver.json")),
     "Studio's design tokens (210 tokens)": await project(
-        join(repo, "packages/studio/src/design-tokens/tokens.resolver.json"),
+        join(
+            repo,
+            "packages/cli/tests/__fixtures__/projects/studio-tokens/src/design-tokens/tokens.resolver.json",
+        ),
     ),
 };
 

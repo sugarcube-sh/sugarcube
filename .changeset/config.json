@@ -8,8 +8,6 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "www",
-    "@sugarcube-sh/studio",
-    "@sugarcube-sh/dtcg-edit"
+    "www"
   ]
 }

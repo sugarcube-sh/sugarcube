@@ -1,8 +1,0 @@
-.icon {
-    --icon-size: 0.875rem;
-    color: var(--color-solid-default);
-    width: var(--icon-size);
-    height: var(--icon-size);
-    flex-shrink: 0;
-    vertical-align: middle;
-}

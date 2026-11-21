@@ -10,8 +10,6 @@ const tokenFolders = [
     "packages/core/tests/__fixtures__",
     "packages/cli/tests/__fixtures__",
     "packages/cli/tests/e2e/__fixtures__",
-    "packages/studio/demo",
-    "packages/studio/src/design-tokens",
     "apps/www/registry/tokens",
 ];
 
@@ -185,7 +183,7 @@ const expectedFailures: Expected[] = [
         matches: (d) => reason(d) === "string-with-unit",
     },
     {
-        project: "packages/studio/demo/tokens.resolver.json",
+        project: "packages/cli/tests/__fixtures__/projects/studio-demo/tokens.resolver.json",
         why: "refers to size.step.*, made by sugarcube's scale recipe on size.step, which dtcg alone does not know; core's scale-parity test reads it with the generator and finds none missing",
         matches: (d) => d.kind === "missing-reference" && d.detail.ref.startsWith("size.step."),
     },

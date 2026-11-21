@@ -4,7 +4,7 @@ import { basename, join, resolve } from "node:path";
 import { type LoadedConfig, fillDefaults } from "@sugarcube-sh/core";
 import type { SugarcubeConfig, UtilityClassesConfig } from "@sugarcube-sh/core";
 import wwwConfig from "../../../apps/www/sugarcube.config.js";
-import studioConfig from "../../studio/sugarcube.config.js";
+import studioConfig from "./__fixtures__/projects/studio-tokens/sugarcube.config.js";
 
 const ROOT = resolve(__dirname, "../../..");
 export const GOLDEN_DIR = join(__dirname, "__golden__");
@@ -118,9 +118,13 @@ export const CASES: GoldenCase[] = [
     },
     {
         name: "studio/demo",
-        resolver: join(ROOT, "packages/studio/demo/tokens.resolver.json"),
+        resolver: join(__dirname, "__fixtures__/projects/studio-demo/tokens.resolver.json"),
     },
-    fromProject("studio/design-tokens", studioConfig, join(ROOT, "packages/studio")),
+    fromProject(
+        "studio/design-tokens",
+        studioConfig,
+        join(__dirname, "__fixtures__/projects/studio-tokens"),
+    ),
     fromProject("registry/starter-kits/fluid", wwwConfig, join(ROOT, "apps/www")),
     {
         name: "registry/starter-kits/static",
