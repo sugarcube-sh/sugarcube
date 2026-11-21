@@ -1,6 +1,6 @@
 {
   "name": "@sugarcube-sh/cli",
-  "version": "0.1.28",
+  "version": "0.2.0",
   "description": "CLI for sugarcube",
   "keywords": [
     "CUBE CSS",
