@@ -1,4 +1,5 @@
-import { type JsonPath, type JsonValue, isEqualJson } from "@sugarcube-sh/dtcg";
+import type { JsonPath, JsonValue } from "@sugarcube-sh/dtcg";
+import { isEqualJson } from "@sugarcube-sh/dtcg/values";
 import type { EditStep, FileOp } from "./index.js";
 
 type ValueOp = Extract<FileOp, { kind: "set" | "add" | "remove" }>;

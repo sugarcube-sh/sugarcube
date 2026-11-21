@@ -6,7 +6,6 @@ export { read, readFromMemory } from "./read/read.js";
 export { getFilePath } from "./read/files/paths.js";
 export { tokenPath } from "./path.js";
 export { toInputLabel } from "./lookup/permutation-label.js";
-export { isEqualJson, isEquivalentValue } from "./values/same-value.js";
 export type { ValueErrorCode, ValueErrorDetail } from "./values/value-errors.js";
 
 export type {

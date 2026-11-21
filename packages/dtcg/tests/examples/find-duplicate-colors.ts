@@ -1,5 +1,6 @@
 // Finds colors with the same value under different names, and suggests pointing one at the other.
-import { isEquivalentValue, type DesignTokens, type Token } from "@sugarcube-sh/dtcg";
+import type { DesignTokens, Token } from "@sugarcube-sh/dtcg";
+import { isEquivalentValue } from "@sugarcube-sh/dtcg/values";
 
 declare const tokens: DesignTokens;
 

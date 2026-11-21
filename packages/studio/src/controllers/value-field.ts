@@ -5,13 +5,13 @@ import {
     type JsonValue,
     type StrokeStyleKeyword,
     type TokenType,
-    isEqualJson,
 } from "@sugarcube-sh/dtcg";
 import {
     type FontWeightKeyword,
     dimensionUnits,
     durationUnits,
     fontWeightKeywords,
+    isEqualJson,
     parseValue,
     parseReference,
     strokeStyleKeywords,

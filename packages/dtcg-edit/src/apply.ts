@@ -1,4 +1,5 @@
-import { type DesignTokens, type JsonValue, isEqualJson } from "@sugarcube-sh/dtcg";
+import type { DesignTokens, JsonValue } from "@sugarcube-sh/dtcg";
+import { isEqualJson } from "@sugarcube-sh/dtcg/values";
 import { type Node, findNodeAtLocation, getNodeValue, parseTree } from "jsonc-parser";
 import { createConflict } from "./error-messages.js";
 import type {

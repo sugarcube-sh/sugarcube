@@ -6,8 +6,8 @@ import {
     type Permutation,
     type Token,
     readFromMemory,
-    isEqualJson,
 } from "@sugarcube-sh/dtcg";
+import { isEqualJson } from "@sugarcube-sh/dtcg/values";
 import {
     type Clash,
     type CommitResult,

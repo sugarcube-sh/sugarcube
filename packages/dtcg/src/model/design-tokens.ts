@@ -30,11 +30,10 @@ import type { Span } from "./location.js";
 /**
  * Design tokens, as {@link read} returns them, with every permutation.
  *
- * Everything in them is read-only. A token or group that's the same in two permutations is one
- * object in both, so `===` tells whether it differs.
+ * Read-only. A token or group that's the same in two permutations is one
+ * object.
  *
  * @example
- * // color.blue.500 is the same in light and dark
  * light.getToken("color.blue.500") === dark.getToken("color.blue.500")
  * // => true
  */
@@ -54,7 +53,8 @@ export interface DesignTokens {
     /**
      * Every permutation the read built, in the resolver's order.
      *
-     * The default isn't always first. To get it, use `getPermutation()`.
+     * The default may not be first, such as when a modifier lists `light` before its default,
+     * `dark`. To get the default, use `getPermutation()`.
      */
     readonly permutations: Permutations;
     /**
