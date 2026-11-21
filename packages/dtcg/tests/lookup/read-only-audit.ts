@@ -4,14 +4,10 @@ import ts from "typescript";
 const packages = join(import.meta.dirname, "../../..");
 
 const entries = {
-    "dtcg": ["dtcg/src/index.ts", "dtcg/src/node.ts", "dtcg/src/values.ts", "dtcg/src/css.ts"],
-    "dtcg-edit": ["dtcg-edit/src/index.ts", "dtcg-edit/src/node.ts"],
+    dtcg: ["dtcg/src/index.ts", "dtcg/src/node.ts", "dtcg/src/values.ts", "dtcg/src/css.ts"],
 };
 
-const KEEP_THEIR_ANSWERS = [
-    ["dtcg/src/css.ts", "CSSWriter"],
-    ["dtcg-edit/src/index.ts", "Edits"],
-] as const;
+const KEEP_THEIR_ANSWERS = [["dtcg/src/css.ts", "CSSWriter"]] as const;
 
 export type Package = keyof typeof entries;
 
@@ -47,12 +43,11 @@ export function readOnlyBreaks(): Breaks {
     );
     const checker = program.getTypeChecker();
     const snapshot = new Set<string>();
-    const parameters: Record<Package, Set<string>> = { "dtcg": new Set(), "dtcg-edit": new Set() };
+    const parameters: Record<Package, Set<string>> = { dtcg: new Set() };
     const visited = new Set<string>();
 
     const packageOf = (node: ts.Node): Package | undefined => {
         const file = node.getSourceFile().fileName;
-        if (file.includes("/dtcg-edit/src/")) return "dtcg-edit";
         if (file.includes("/dtcg/src/")) return "dtcg";
         return undefined;
     };
@@ -190,8 +185,7 @@ export function readOnlyBreaks(): Breaks {
     return {
         snapshot: sorted(snapshot),
         parameters: {
-            "dtcg": sorted(parameters.dtcg),
-            "dtcg-edit": sorted(parameters["dtcg-edit"]),
+            dtcg: sorted(parameters.dtcg),
         },
     };
 }

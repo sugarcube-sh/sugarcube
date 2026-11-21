@@ -24,27 +24,7 @@ export default defineConfig({
     },
     overrides: [
         {
-            files: ["packages/studio/src/controllers/**", "packages/studio/src/adapters/plain.ts"],
-            rules: {
-                "no-restricted-imports": [
-                    "error",
-                    {
-                        patterns: [
-                            {
-                                group: ["@sugarcube-sh/core", "@sugarcube-sh/core/*"],
-                                message:
-                                    "studio's controllers and the plain adapter work for any build tool: ask the build adapter for what sugarcube writes, never core.",
-                            },
-                        ],
-                    },
-                ],
-            },
-        },
-        {
-            files: [
-                "packages/dtcg/src/{index,node,values}.ts",
-                "packages/dtcg-edit/src/{index,node,text}.ts",
-            ],
+            files: ["packages/dtcg/src/{index,node,values}.ts"],
             rules: {
                 "no-unused-vars": ["error", { args: "none" }],
             },

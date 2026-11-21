@@ -1,8 +1,3 @@
-> **Scope.** This MIT licence covers this repository except the studio package
-> (`packages/studio`),
-> which is not licensed for reuse or redistribution (`"license": "UNLICENSED"` in its manifest)
-> until a licence for it is chosen. The source is public so it can be read.
-
 MIT License
 
 Copyright (c) Mark Tomlinson

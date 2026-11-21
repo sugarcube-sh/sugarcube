@@ -4,7 +4,6 @@ import { satteri, satteriHeadingIdsPlugin } from "@astrojs/markdown-satteri";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
-import studio from "@sugarcube-sh/studio/vite";
 import sugarcube from "@sugarcube-sh/vite";
 import presetWind3 from "@unocss/preset-wind3";
 import robotsTxt from "astro-robots-txt";
@@ -226,7 +225,6 @@ export default defineConfig({
             alias: { "@": fileURLToPath(new URL(".", import.meta.url)) },
         },
         plugins: [
-            studio(),
             sugarcube({
                 unoOptions: {
                     presets: [presetWind3({ preflight: false })],

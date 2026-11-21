@@ -22,7 +22,10 @@ const projects = {
         join(kits, "fluid/tokens.resolver.json"),
     ),
     "Studio's design tokens (210 tokens, 2 permutations)": await project(
-        join(repo, "packages/studio/src/design-tokens/tokens.resolver.json"),
+        join(
+            repo,
+            "packages/cli/tests/__fixtures__/projects/studio-tokens/src/design-tokens/tokens.resolver.json",
+        ),
     ),
 };
 

@@ -392,7 +392,7 @@ export type DiagnosticKind = keyof DiagnosticDetailByKind;
  * A problem with the files, or a note about them.
  *
  * Reading carries on past a problem, so one read reports them all. Check `kind`, and TypeScript
- * knows its `detail`. To fix one, see `@sugarcube-sh/dtcg-edit`.
+ * knows its `detail`.
  *
  * @example
  * // A typo in a reference
