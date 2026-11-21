@@ -31,7 +31,19 @@ export interface ReadEvent {
  * A chokidar watcher works, and so does Vite's `server.watcher`.
  */
 export interface FileWatcher {
+    /**
+     * Starts watching more files.
+     *
+     * @param paths - Full paths on disk, such as `"/project/tokens/dark.json"`.
+     */
     add(paths: string | readonly string[]): unknown;
+    /**
+     * Calls `listener` when a watched file is saved (`"change"`), added (`"add"`) or deleted
+     * (`"unlink"`).
+     *
+     * @param event - `"change"`, `"add"` or `"unlink"`.
+     * @param listener - Gets the file's full path on disk.
+     */
     on(event: "change" | "add" | "unlink", listener: (path: string) => void): unknown;
 }
 
@@ -92,10 +104,10 @@ export interface LiveTokens {
 }
 
 /**
- * Reads design tokens from disk, and again on each save.
+ * Reads design tokens from disk, and again each time their files change.
  *
- * It reads straight away, and on each save once you pass a watcher to {@link LiveTokens.watch}.
- * Saves during a read lead to one more read.
+ * It reads straight away, and each time a file is saved, added or deleted once you pass a watcher
+ * to {@link LiveTokens.watch}. Changes during a read lead to one more read.
  *
  * @param source - Where the tokens are, such as `{ entryFile: "tokens/tokens.resolver.json" }`.
  * Give a function to be asked again on every read.

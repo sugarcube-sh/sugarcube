@@ -14,9 +14,8 @@ import type {
 } from "./value.js";
 
 /**
- * One part of a token's value.
+ * A token's value, or one part of it, such as a border's `color`.
  *
- * It can be the whole value, or a part of it, such as a border's `color` or one shadow layer.
  * Check `type`, and TypeScript knows its `resolvedValue` and its own parts.
  *
  * @example

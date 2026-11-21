@@ -18,4 +18,5 @@ export {
 export { type ExtensionReader, createExtensionReader } from "./values/extension-reader.js";
 export type { ExtensionResult } from "./model/index.js";
 export { isJsonObject } from "./values/json.js";
+export { isEqualJson, isEquivalentValue } from "./values/same-value.js";
 export { compositeParts } from "./values/composite-parts.js";

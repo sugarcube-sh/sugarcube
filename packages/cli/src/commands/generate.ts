@@ -62,11 +62,11 @@ export const generate = new Command()
     .option("--resolver <path>", "Path to token resolver file (.resolver.json)")
     .option(
         "--variables <path>",
-        "Output path for CSS variables (default: 'src/styles/tokens.css')",
+        "Output path for CSS variables (default: 'src/styles/variables.gen.css')",
     )
     .option(
         "--utilities <path>",
-        "Output path for utility classes (default: 'src/styles/utilities.css')",
+        "Output path for utility classes (default: 'src/styles/utilities.gen.css')",
     )
     .option(
         "--fluid-min <number>",

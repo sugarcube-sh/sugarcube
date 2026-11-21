@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isEqualJson } from "../../src/index.js";
+import { isEqualJson } from "../../src/values.js";
 
 describe("isEqualJson", () => {
     it("is true for the same JSON, with object keys in any order", () => {
-        expect(isEqualJson({ a: 1, b: [true, null, "x"] }, { b: [true, null, "x"], a: 1 })).toBe(true);
+        expect(isEqualJson({ a: 1, b: [true, null, "x"] }, { b: [true, null, "x"], a: 1 })).toBe(
+            true,
+        );
         expect(isEqualJson("{color.red}", "{color.red}")).toBe(true);
     });
 

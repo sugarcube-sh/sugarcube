@@ -48,7 +48,7 @@ export interface LocalGroup extends LocalProperties {
 }
 
 /**
- * A place where a token or group is written.
+ * A token or group as one file writes it.
  *
  * A definition read by several permutations is the same object in each. To find where it is in
  * the file, use `getSpan`.

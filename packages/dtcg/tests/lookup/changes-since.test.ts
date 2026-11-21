@@ -7,8 +7,8 @@ import {
     type UnresolvedValue,
     defineGenerator,
     readFromMemory,
-    isEquivalentValue,
 } from "../../src/index.js";
+import { isEquivalentValue } from "../../src/values.js";
 import { lightDark, oneFile } from "../token-files.js";
 
 const resolver = lightDark(["base.json"], ["dark.json"]);

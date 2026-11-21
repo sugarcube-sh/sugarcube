@@ -1,0 +1,35 @@
+---
+// @ts-ignore - virtual:starlight module
+import Search from "virtual:starlight/components/Search";
+import Icons from "@/src/components/Icons.astro";
+import Link from "@/src/components/Link.astro";
+import ModeToggle from "@/src/components/ModeToggle.astro";
+
+import logoSvg from "@/src/assets/sugarcube-logo.svg?raw";
+---
+
+<div class="repel w-full">
+    <a class="logo cluster cluster-gap-xs" href="/" aria-label="sugarcube home">
+        <Fragment set:html={logoSvg} />
+        sugarcube
+    </a>
+    <Search />
+    <nav class="sl-hidden md:sl-flex">
+        <ul class="cluster gap-0 flex-nowrap" role="list">
+            <li>
+                <ModeToggle class="is-nav-link" />
+            </li>
+            <li>
+                <Link
+                    href="https://github.com/sugarcube-sh/sugarcube"
+                    isExternal
+                    class="site-button is-icon-only is-nav-link"
+                    data-appearance="ghost"
+                >
+                    <Icons name="github" class="" />
+                    <span class="sr-only">GitHub</span>
+                </Link>
+            </li>
+        </ul>
+    </nav>
+</div>
