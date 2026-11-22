@@ -12,7 +12,6 @@
 @import "@/src/styles/blocks/blog.css" layer(blocks);
 @import "@/src/styles/blocks/post-list.css" layer(blocks);
 @import "@/src/styles/blocks/site-header.css" layer(blocks);
-@import "@/src/styles/blocks/services.css" layer(blocks);
 @import "@/src/styles/blocks/site-alert.css" layer(blocks);
 @import "@/src/styles/blocks/site-table.css" layer(blocks);
 @import "@/src/styles/blocks/site-button.css" layer(blocks);

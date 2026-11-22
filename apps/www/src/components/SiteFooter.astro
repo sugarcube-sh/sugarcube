@@ -1,7 +1,6 @@
 ---
 import Logo from "@/src/assets/sugarcube-logo.svg";
 import { ArrowRight } from "@lucide/astro";
-const isConsultingPage = Astro.url.pathname.includes("/consulting");
 ---
 
 <footer class="site-footer region py-lg mt-xl">
@@ -20,37 +19,27 @@ const isConsultingPage = Astro.url.pathname.includes("/consulting");
                         <a href="/blog">Blog</a>
                     </li>
                     <li>
-                        <a href="/consulting">Consulting</a>
+                        <a href="https://marktomlinson.dev/hire-me">Consulting</a>
                     </li>
                     <li>
-                        <a href="https://github.com/sponsors/mark-tomlinson-dev"
-                            >Sponsor</a
-                        >
+                        <a href="https://github.com/sponsors/mark-tomlinson-dev">Sponsor</a>
                     </li>
                     <li>
-                        <a href="https://github.com/sugarcube-sh/sugarcube"
-                            >GitHub</a
-                        >
+                        <a href="https://github.com/sugarcube-sh/sugarcube">GitHub</a>
                     </li>
                     <li>
-                        <a href="https://bsky.app/profile/sugarcube.sh"
-                            >Bluesky</a
-                        >
+                        <a href="https://bsky.app/profile/sugarcube.sh">Bluesky</a>
                     </li>
                 </ul>
             </nav>
         </div>
         <div class="footer-ctas cluster">
-            {
-                isConsultingPage ? null : (
-                    <div class="footer-cta">
-                        <p>Want us to build it for you?</p>
-                        <a href="/consulting" class="site-button is-pill">
-                            Let's Talk <ArrowRight />
-                        </a>
-                    </div>
-                )
-            }
+            <div class="footer-cta">
+                <p>Need a hand with your design system?</p>
+                <a href="https://marktomlinson.dev/hire-me" class="site-button is-pill">
+                    Let's Talk <ArrowRight />
+                </a>
+            </div>
         </div>
     </div>
 </footer>
