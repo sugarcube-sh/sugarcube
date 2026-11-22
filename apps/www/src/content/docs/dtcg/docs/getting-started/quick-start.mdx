@@ -1,0 +1,139 @@
+---
+title: Quick start
+description: Read a token file. Print out problems. Add a resolver and permutations. 
+sidebar:
+  order: 3
+---
+
+The best way to get started with **dtcg** is to open your text editor and play around. Below is a journey you might like to take.
+
+## Read a token file
+
+Save the following as `color.json`.
+
+```json
+{
+  "color": {
+    "$type": "color",
+    "white": { "$value": { "colorSpace": "srgb", "components": [1, 1, 1] } },
+    "gray": {
+      "800": { "$value": { "colorSpace": "srgb", "components": [0.2, 0.2, 0.2] } }
+    },
+    "blue": {
+      "300": { "$value": { "colorSpace": "srgb", "components": [0.6, 0.8, 1] } },
+      "500": { "$value": { "colorSpace": "srgb", "components": [0.2, 0.4, 0.8] } }
+    },
+    "text":       { "$value": "{color.gray.800}" },
+    "background": { "$value": "{color.white}" },
+    "accent":     { "$value": "{color.blue.500}" },
+    "link":       { "$value": "{color.accent}" },
+    "focus":      { "$value": "{color.bleu.500}" }
+  }
+}
+```
+
+Pass its path to `read`:
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("color.json");
+```
+
+## Get a token's value
+
+```ts
+tokens.getToken("color.link")?.resolvedValue;
+// { colorSpace: "srgb", components: [0.2, 0.4, 0.8], alpha: 1 }
+```
+
+`resolvedValue` follows `color.link` to `color.accent` to `color.blue.500`.
+
+## Find the problems
+
+A problem in a file doesn't stop the read. It's listed in `tokens.diagnostics`:
+
+```ts
+for (const problem of tokens.diagnostics) {
+  console.log(problem.severity, `${problem.span?.file}:${problem.span?.start.line}`, problem.message);
+}
+// error color.json:16 `color.bleu.500` does not exist
+```
+
+## Add `dark.json`
+
+```json
+{
+  "color": {
+    "text":       { "$value": "{color.white}" },
+    "background": { "$value": "{color.gray.800}" },
+    "accent":     { "$value": "{color.blue.300}" }
+  }
+}
+```
+
+## Add a resolver
+
+Save a resolver as `tokens.resolver.json`. It reads `color.json` in every permutation, and `dark.json` only in the `dark` context of the modifier `mode`.
+
+```json
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    { "type": "set", "name": "base", "sources": [{ "$ref": "color.json" }] },
+    {
+      "type": "modifier",
+      "name": "mode",
+      "default": "light",
+      "contexts": { "light": [], "dark": [{ "$ref": "dark.json" }] }
+    }
+  ]
+}
+```
+
+Read the resolver with the same call as earlier. You get a permutation for each context:
+
+```ts
+const tokens = await read("tokens.resolver.json");
+
+tokens.permutations.map((permutation) => permutation.label);
+// ["mode: light", "mode: dark"]
+```
+
+## Get a value in a permutation
+
+```ts
+const dark = tokens.getPermutation({ mode: "dark" });
+
+dark.getToken("color.link")?.resolvedValue;
+// { colorSpace: "srgb", components: [0.6, 0.8, 1], alpha: 1 }
+```
+
+To ask every permutation at once, use `groupPermutationsBy`. It calls your function in each permutation. `color.link` has a different value in each mode, so each mode gets its own group:
+
+```ts
+import { toCSSValue } from "@sugarcube-sh/dtcg/css";
+
+for (const { result, permutations } of tokens.groupPermutationsBy((permutation) =>
+  toCSSValue(permutation.getToken("color.link")),
+)) {
+  console.log(permutations.label, result);
+}
+// mode: light rgb(51 102 204)
+// mode: dark rgb(153 204 255)
+```
+
+`color.blue.500` is the same in both modes, so both share one group:
+
+```ts
+for (const { result, permutations } of tokens.groupPermutationsBy((permutation) =>
+  toCSSValue(permutation.getToken("color.blue.500")),
+)) {
+  console.log(permutations.label, result);
+}
+// every permutation rgb(51 102 204)
+```
+
+## Next steps
+
+- [API reference](/dtcg/docs/reference/overview/)
