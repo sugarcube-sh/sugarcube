@@ -1,0 +1,43 @@
+---
+title: Introduction
+description: Learn what dtcg is and what you can do with it.
+sidebar:
+  order: 1
+---
+
+`@sugarcube-sh/dtcg` is a TypeScript library for working with DTCG design tokens.
+
+DTCG design tokens are written to the [Design Tokens Community Group's specification](https://www.designtokens.org/TR/2025.10/), currently version 2025.10. The specification has two main parts:
+
+1. The [Format module](https://www.designtokens.org/TR/2025.10/format/) defines how design tokens are written in JSON.
+2. The [Resolver module](https://www.designtokens.org/TR/2025.10/resolver/) defines resolver documents. A resolver document is a JSON file that says which tokens to read and in what order. It can also give tokens different values in different contexts (think modes, themes, and so on).
+
+Reading these files takes more than parsing JSON. The specification has many rules, such as type inheritance, group extension, and references between tokens. **dtcg** applies all of them and reports every problem it finds.
+
+## What you can build with dtcg
+
+- A docs page that shows every token and its value in each mode or theme.
+- A check in CI that fails when the tokens have a problem or break your own rules.
+- A report on a pull request of which tokens changed, and what uses them.
+- A rename or delete that first shows everything that uses a token.
+- An editor, or a plugin for a design tool.
+- A build tool like sugarcube's [CLI](/docs/cli-overview) or [Vite plugin](/docs/vite-plugin).
+
+And many things besides.
+
+## How it works
+
+dtcg has two `read` functions. In Node, use the one from [`dtcg/node`](/dtcg/docs/reference/node/#read). Anywhere else, use the one from [`dtcg`](/dtcg/docs/reference/dtcg/#read), and pass it a `readText` function.
+
+`read` takes a token file or a resolver document, reads every file it names, and returns a [`DesignTokens`](/dtcg/docs/reference/design-tokens/) object. From it, you get a [`Permutation`](/dtcg/docs/reference/permutation/). From each permutation, you get its [groups and tokens](/dtcg/docs/reference/tokens-and-groups/).
+
+[References](/dtcg/docs/reference/references/) tell you which tokens use which. [Diagnostics](/dtcg/docs/reference/problems/) describe every problem the read found.
+
+The `DesignTokens` object never changes. When files change, you read them again, and you can [compare the two reads](/dtcg/docs/reference/changes/).
+
+Other entry points work with the tokens: [`dtcg/css`](/dtcg/docs/reference/css/) writes them as CSS, [`dtcg/editor`](/dtcg/docs/reference/editor/) finds what's at a position in a file, and [`dtcg/values`](/dtcg/docs/reference/values/) checks and compares single values.
+
+## Next steps
+
+- [Quick start](/dtcg/docs/getting-started/quick-start/)
+- [API reference](/dtcg/docs/reference/overview/)
