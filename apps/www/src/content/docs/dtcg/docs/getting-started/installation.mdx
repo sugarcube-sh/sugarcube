@@ -1,0 +1,25 @@
+---
+title: Installation
+description: Add dtcg to your project and choose what to import.
+sidebar:
+  order: 2
+---
+
+import PackageManagerTabs from "@/src/components/PackageManagerTabs.astro";
+import Table from "@/src/components/Table.astro";
+
+<PackageManagerTabs command="npm install @sugarcube-sh/dtcg" />
+
+ESM only. In Node, it requires 22.14 or later.
+
+## Import paths
+
+<Table>
+| Import | Use it for |
+| --- | --- |
+| [`@sugarcube-sh/dtcg`](/dtcg/docs/reference/dtcg/) | Reading tokens in any runtime, and every type |
+| [`@sugarcube-sh/dtcg/node`](/dtcg/docs/reference/node/) | Reading tokens from disk, finding token files, and reading them again when they change |
+| [`@sugarcube-sh/dtcg/css`](/dtcg/docs/reference/css/) | Writing tokens as CSS |
+| [`@sugarcube-sh/dtcg/editor`](/dtcg/docs/reference/editor/) | Finding what's at a position in a file |
+| [`@sugarcube-sh/dtcg/values`](/dtcg/docs/reference/values/) | Checking and comparing single values |
+</Table>
