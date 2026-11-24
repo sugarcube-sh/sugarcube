@@ -1,0 +1,66 @@
+---
+title: Read without a file system
+# description: Read tokens in a browser, an edge function or a test, by fetching each file or by passing the text.
+sidebar:
+  order: 6
+---
+
+In Node, `read` opens your token files from disk. In a browser, an edge function or a test, there's no disk, so you give dtcg the files another way: fetch them, or pass their text.
+
+## Fetch the files
+
+Import [`read`](/dtcg/docs/reference/dtcg/#read) from `@sugarcube-sh/dtcg`, and give it a function that fetches one file:
+
+```ts
+import { read } from "@sugarcube-sh/dtcg";
+
+async function readText(path: string) {
+  const response = await fetch(path);
+  if (response.status === 404) return undefined;
+  if (!response.ok) throw new Error(`${response.status}`);
+  return response.text();
+}
+
+const tokens = await read("/tokens/tokens.resolver.json", { readText });
+```
+
+dtcg calls your function for each file it needs. Return `undefined` if a file doesn't exist.
+
+## Pass the text
+
+If you already have the files' text, pass it to [`readFromMemory`](/dtcg/docs/reference/dtcg/#readfrommemory):
+
+```ts
+import { readFromMemory } from "@sugarcube-sh/dtcg";
+
+const tokens = readFromMemory({
+  files: {
+    "tokens.resolver.json": resolverText,
+    "color.json": colorText,
+    "dark.json": darkText,
+  },
+});
+```
+
+In a test, you can write the tokens in your code:
+
+```ts
+const tokens = readFromMemory({
+  files: {
+    "tokens.json": JSON.stringify({
+      color: {
+        $type: "color",
+        red: { $value: { colorSpace: "srgb", components: [1, 0, 0] } },
+        danger: { $value: "{color.red}" },
+      },
+    }),
+  },
+});
+
+tokens.getToken("color.danger")?.resolvedValue;
+// { colorSpace: "srgb", components: [1, 0, 0], alpha: 1 }
+```
+
+## Send tokens from a server to a browser
+
+Read the tokens on the server, and send [`tokens.toMemory()`](/dtcg/docs/reference/design-tokens/#tomemory) to the browser. There, pass it to `readFromMemory`.

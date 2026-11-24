@@ -1,0 +1,55 @@
+---
+title: Check your own extensions
+# description: Check the data your tool keeps in $extensions, so its mistakes show up with dtcg's other problems.
+sidebar:
+  order: 8
+---
+
+If your tool keeps its own data in `$extensions`, dtcg can check it while it reads. Mistakes show up with dtcg's other problems.
+
+## Check your data
+
+Say your tool gives each space token a `fluid` setting, which must be `true` or `false`:
+
+```json
+{
+  "space": {
+    "$type": "dimension",
+    "gutter": {
+      "$value": { "value": 16, "unit": "px" },
+      "$extensions": { "com.example": { "fluid": "yes" } }
+    }
+  }
+}
+```
+
+Write a check with [`defineExtensionValidator`](/dtcg/docs/reference/dtcg/#defineextensionvalidator), and pass it to `read`:
+
+```ts
+import { defineExtensionValidator } from "@sugarcube-sh/dtcg";
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const fluid = defineExtensionValidator({
+  key: "com.example",
+  appliesTo: ["dimension"],
+  messages: {
+    "not-a-boolean": ({ fluid }: { fluid: unknown }) =>
+      `\`fluid\` must be true or false, not ${JSON.stringify(fluid)}`,
+  },
+  validate: (owner, extension) => {
+    const { fluid } = extension as { fluid?: unknown };
+    return typeof fluid === "boolean"
+      ? []
+      : [{ jsonPath: ["fluid"], reason: "not-a-boolean", data: { fluid } }];
+  },
+});
+
+const tokens = await read("space.json", { extensionValidators: [fluid] });
+
+tokens.diagnostics[0]?.message;
+// "`fluid` must be true or false, not \"yes\""
+```
+
+`key` is your key in `$extensions`, and `appliesTo` is the token types to check. `validate` returns a problem for each mistake, and `messages` turns each problem into words.
+
+If you already use a schema library, you can pass a `schema` instead of `validate`. See [`ExtensionValidator`](/dtcg/docs/reference/extensions/#extensionvalidator).

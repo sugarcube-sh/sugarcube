@@ -1,0 +1,80 @@
+---
+title: Write CSS
+# description: Turn your tokens into CSS custom properties.
+sidebar:
+  order: 5
+---
+
+A common task with tokens is turning them into something your code can use, such as CSS, JavaScript or Swift. dtcg writes CSS today but is built so other formats can be added later.
+
+## Write a stylesheet
+
+Give [`getCSSBlocks`](/dtcg/docs/reference/css/#getcssblocks) a selector for each permutation, then pass the result to [`toCSS`](/dtcg/docs/reference/css/#tocss):
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+import { getCSSBlocks, toCSS } from "@sugarcube-sh/dtcg/css";
+
+const tokens = await read("tokens.resolver.json");
+
+const css = toCSS(
+  getCSSBlocks(tokens, [
+    { input: {}, selector: ":root" },
+    { input: { mode: "dark" }, selector: '[data-mode="dark"]' },
+  ]),
+);
+```
+
+```css
+:root {
+    --color-white: rgb(255 255 255);
+    --color-gray-800: rgb(51 51 51);
+    --color-blue-300: rgb(153 204 255);
+    --color-blue-500: rgb(51 102 204);
+    --color-text: var(--color-gray-800);
+    --color-background: var(--color-white);
+    --color-accent: var(--color-blue-500);
+    --color-link: var(--color-accent);
+}
+
+[data-mode="dark"] {
+    --color-text: var(--color-white);
+    --color-background: var(--color-gray-800);
+    --color-accent: var(--color-blue-300);
+    --color-link: var(--color-accent);
+}
+```
+
+Add a media query, if you need:
+
+```ts
+{ input: { mode: "dark" }, selector: ":root", atRules: ["@media (prefers-color-scheme: dark)"] }
+```
+
+## Change the names or values
+
+Pass a [writer](/dtcg/docs/reference/css/#createcsswriter) with your options. Here, every name gets a prefix:
+
+```ts
+import { createCSSWriter } from "@sugarcube-sh/dtcg/css";
+
+const writer = createCSSWriter({ naming: { prefix: "ds" } });
+
+toCSS(getCSSBlocks(tokens, [{ input: {}, selector: ":root" }], { writer }));
+// :root { --ds-color-white: rgb(255 255 255); … }
+```
+
+You can also leave tokens out, write references as plain values, or write values your own way. See [the writer's options](/dtcg/docs/reference/css/#csswriteroptions).
+
+## Write one value
+
+[`toCSSValue`](/dtcg/docs/reference/css/#tocssvalue) writes one token's value, and [`toCustomPropertyName`](/dtcg/docs/reference/css/#tocustompropertyname) writes its name:
+
+```ts
+import { toCSSValue, toCustomPropertyName } from "@sugarcube-sh/dtcg/css";
+
+const link = tokens.getPermutation({ mode: "dark" }).getToken("color.link");
+
+toCSSValue(link); // "rgb(153 204 255)"
+toCustomPropertyName("color.link"); // "--color-link"
+```

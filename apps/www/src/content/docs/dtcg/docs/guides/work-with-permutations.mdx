@@ -1,0 +1,74 @@
+---
+title: Work with permutations
+# description: Get the tokens for one permutation, handle a context that doesn't exist, show a token's value in every permutation, and choose which permutations to build.
+sidebar:
+  order: 1
+---
+
+If your resolver has modifiers, such as a light and dark mode, a token can have a different value in each one. `color.text` might be dark gray in `mode: light` and white in `mode: dark`. Each combination of modifiers is called a permutation.
+
+If a read has only one permutation - because, say, it's a token file with no resolver or a resolver with no modifiers - you can query it for tokens directly with `tokens.getToken()`. When it has several permutations, `getToken()` can't know which you mean, so it throws.
+
+## Get one permutation
+
+Pass an input to [`getPermutation`](/dtcg/docs/reference/design-tokens/#getpermutation):
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("tokens.resolver.json");
+const dark = tokens.getPermutation({ mode: "dark" });
+
+dark.getToken("color.text")?.resolvedValue;
+// { colorSpace: "srgb", components: [1, 1, 1], alpha: 1 }
+dark.label;
+// "mode: dark"
+dark.input;
+// { mode: "dark" }
+```
+
+Useful to know: a token that's the same in two permutations is the same object in both:
+
+```ts
+dark.getToken("color.blue.500") === light.getToken("color.blue.500");
+// true
+```
+
+## Show a token's value in every permutation
+
+[`groupPermutationsBy`](/dtcg/docs/reference/design-tokens/#grouppermutationsby) calls your function in each permutation, and permutations where it returns the same thing go in one group. Each group has a label. For every token:
+
+```ts
+import { toCSSValue } from "@sugarcube-sh/dtcg/css";
+
+for (const path of tokens.tokenPaths) {
+  const groups = tokens.groupPermutationsBy((permutation) =>
+    toCSSValue(permutation.getToken(path)),
+  );
+  for (const { result, permutations } of groups) {
+    console.log(path.padEnd(18), permutations.label.padEnd(18), result ?? "no value");
+  }
+}
+// color.white        every permutation  rgb(255 255 255)
+// color.gray.800     every permutation  rgb(51 51 51)
+// color.blue.300     every permutation  rgb(153 204 255)
+// color.blue.500     every permutation  rgb(51 102 204)
+// color.text         mode: light        rgb(51 51 51)
+// color.text         mode: dark         rgb(255 255 255)
+// color.background   mode: light        rgb(255 255 255)
+// color.background   mode: dark         rgb(51 51 51)
+// color.accent       mode: light        rgb(51 102 204)
+// color.accent       mode: dark         rgb(153 204 255)
+// color.link         mode: light        rgb(51 102 204)
+// color.link         mode: dark         rgb(153 204 255)
+// color.focus        every permutation  no value
+```
+
+## Show what one permutation changes
+
+[`getTokensDifferentFrom`](/dtcg/docs/reference/permutation/#gettokensdifferentfrom) lists the tokens whose value differs from another permutation's:
+
+```ts
+dark.getTokensDifferentFrom(light).map((token) => token.path);
+// ["color.text", "color.background", "color.accent", "color.link"]
+```

@@ -1,0 +1,41 @@
+---
+title: Check single values
+# description: Check one value against its token type, compare two values, and use the spec's lists of types, units and keywords.
+sidebar:
+  order: 7
+---
+
+When someone types a token value, such as in a form or a color picker, check it before you save it.
+
+## Check a value
+
+Pass the token's type and the value to [`parseValue`](/dtcg/docs/reference/values/#parsevalue):
+
+```ts
+import { parseValue } from "@sugarcube-sh/dtcg/values";
+
+parseValue("color", { colorSpace: "srgb", components: [0.2, 0.4, 0.8] }).ok;
+// true
+```
+
+If the value is wrong, `errors` says why:
+
+```ts
+const result = parseValue("dimension", { value: 4, unit: "pt" });
+
+if (!result.ok) {
+  result.errors[0].message; // "`pt` is not a dimension unit"
+  result.errors[0].help; // "use `px` or `rem`"
+}
+```
+
+If you read your tokens with options, such as `hexStringColors`, pass `tokens.parseOptions` so values are checked the same way:
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("tokens.resolver.json", { hexStringColors: true });
+
+parseValue("color", "#3366cc", tokens.parseOptions).ok;
+// true
+```
