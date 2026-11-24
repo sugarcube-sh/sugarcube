@@ -1,0 +1,45 @@
+---
+title: Read again when files change
+# description: Read tokens again after files change, see what changed, and keep tokens up to date as files are saved.
+sidebar:
+  order: 4
+---
+
+After someone edits a token file, read it again to get the new tokens.
+
+## When a file is saved
+
+In a dev server or a watch mode, use [`createLiveTokens`](/dtcg/docs/reference/node/#createlivetokens) (Node only). It reads the tokens, then reads them again each time a file is saved. Give it a [file watcher](/dtcg/docs/reference/node/#filewatcher), and it tells you when there are new tokens:
+
+```ts
+import { createLiveTokens } from "@sugarcube-sh/dtcg/node";
+
+const live = createLiveTokens({ entryFile: "tokens.resolver.json" }, { onError: console.error });
+live.watch(watcher);
+
+live.onRead((tokens) => {
+  console.log(tokens.diagnostics.length);
+});
+// 0
+```
+
+To get the latest tokens at any time, call `await live.getTokens()`.
+
+## When the edit isn't saved to a file
+
+Pass the whole new text of each change to [`reread`](/dtcg/docs/reference/design-tokens/#reread):
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("tokens.resolver.json");
+
+const fixedText = tokens.getText("color.json")!.replace("color.bleu.500", "color.blue.500");
+const fixed = tokens.reread({ "color.json": fixedText });
+
+fixed.diagnostics.length // 0
+```
+
+For a deleted file, pass `null`.
+
+If you don't know which files changed, pass them all to [`rereadAll`](/dtcg/docs/reference/design-tokens/#rereadall).

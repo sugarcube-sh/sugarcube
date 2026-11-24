@@ -1,0 +1,126 @@
+---
+title: Handle problems and errors
+# description: List the problems in token files, fail a CI check on errors, point at a problem in its file, and catch the errors dtcg throws.
+sidebar:
+  order: 3
+---
+
+Token files can have mistakes. In most cases, dtcg reports a mistake rather than throwing.
+
+## List every problem
+
+[`diagnostics`](/dtcg/docs/reference/design-tokens/#diagnostics) lists every problem the read found:
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("color.json");
+
+for (const problem of tokens.diagnostics) {
+  console.log(problem.severity, `${problem.span?.file}:${problem.span?.start.line}`, problem.message);
+}
+// error color.json:16 `color.bleu.500` does not exist
+```
+
+`severity` is `"error"`, `"warning"`, `"info"` or `"hint"`.
+
+## Fail a CI check on errors
+
+Print each problem as `file:line:column` and set the exit code when any is an error:
+
+```ts
+// check-tokens.mjs
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("tokens.resolver.json");
+
+for (const problem of tokens.diagnostics) {
+  const where = problem.span
+    ? `${problem.span.file}:${problem.span.start.line}:${problem.span.start.column}`
+    : tokens.entryFile;
+  const help = problem.help ? `; ${problem.help}` : "";
+  console.log(`${where} ${problem.severity} ${problem.message}${help} (${problem.kind})`);
+}
+
+if (tokens.diagnostics.some((problem) => problem.severity === "error")) {
+  process.exitCode = 1;
+}
+```
+
+```text
+color.json:16:31 error `color.bleu.500` does not exist; did you mean `color.blue.500`? (missing-reference)
+```
+
+## Show where a problem is
+
+A problem's [`span`](/dtcg/docs/reference/problems/#span) is where it's written.
+
+```ts
+problem.span;
+// { file: "color.json", offset: 638, length: 18, start: { line: 16, column: 31 }, end: { line: 16, column: 49 } }
+```
+
+To print the line with the problem, use [`getSourceLine`](/dtcg/docs/reference/editor/#getsourceline). To find the problems under the cursor in an editor, use [`getDiagnosticsAt`](/dtcg/docs/reference/editor/#getdiagnosticsat), with the cursor's offset and a length of 0:
+
+```ts
+import { getDiagnosticsAt, getSourceLine } from "@sugarcube-sh/dtcg/editor";
+
+getSourceLine(tokens, problem.span!);
+// { line: 16, text: '    "focus":      { "$value": "{color.bleu.500}" }', column: 31, length: 18 }
+
+getDiagnosticsAt(tokens, { file: "color.json", offset: 641, length: 0 }).map((problem) => problem.kind);
+// ["missing-reference"]
+```
+
+Note that a problem that doesn't have a location, such as a missing file, has no `span`.
+
+## Show the problems a token has
+
+[`getDiagnostics`](/dtcg/docs/reference/design-tokens/#getdiagnostics) returns the problems a token or group has:
+
+```ts
+tokens.getDiagnostics("color.focus").map((problem) => problem.kind);
+// ["missing-reference"]
+
+tokens.getDiagnostics("color.link");
+// []
+```
+
+## Catch the errors dtcg throws
+
+dtcg throws three errors.
+
+When a resolver makes more than one permutation, `tokens.getToken` and similar methods don't know which one to use, so they throw [`SeveralPermutationsError`](/dtcg/docs/reference/problems/#severalpermutationserror).
+
+```ts
+import { SeveralPermutationsError } from "@sugarcube-sh/dtcg";
+
+const tokens = await read("tokens.resolver.json");
+
+try {
+  tokens.getToken("color.text");
+} catch (error) {
+  if (error instanceof SeveralPermutationsError) {
+    error.message;
+    // "tokens.getToken() needs a permutation: this resolver has the modifier `mode`. Pick one with tokens.getPermutation({ mode: \"dark\" }), or group them with tokens.groupPermutationsBy(…)"
+  }
+}
+```
+
+[`PermutationError`](/dtcg/docs/reference/problems/#permutationerror) is thrown when an input names a permutation the tokens don't have:
+
+```ts
+import { PermutationError } from "@sugarcube-sh/dtcg";
+
+try {
+  tokens.getPermutation({ mode: "dim" });
+} catch (error) {
+  if (error instanceof PermutationError && error.detail.reason === "unknown-context") {
+    const { context, valid } = error.detail;
+    `There's no ${context} mode. Pick ${valid.join(" or ")}.`;
+    // "There's no dim mode. Pick light or dark."
+  }
+}
+```
+
+[`EntryFileError`](/dtcg/docs/reference/problems/#entryfileerror) is thrown by `readFromMemory` when it can't tell which file to start from.

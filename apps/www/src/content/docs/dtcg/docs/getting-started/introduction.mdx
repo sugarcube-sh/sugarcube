@@ -31,7 +31,7 @@ dtcg has two `read` functions. In Node, use the one from [`dtcg/node`](/dtcg/doc
 
 `read` takes a token file or a resolver document, reads every file it names, and returns a [`DesignTokens`](/dtcg/docs/reference/design-tokens/) object. From it, you get a [`Permutation`](/dtcg/docs/reference/permutation/). From each permutation, you get its [groups and tokens](/dtcg/docs/reference/tokens-and-groups/).
 
-[References](/dtcg/docs/reference/references/) tell you which tokens use which. [Diagnostics](/dtcg/docs/reference/problems/) describe every problem the read found.
+[References](/dtcg/docs/reference/references/) tell you which tokens use which. [Diagnostics](/dtcg/docs/reference/problems/) report every problem the read found.
 
 The `DesignTokens` object never changes. When files change, you read them again, and you can [compare the two reads](/dtcg/docs/reference/changes/).
 
