@@ -1,0 +1,61 @@
+---
+title: How a read works
+# description: What happens between your token files and the tokens you get back, and why the result never changes.
+sidebar:
+  order: 1
+---
+
+Your token files are JSON. Your tool wants to know about them. `read` turns the files into a token structure you can query. This page explains some of how that happens.
+
+## From files to tokens
+
+A read has three steps:
+
+1. Get the files
+
+   Pass `read` a token file or a resolver. When passed a resolver, `read` gets every file the resolver lists.
+
+2. Assemble each permutation
+
+   A resolver can give tokens different values (e.g. the same token in light and dark mode). dtcg tracks and handles all that.
+
+3. Work out each token
+
+    A token can get its type from its group, or its value from another token. dtcg works these out so your tool doesn't have to.
+
+## Reading more than the spec allows
+
+By default, a read follows DTCG 2025.10 exactly. Two options let it accept more:
+
+- `hexStringColors` reads a color written as a hex string, such as `"#e11d48"`.
+- `ignoreUnknownProperties` sets aside a property a value's type doesn't have and reports a warning.
+
+Without them, each is an error. See [`ReadOptions`](/dtcg/docs/reference/dtcg/#readoptions).
+
+## Problems don't stop a read
+
+This is because most tools don't want to report just one problem but **all** the problems the current set of tokens has.
+
+The exception to this is when a file's text can't be fetched at all. Everything else, including a missing file, is a problem in `tokens.diagnostics`. See [Problems](/dtcg/docs/concepts/problems/).
+
+## Tokens are a snapshot
+
+The tokens you get back are read only. They are a snapshot of your files at the time you read them. Read them again to get new ones.
+
+This means you can compare between reads to see what changed (e.g. if you're building a token editor and need that data).
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("color.json");
+
+const fixedText = tokens.getText("color.json")!.replace("color.bleu.500", "color.blue.500");
+const fixed = tokens.reread({ "color.json": fixedText });
+
+fixed.getToken("color.white") === tokens.getToken("color.white");
+// true
+fixed.getToken("color.focus") === tokens.getToken("color.focus");
+// false
+```
+
+For more on this, see [Read again when files change](/dtcg/docs/guides/read-again-when-files-change/).

@@ -5,9 +5,7 @@ sidebar:
   order: 1
 ---
 
-If your resolver has modifiers, such as a light and dark mode, a token can have a different value in each one. `color.text` might be dark gray in `mode: light` and white in `mode: dark`. Each combination of modifiers is called a permutation.
-
-If a read has only one permutation - because, say, it's a token file with no resolver or a resolver with no modifiers - you can query it for tokens directly with `tokens.getToken()`. When it has several permutations, `getToken()` can't know which you mean, so it throws.
+If your resolver has modifiers (e.g. light and dark modes) a token can have a different value in each permutation. `color.text` might be dark gray in `mode: light` and white in `mode: dark`. That means you'll likely need to work with permutations.
 
 ## Get one permutation
 
@@ -25,13 +23,6 @@ dark.label;
 // "mode: dark"
 dark.input;
 // { mode: "dark" }
-```
-
-Useful to know: a token that's the same in two permutations is the same object in both:
-
-```ts
-dark.getToken("color.blue.500") === light.getToken("color.blue.500");
-// true
 ```
 
 ## Show a token's value in every permutation
@@ -69,6 +60,8 @@ for (const path of tokens.tokenPaths) {
 [`getTokensDifferentFrom`](/dtcg/docs/reference/permutation/#gettokensdifferentfrom) lists the tokens whose value differs from another permutation's:
 
 ```ts
+const light = tokens.getPermutation({ mode: "light" });
+
 dark.getTokensDifferentFrom(light).map((token) => token.path);
 // ["color.text", "color.background", "color.accent", "color.link"]
 ```

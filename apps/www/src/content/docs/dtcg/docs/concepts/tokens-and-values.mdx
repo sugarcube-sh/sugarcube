@@ -1,0 +1,48 @@
+---
+title: Tokens and values
+# description: What a token is once dtcg has read it, why it has three values, and where its type comes from.
+sidebar:
+  order: 3
+---
+
+A token often contains only part of what a tool needs to know about it. Take, for example, this token from the [quick start](/dtcg/docs/getting-started/quick-start/):
+
+```json
+"link": { "$value": "{color.accent}" }
+```
+
+You'll notice that it writes no type and no color. That's because both come from the token it refers to (which, in turn, may refer to another token). dtcg works all of that out for you so that your tool can read any token's type and value directly.
+
+
+## Three values
+
+Tools need a token's value in different forms:
+
+- A tool that edits files needs the literal text: `"{color.accent}"`.
+- A tool that writes CSS needs to know it's a reference so it can write `var(--color-accent)`.
+- A tool that shows a swatch needs the color itself.
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("color.json");
+const link = tokens.getToken("color.link")!;
+
+link.winningDefinition.local.value;
+// "{color.accent}"
+link.parsedValue;
+// { syntax: "curly-brace", path: "color.accent" }
+link.resolvedValue;
+// { colorSpace: "srgb", components: [0.2, 0.4, 0.8], alpha: 1 }
+```
+
+## One shape for each type
+
+DTCG lets a file write some values in more than one way. A font weight can be `700` or `"bold"`, and a shadow can be one object or a list. If dtcg passed values on as written, every tool would have to handle every form.
+
+So `parsedValue` and `resolvedValue` always have one shape for each type:
+
+- A color always has `alpha`. It's `1` if the file leaves it out.
+- A font family is always an array, even if the file writes one name.
+- A font weight is always a number, so `"bold"` becomes `700`.
+- A shadow is always an array of layers, and each layer always has `inset`.

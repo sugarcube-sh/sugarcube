@@ -1,0 +1,61 @@
+---
+title: References
+description: The three ways DTCG lets one token or group point at another, and what dtcg tells you about them.
+sidebar:
+  order: 4
+---
+
+Tokens often refer to other tokens. `color.link` refers to `color.accent`, which refers to `color.blue.500`, and so on. Change `color.blue.500`, and the other two follow.
+
+## Three ways to refer to another token
+
+DTCG has three ways for one thing to point at another.
+
+**Curly braces.** A token takes another token's whole value:
+
+```json
+"link": { "$value": "{color.accent}" }
+```
+
+**JSON Pointers.** These can also point at part of a value, such as only the width of a border:
+
+```json
+"divider": { "$value": { "$ref": "#/border/strong/$value/width" } }
+```
+
+**`$extends`.** A group copies all of another group's tokens, and can replace some of them:
+
+```json
+"cta": {
+  "$extends": "{button}",
+  "background": { "$value": "{color.accent}" }
+}
+```
+
+## Chains
+
+A reference can point at a token that's a reference itself. dtcg follows the chain to the end to get the token's `resolvedValue`. `aliasChain` lists each step:
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("color.json");
+
+tokens.getToken("color.link")!.aliasChain.map((token) => token.path);
+// ["color.link", "color.accent", "color.blue.500"]
+```
+
+If a reference points at a token that doesn't exist, or a chain loops back on itself, the chain stops there, and the read reports it as a problem.
+
+## References and dependents
+
+There are two ways to ask what uses a token, and they answer different questions:
+
+- **References** are every place the token is mentioned, with where each one is written. A token that mentions another twice, such as a shadow with two layers in the same color, has two references.
+- **Dependents** are the tokens that mention it, each listed once. Use them to see what a change affects.
+
+See [Follow references](/dtcg/docs/guides/follow-references/).
+
+## Different in each permutation
+
+What a token refers to can change between permutations. In the quick start, `color.accent` refers to `color.blue.500` in light mode, and to `color.blue.300` in dark mode. So a permutation answers for itself and `tokens.getReferencesTo` labels each reference with the permutations it applies in. See [Permutations](/dtcg/docs/concepts/permutations/).

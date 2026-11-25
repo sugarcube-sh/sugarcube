@@ -1,0 +1,37 @@
+---
+title: Permutations
+# description: Why some questions are asked of all your tokens and others of one permutation, and what the labels on answers mean.
+sidebar:
+  order: 2
+---
+
+With a resolver, a token can have a different value in each permutation. `color.text` might be dark gray in `mode: light` and white in `mode: dark`. So before dtcg can answer most questions, it needs to know which permutation you mean.
+
+How dtcg answers depends on what you ask.
+
+## Ask a specific permutation, get that specific permutation
+
+In one permutation, each token has one value. So a permutation can answer any question about its tokens, such as what `color.text` is in dark mode. See [Work with permutations](/dtcg/docs/guides/work-with-permutations/) for how to do this.
+
+Good to know: `getPermutation` with no input returns the default permutation.
+
+## Ask `tokens`, get every permutation
+
+Ask `tokens` a question, and it answers for every permutation at once. Each answer says which permutations it applies in:
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("tokens.resolver.json");
+
+tokens.getReferencesTo("color.blue.300").map((reference) => reference.permutations.label);
+// ["mode: dark"]
+```
+
+## When there's no single answer
+
+Some questions have a different answer in each permutation. `tokens` can't pick one for you, so `tokens.getToken` throws a [`SeveralPermutationsError`](/dtcg/docs/reference/problems/#severalpermutationserror), and the message tells you to pick a permutation first.
+
+With only one permutation there's no possible confusion, so `tokens` can return the result cleanly.
+
+To see the answer in every permutation, use `groupPermutationsBy`. It asks each permutation, and groups the ones that give the same answer. See [Work with permutations](/dtcg/docs/guides/work-with-permutations/) for more.

@@ -1,0 +1,55 @@
+---
+title: Problems
+# description: What dtcg tells you about each mistake in your files, and why it reports mistakes instead of throwing.
+sidebar:
+  order: 6
+---
+
+Every tool that reads tokens has to deal with mistakes in them. dtcg aims to make this as easy as possible by providing: how serious the mistake is, what kind it is, where it's written, and which permutations it affects.It calls each one a diagnostic.
+
+## What a problem tells you
+
+```ts
+import { read } from "@sugarcube-sh/dtcg/node";
+
+const tokens = await read("tokens.resolver.json");
+const [problem] = tokens.diagnostics;
+
+problem.severity;            // "error"
+problem.message;             // "`color.bleu.500` does not exist"
+problem.help;                // "did you mean `color.blue.500`?"
+problem.kind;                // "missing-reference"
+problem.span?.start.line;    // 16
+problem.permutations.label;  // "every permutation"
+```
+
+- `severity` is how serious it is.
+- `message` is what's wrong, and `help` is how to fix it (when there's a clear fix).
+- `kind` names the kind of mistake.
+- `span` is where it's written.
+- `permutations` is where it applies.
+
+## Written to fit anywhere
+
+A message's wording can change, but its `kind` won't. So in code, check `kind`. Each kind has a `detail` with the facts behind the message, such as the missing path and the suggested fix.
+
+## Severity
+
+- `"error"` breaks a rule of DTCG, such as a reference to a token that doesn't exist.
+- `"warning"` breaks no rule, but probably isn't what you meant, such as a key written twice.
+- `"info"` is worth knowing.
+- `"hint"` is a small note, such as a set nothing uses.
+
+## A missing file hides some problems
+
+If a file can't be found, dtcg doesn't report missing references in the permutations that read it. The token a reference names might be in the missing file, so dtcg can't tell whether it's really missing. Fix the missing file first, and the next read reports what's still wrong.
+
+## What's thrown
+
+A mistake in your files is never thrown. dtcg throws only when your own code asks for something the tokens can't give:
+
+- [`SeveralPermutationsError`](/dtcg/docs/reference/problems/#severalpermutationserror): you asked `tokens` something that needs one permutation. See [Permutations](/dtcg/docs/concepts/permutations/#when-theres-no-single-answer).
+- [`PermutationError`](/dtcg/docs/reference/problems/#permutationerror): you asked for a permutation that doesn't exist, such as `{ mode: "dim" }`.
+- [`EntryFileError`](/dtcg/docs/reference/problems/#entryfileerror): `readFromMemory` can't tell which file to start from.
+
+`read` itself only fails when it can't get a file's text at all, such as when your own fetch function throws. See [Handle problems and errors](/dtcg/docs/guides/handle-problems-and-errors/).

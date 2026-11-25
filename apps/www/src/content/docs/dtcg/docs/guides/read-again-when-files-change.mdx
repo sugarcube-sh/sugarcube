@@ -5,7 +5,7 @@ sidebar:
   order: 4
 ---
 
-After someone edits a token file, read it again to get the new tokens.
+After someone edits a token file you need to read it again to get the new tokens. [How a read works](/dtcg/docs/concepts/how-a-read-works/#the-result-never-changes) explains why.
 
 ## When a file is saved
 
@@ -15,12 +15,11 @@ In a dev server or a watch mode, use [`createLiveTokens`](/dtcg/docs/reference/n
 import { createLiveTokens } from "@sugarcube-sh/dtcg/node";
 
 const live = createLiveTokens({ entryFile: "tokens.resolver.json" }, { onError: console.error });
-live.watch(watcher);
+live.watch(watcher); // any file watcher with add() and on()
 
 live.onRead((tokens) => {
   console.log(tokens.diagnostics.length);
 });
-// 0
 ```
 
 To get the latest tokens at any time, call `await live.getTokens()`.
