@@ -53,6 +53,11 @@ const variablesDecisions = {
             "a later block re-declares every variable referring to something it changes, by default",
         adds: (_name, value, block) => block > 0 && value.includes("var("),
     },
+    gradient: {
+        because:
+            "a gradient's variable holds only its stops, for inside linear-gradient() or another gradient function; old sugarcube wrapped them in linear-gradient()",
+        explains: (before, after) => before === `linear-gradient(${after})`,
+    },
     partial: {
         because:
             "typography needs all five properties (Format 9.8), so typography.partial is an error and writes nothing",
@@ -63,12 +68,12 @@ const variablesDecisions = {
 export const decidedVariables: Record<string, (keyof typeof variablesDecisions)[]> = {
     "studio/design-tokens/variables.css": ["order", "redeclare"],
     "core/tokens/fluid/variables.css": ["fluid"],
-    "studio/demo/variables.css": ["fluid", "dashed", "redeclare"],
+    "studio/demo/variables.css": ["fluid", "dashed", "redeclare", "gradient"],
     "registry/starter-kits/fluid/variables.css": ["fluid", "redeclare"],
     "registry/starter-kits/static/variables.css": ["redeclare"],
     "core/resolver/complex/variables.css": ["redeclare"],
     "core/resolver/propagate-chain/variables.css": ["redeclare"],
-    "every-value-form/native/variables.css": ["exact", "fluid", "dashed", "partial"],
+    "every-value-form/native/variables.css": ["exact", "fluid", "dashed", "partial", "gradient"],
     "every-value-form/polyfill/variables.css": ["alpha"],
     "every-value-form/polyfill/dark.css": ["alpha"],
     "registry/recipes/size-demo/variables.css": ["fluid"],

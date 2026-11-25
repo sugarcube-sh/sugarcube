@@ -1057,7 +1057,7 @@ describe("emitCSS", () => {
                     ":root {",
                     "    --deep: #8a6f9e;",
                     "    --edge: 1px solid #aa3344;",
-                    "    --fade: linear-gradient(#aa3344 0%, #1a334d 100%);",
+                    "    --fade: #aa3344 0%, #1a334d 100%;",
                     "}",
                     "",
                     "@supports (color: lab(0 0 0)) {",
@@ -1074,7 +1074,7 @@ describe("emitCSS", () => {
                     "",
                     "@supports (color: oklch(0 0 0)) and (color: color(display-p3 1 1 1)) {",
                     "    :root {",
-                    "        --fade: linear-gradient(oklch(0.5 0.1 20) 0%, color(display-p3 0.1 0.2 0.3) 100%);",
+                    "        --fade: oklch(0.5 0.1 20) 0%, color(display-p3 0.1 0.2 0.3) 100%;",
                     "    }",
                     "}",
                     "",
@@ -1629,8 +1629,8 @@ describe("emitCSS", () => {
                 }),
             ).toStrictEqual([
                 "--half: 0.5;",
-                "--start: linear-gradient(#ffffff 0%);",
-                "--fade: linear-gradient(#ffffff 0%, #e11d48 clamp(0%, var(--half) * 100%, 100%));",
+                "--start: #ffffff 0%;",
+                "--fade: #ffffff 0%, #e11d48 clamp(0%, var(--half) * 100%, 100%);",
             ]);
         });
 
