@@ -2,7 +2,7 @@
   "name": "@sugarcube-sh/dtcg",
   "version": "0.0.0",
   "private": true,
-  "description": "Read DTCG design tokens and resolvers: every token, reference and problem, in every permutation",
+  "description": "Read DTCG design tokens and resolver documents. Use it to build your own token-related tools.",
   "keywords": [
     "design-system",
     "design-tokens",
