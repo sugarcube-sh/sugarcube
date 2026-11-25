@@ -89,7 +89,7 @@ function renderOverview(pages: readonly PlacedPage[], links: Links): string {
         "",
         BANNER,
         "",
-        "dtcg reads design tokens written to the DTCG spec, and returns objects you can query.",
+        "dtcg reads DTCG design tokens and resolver documents. Use it to build your own token-related tools.",
         "",
         "```ts",
         'import { read } from "@sugarcube-sh/dtcg/node";',

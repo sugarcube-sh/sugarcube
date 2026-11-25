@@ -5,7 +5,7 @@ sidebar:
   order: 2
 ---
 
-Tokens can refer to each other, so changing one token can change others. If `color.link` refers to `color.accent` and you delete `color.accent`, `color.link` no longer has a value. If you change `color.accent`, `color.link` changes too. So before you rename, delete or change a token, you might need to know what refers to it.
+Tokens can refer to each other. That means that changes in one place can affect other areas. If `color.link` refers to `color.accent` and you delete `color.accent`, `color.link` no longer has a value. Therefore, before you rename, delete or change a token, you might need to know what it is going to affect.
 
 ## Check before you delete
 
@@ -55,7 +55,7 @@ newText.split("\n")[13];
 
 ## See what a change affects
 
-[`getDependents`](/dtcg/docs/reference/permutation/#getdependents) returns the tokens that use a token. [`getDependencies`](/dtcg/docs/reference/permutation/#getdependencies) does the opposite: it returns the tokens a token uses. Add `{ chained: true }` to include tokens that use it through another tokens (e.g. `color.link` uses `color.blue.300` through `color.accent`):
+[`getDependents`](/dtcg/docs/reference/permutation/#getdependents) returns the tokens that use a token. [`getDependencies`](/dtcg/docs/reference/permutation/#getdependencies) does the opposite: it returns the tokens a token uses. Add `{ chained: true }` to include tokens that use it through another token (e.g. `color.link` uses `color.blue.300` through `color.accent`):
 
 ```ts
 const dark = tokens.getPermutation({ mode: "dark" });

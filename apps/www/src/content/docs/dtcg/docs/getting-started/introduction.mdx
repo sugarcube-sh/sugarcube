@@ -1,11 +1,11 @@
 ---
 title: Introduction
-description: Learn what dtcg is and what you can do with it.
+description: Learn what dtcg is and what you can build with it.
 sidebar:
   order: 1
 ---
 
-`@sugarcube-sh/dtcg` is a TypeScript library for working with DTCG design tokens.
+`@sugarcube-sh/dtcg` is a TypeScript library that reads DTCG design tokens and resolver documents. Use it to build your own token-related tools.
 
 DTCG design tokens are written to the [Design Tokens Community Group's specification](https://www.designtokens.org/TR/2025.10/), currently version 2025.10. The specification has two main parts:
 
@@ -25,19 +25,9 @@ Reading these files takes more than parsing JSON. The specification has many rul
 
 And many things besides.
 
-## How it works
-
-dtcg has two `read` functions. In Node, use the one from [`dtcg/node`](/dtcg/docs/reference/node/#read). Anywhere else, use the one from [`dtcg`](/dtcg/docs/reference/dtcg/#read), and pass it a `readText` function.
-
-`read` takes a token file or a resolver document, reads every file it names, and returns a [`DesignTokens`](/dtcg/docs/reference/design-tokens/) object. From it, you get a [`Permutation`](/dtcg/docs/reference/permutation/). From each permutation, you get its [groups and tokens](/dtcg/docs/reference/tokens-and-groups/).
-
-[References](/dtcg/docs/reference/references/) tell you which tokens use which. [Diagnostics](/dtcg/docs/reference/problems/) report every problem the read found.
-
-The `DesignTokens` object never changes. When files change, you read them again, and you can [compare the two reads](/dtcg/docs/reference/changes/).
-
-Other entry points work with the tokens: [`dtcg/css`](/dtcg/docs/reference/css/) writes them as CSS, [`dtcg/editor`](/dtcg/docs/reference/editor/) finds what's at a position in a file, and [`dtcg/values`](/dtcg/docs/reference/values/) checks and compares single values.
-
 ## Next steps
 
 - [Quick start](/dtcg/docs/getting-started/quick-start/)
+- [Guides](/dtcg/docs/guides/work-with-permutations/)
+- [Concepts](/dtcg/docs/concepts/how-a-read-works/)
 - [API reference](/dtcg/docs/reference/overview/)
