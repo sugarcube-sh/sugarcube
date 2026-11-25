@@ -18,6 +18,7 @@
 @import "@/src/styles/blocks/site-card.css" layer(blocks);
 @import "@/src/styles/blocks/mode-toggle.css" layer(blocks);
 @import "@/src/styles/blocks/site-dropdown-menu.css" layer(blocks);
+@import "@/src/styles/blocks/product-switcher.css" layer(blocks);
 @import "@/src/styles/blocks/collapsible.css" layer(blocks);
 @import "@/src/styles/blocks/site-code-block.css" layer(blocks);
 @import "@/src/styles/blocks/site-footer.css" layer(blocks);

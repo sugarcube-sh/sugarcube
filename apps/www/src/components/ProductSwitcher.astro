@@ -1,0 +1,50 @@
+---
+import { Check, ChevronsUpDown } from "@lucide/astro";
+
+const { topics } = Astro.locals.starlightSidebarTopics;
+const current = topics.find((topic) => topic.isCurrent) ?? topics[0];
+---
+
+<div class="product-switcher">
+    <button
+        type="button"
+        class="product-switcher-trigger"
+        popovertarget="product-switcher-menu"
+        aria-label={`${current?.label} docs. Switch product`}
+    >
+        <span class="product-switcher-text">
+            <span class="product-switcher-name">{current?.label}</span>
+        </span>
+        <ChevronsUpDown class="product-switcher-chevron" />
+    </button>
+    <nav id="product-switcher-menu" class="product-switcher-menu" popover aria-label="Products">
+        <ul role="list">
+            {topics.map((topic) => (
+                <li>
+                    <a href={topic.link} aria-current={topic.isCurrent ? "true" : undefined}>
+                        <span class="product-switcher-text">
+                            <span class="product-switcher-name">{topic.label}</span>
+                        </span>
+                        {topic.isCurrent && <Check class="product-switcher-check" />}
+                    </a>
+                </li>
+            ))}
+        </ul>
+    </nav>
+</div>
+
+<script>
+    if (!CSS.supports("anchor-name: --product-switcher")) {
+        const menu = document.querySelector<HTMLElement>("#product-switcher-menu");
+        const trigger = document.querySelector<HTMLElement>(
+            '[popovertarget="product-switcher-menu"]',
+        );
+        menu?.addEventListener("toggle", (event) => {
+            if (!trigger || (event as ToggleEvent).newState !== "open") return;
+            const { bottom, left, width } = trigger.getBoundingClientRect();
+            menu.style.top = `${bottom}px`;
+            menu.style.left = `${left}px`;
+            menu.style.width = `${width}px`;
+        });
+    }
+</script>

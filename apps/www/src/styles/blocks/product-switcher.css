@@ -1,0 +1,110 @@
+.product-switcher {
+    margin-block-end: var(--space-sm);
+    padding-block-end: var(--space-sm);
+    border-block-end: var(--border-width-thin) var(--border-style) var(--color-surface-border);
+}
+
+.product-switcher-trigger,
+.product-switcher-menu a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    width: 100%;
+    padding: var(--space-3xs);
+    border-radius: var(--radius-md);
+    color: var(--color-text-normal);
+    text-align: start;
+    text-decoration: none;
+    transition: background-color var(--transition-normal) var(--ease-out);
+}
+
+.product-switcher-trigger {
+    anchor-name: --product-switcher;
+    font: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.product-switcher-trigger:is(:hover, :focus-visible),
+.product-switcher-menu a:is(:hover, :focus-visible) {
+    background-color: var(--color-fill-normal);
+}
+
+.product-switcher-trigger:focus-visible,
+.product-switcher-menu a:focus-visible {
+    outline: 2px solid var(--color-fill-loud);
+    outline-offset: 1px;
+}
+
+.product-switcher-logo {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    aspect-ratio: 1;
+    border-radius: var(--radius-md);
+    background-color: var(--color-fill-loud);
+    color: var(--color-on-loud);
+}
+
+.product-switcher-logo svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.product-switcher-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+}
+
+.product-switcher-name {
+    font-weight: var(--font-weight-medium);
+}
+
+.product-switcher-description {
+    color: var(--color-text-quiet);
+    font-size: var(--text-xs);
+}
+
+.product-switcher-chevron,
+.product-switcher-check {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    margin-inline-start: auto;
+    color: var(--color-text-quiet);
+}
+
+.product-switcher-menu {
+    position-anchor: --product-switcher;
+    position-area: block-end span-inline-end;
+    width: anchor-size(width);
+    inset: auto;
+    margin: 0;
+    margin-block-start: var(--space-3xs);
+    padding: var(--space-3xs);
+    border: var(--panel-border-width) var(--border-style) var(--panel-border-color);
+    border-radius: var(--panel-radius);
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-md);
+    color: var(--color-text-normal);
+}
+
+.product-switcher-menu ul {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@supports not (anchor-name: --product-switcher) {
+    .product-switcher-menu {
+        position: fixed;
+    }
+}

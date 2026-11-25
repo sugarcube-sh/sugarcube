@@ -1,0 +1,10 @@
+---
+import Default from "@astrojs/starlight/components/Sidebar.astro";
+import ProductSwitcher from "@/src/components/ProductSwitcher.astro";
+
+const { hasSidebar } = Astro.locals.starlightRoute;
+const { isPageWithTopic } = Astro.locals.starlightSidebarTopics;
+---
+
+{hasSidebar && isPageWithTopic && <ProductSwitcher />}
+<Default><slot /></Default>
