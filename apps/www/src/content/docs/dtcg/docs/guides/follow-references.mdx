@@ -9,7 +9,7 @@ Tokens can refer to each other. That means that changes in one place can affect 
 
 ## Check before you delete
 
-[`getReferencesTo`](/dtcg/docs/reference/design-tokens/#getreferencesto) returns every reference to a path, in any file and any permutation. An empty array means nothing uses the token:
+To check that nothing uses a token before you delete it, use [`getReferencesTo`](/dtcg/docs/reference/design-tokens/#getreferencesto). An empty array means nothing does:
 
 ```ts
 import { read } from "@sugarcube-sh/dtcg/node";
@@ -24,6 +24,8 @@ tokens.getReferencesTo("color.link").length;
 ```
 
 ## See where each reference is written
+
+To find a reference in its file, use its `span`:
 
 ```ts
 const [reference] = tokens.getReferencesTo("color.blue.500");
@@ -40,7 +42,7 @@ reference.permutations.label;
 
 ## Rename a token
 
-[`applyMoves`](/dtcg/docs/reference/references/#referenceinpermutations) takes a rename and returns the reference's new text. Write it back at the reference's `span`:
+To rename a token, update each reference to it. [`applyMoves`](/dtcg/docs/reference/references/#referenceinpermutations) returns a reference's new text. Its `span` says where to write it:
 
 ```ts
 const text = tokens.getText(reference.span.file)!;
@@ -55,7 +57,9 @@ newText.split("\n")[13];
 
 ## See what a change affects
 
-[`getDependents`](/dtcg/docs/reference/permutation/#getdependents) returns the tokens that use a token. [`getDependencies`](/dtcg/docs/reference/permutation/#getdependencies) does the opposite: it returns the tokens a token uses. Add `{ chained: true }` to include tokens that use it through another token (e.g. `color.link` uses `color.blue.300` through `color.accent`):
+To see which tokens a change would affect, use [`getDependents`](/dtcg/docs/reference/permutation/#getdependents). Add `{ chained: true }` to include tokens that use it through another token, such as `color.link` through `color.accent`.
+
+[`getDependencies`](/dtcg/docs/reference/permutation/#getdependencies) goes the other way, and returns the tokens a token uses:
 
 ```ts
 const dark = tokens.getPermutation({ mode: "dark" });
@@ -67,7 +71,7 @@ dark.getDependencies("color.link", { chained: true }).map((token) => token.path)
 // ["color.accent", "color.blue.300"]
 ```
 
-To ask every permutation at once, use [`groupPermutationsBy`](/dtcg/docs/reference/design-tokens/#grouppermutationsby).
+To see what a change affects in permutations, use [`groupPermutationsBy`](/dtcg/docs/reference/design-tokens/#grouppermutationsby):
 
 ```ts
 tokens

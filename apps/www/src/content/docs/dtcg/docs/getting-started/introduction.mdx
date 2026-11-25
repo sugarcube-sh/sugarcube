@@ -12,13 +12,13 @@ DTCG design tokens are written to the [Design Tokens Community Group's specifica
 1. The [Format module](https://www.designtokens.org/TR/2025.10/format/) defines how design tokens are written in JSON.
 2. The [Resolver module](https://www.designtokens.org/TR/2025.10/resolver/) defines resolver documents. A resolver document is a JSON file that says which tokens to read and in what order. It can also give tokens different values in different contexts (think modes, themes, and so on).
 
-Reading these files takes more than parsing JSON. The specification has many rules, such as type inheritance, group extension, and references between tokens. **dtcg** applies all of them and reports every problem it finds.
+Reading these files takes more than parsing JSON. The specification has many rules, such as type inheritance, group extension, and references between tokens. **dtcg** applies all of them.
 
 ## What you can build with dtcg
 
 - A docs page that shows every token and its value in each mode or theme.
 - A check in CI that fails when the tokens have a problem or break your own rules.
-- A report on a pull request of which tokens changed, and what uses them.
+- A report on a pull request of which tokens changed.
 - A rename or delete that first shows everything that uses a token.
 - An editor, or a plugin for a design tool.
 - A build tool like sugarcube's [CLI](/docs/cli-overview) or [Vite plugin](/docs/vite-plugin).

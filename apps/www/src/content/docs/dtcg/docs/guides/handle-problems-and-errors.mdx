@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-Token files can have mistakes. In most cases, dtcg reports a mistake rather than throwing. See [problems](/dtcg/docs/concepts/problems/) for more on why and how.
+Token files can have problems. In most cases, dtcg reports a problem rather than throwing. See [problems](/dtcg/docs/concepts/problems/) for more on why and how.
 
 ## List every problem
 
@@ -89,8 +89,6 @@ tokens.getDiagnostics("color.link");
 ```
 
 ## Catch the errors dtcg throws
-
-dtcg throws these errors when your code asks for something the tokens can't give.
 
 When a resolver makes more than one permutation, `tokens.getToken` and similar methods don't know which one to use, so they throw [`SeveralPermutationsError`](/dtcg/docs/reference/problems/#severalpermutationserror).
 

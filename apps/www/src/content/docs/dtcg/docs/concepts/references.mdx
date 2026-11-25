@@ -1,6 +1,6 @@
 ---
 title: References
-description: The three ways DTCG lets one token or group point at another, and what dtcg tells you about them.
+# description: The three ways DTCG lets one token or group point at another, and what dtcg tells you about them.
 sidebar:
   order: 4
 ---
@@ -49,13 +49,13 @@ If a reference points at a token that doesn't exist, or a chain loops back on it
 
 ## References and dependents
 
-There are two ways to ask what uses a token, and they answer different questions:
+There are two ways to ask what uses a token:
 
-- **References** are every place the token is mentioned, with where each one is written. A token that mentions another twice, such as a shadow with two layers in the same color, has two references.
+- **References** are every place the token is mentioned. A token that mentions another twice, such as a shadow with two layers in the same color, has two references.
 - **Dependents** are the tokens that mention it, each listed once. Use them to see what a change affects.
 
 See [Follow references](/dtcg/docs/guides/follow-references/).
 
 ## Different in each permutation
 
-What a token refers to can change between permutations. In the quick start, `color.accent` refers to `color.blue.500` in light mode, and to `color.blue.300` in dark mode. So a permutation answers for itself and `tokens.getReferencesTo` labels each reference with the permutations it applies in. See [Permutations](/dtcg/docs/concepts/permutations/).
+What a token refers to can change between permutations. See [Permutations](/dtcg/docs/concepts/permutations/).

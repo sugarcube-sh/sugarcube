@@ -9,7 +9,7 @@ If your resolver has modifiers (e.g. light and dark modes) a token can have a di
 
 ## Get one permutation
 
-Pass an input to [`getPermutation`](/dtcg/docs/reference/design-tokens/#getpermutation):
+To get one permutation, pass an input to [`getPermutation`](/dtcg/docs/reference/design-tokens/#getpermutation):
 
 ```ts
 import { read } from "@sugarcube-sh/dtcg/node";
@@ -27,7 +27,7 @@ dark.input;
 
 ## Show a token's value in every permutation
 
-[`groupPermutationsBy`](/dtcg/docs/reference/design-tokens/#grouppermutationsby) calls your function in each permutation, and permutations where it returns the same thing go in one group. Each group has a label. For every token:
+To list every token's value in light and dark, use [`groupPermutationsBy`](/dtcg/docs/reference/design-tokens/#grouppermutationsby). Note that a token that's the same in both is listed once.
 
 ```ts
 import { toCSSValue } from "@sugarcube-sh/dtcg/css";
@@ -57,7 +57,7 @@ for (const path of tokens.tokenPaths) {
 
 ## Show what one permutation changes
 
-[`getTokensDifferentFrom`](/dtcg/docs/reference/permutation/#gettokensdifferentfrom) lists the tokens whose value differs from another permutation's:
+To see which tokens dark mode changes, compare it with light using [`getTokensDifferentFrom`](/dtcg/docs/reference/permutation/#gettokensdifferentfrom):
 
 ```ts
 const light = tokens.getPermutation({ mode: "light" });

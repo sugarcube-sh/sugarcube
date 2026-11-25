@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-Every tool that reads tokens has to deal with mistakes in them. dtcg aims to make this as easy as possible by providing: how serious the mistake is, what kind it is, where it's written, and which permutations it affects.It calls each one a diagnostic.
+Every tool that reads tokens has to deal with invalid data. dtcg aims to make this as easy as possible by returning problems in a useful form.
 
 ## What a problem tells you
 
@@ -31,7 +31,7 @@ problem.permutations.label;  // "every permutation"
 
 ## Written to fit anywhere
 
-A message's wording can change, but its `kind` won't. So in code, check `kind`. Each kind has a `detail` with the facts behind the message, such as the missing path and the suggested fix.
+A message's wording can change, but its `kind` won't. So in your code, favour checking `kind`.
 
 ## Severity
 

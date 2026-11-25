@@ -5,13 +5,11 @@ sidebar:
   order: 5
 ---
 
-Tools that check or edit tokens need to know about the files that contain them.
+Tools that check or edit tokens need to know about the files they come from.
 
 ## Sources
 
 A source is something the resolver lists tokens from: a token file, part of a file, or tokens written in the resolver itself. Each permutation reads its sources in the resolver's order.
-
-A source that two permutations read is the same object in both.
 
 ## Definitions
 
@@ -29,10 +27,6 @@ text.winningDefinition.source.file;
 // "dark.json"
 ```
 
-`definitions` lists every place the token is written in this permutation. `winningDefinition` is the one its value comes from.
-
 ## Spans
 
 A span is an exact place in a file: the file, the line and column, and the offset and length in the text. Problems, references and definitions from `tokens` each have a `span`.
-
-That's enough to underline a mistake, jump to where a token is written, or replace a reference with new text.
