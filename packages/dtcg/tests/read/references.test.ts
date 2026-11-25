@@ -87,7 +87,7 @@ describe("a token's references", () => {
 
     it("reference nothing when a pointer names a property the value doesn't have", () => {
         const pointed = oneFile({
-            red: color(1),
+            red: { $type: "color", ...color(1) },
             tint: {
                 $type: "color",
                 $value: {

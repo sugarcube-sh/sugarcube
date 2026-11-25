@@ -702,6 +702,7 @@ function locateTarget(occurrence: Occurrence, merged: Merged): TargetLocation {
     }
 
     const pointsToProperty = getAtPath(target.token.originalValue, target.inside)?.property;
+    if (pointsToProperty === undefined) return { occurrence, path: target.path, isToken: false };
     return { occurrence, path: target.path, isToken: true, pointsToProperty };
 }
 
