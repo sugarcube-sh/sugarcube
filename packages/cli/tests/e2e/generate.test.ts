@@ -162,6 +162,47 @@ describe("generate command", () => {
         },
     );
 
+    it(
+        "points to the resolver docs when there is a token file and no resolver",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await mkdir(join(testDir, "tokens"));
+            await writeFile(
+                join(testDir, "tokens/colors.json"),
+                '{ "color": { "$type": "color", "primary": { "$value": "#0066cc" } } }',
+            );
+
+            const result = await cli(`generate`, {
+                cwd: testDir,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+                env: PLAIN_OUTPUT,
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).toContain("No resolver found.");
+            expect(result.stdout).toContain("https://sugarcube.sh/docs/resolver");
+        },
+    );
+
+    it("refuses a token file passed as --resolver", { timeout: TEST_TIMEOUT }, async () => {
+        await writeFile(
+            join(testDir, "colors.json"),
+            '{ "color": { "$type": "color", "primary": { "$value": "#0066cc" } } }',
+        );
+
+        const result = await cli(`generate --resolver colors.json`, {
+            cwd: testDir,
+            timeout: TEST_TIMEOUT,
+            reject: false,
+            env: PLAIN_OUTPUT,
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain("`colors.json` isn't a resolver.");
+        expect(existsSync(join(testDir, "styles/variables.gen.css"))).toBe(false);
+    });
+
     it("writes to styles/ when no src/ exists", { timeout: TEST_TIMEOUT }, async () => {
         const tokensDir = await createTokens(testDir);
 

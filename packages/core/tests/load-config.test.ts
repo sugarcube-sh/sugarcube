@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +6,10 @@ import { isNoConfigError, loadInternalConfig } from "../src/node/config/load.js"
 import { ConfigError } from "../src/shared/config-error.js";
 import { DEFAULT_CONFIG } from "../src/shared/constants/config.js";
 import { ErrorMessages } from "../src/shared/constants/error-messages.js";
+
+const COLORS = '{ "color": { "$type": "color", "primary": { "$value": "#0066cc" } } }';
+const SPACE =
+    '{ "space": { "$type": "dimension", "s": { "$value": { "value": 1, "unit": "rem" } } } }';
 
 describe("loadInternalConfig", () => {
     let tempDir: string;
@@ -183,13 +187,102 @@ describe("loadInternalConfig", () => {
     });
 
     it("says no tokens were found when there is no config and no resolver", async () => {
+        await writeFile(join(tempDir, "package.json"), '{ "name": "site" }');
+
         const loading = loadInternalConfig();
 
         await expect(loading).rejects.toBeInstanceOf(ConfigError);
         await expect(loading).rejects.toThrow(
-            "No design tokens found.\n\nRun @sugarcube-sh/cli init to set up your design tokens.\n\nStuck? https://sugarcube.sh/docs",
+            "No design tokens found.\n\nRun npx @sugarcube-sh/cli init to set up your design tokens.\n\nStuck? https://sugarcube.sh/docs",
         );
-        await expect(loading).rejects.toMatchObject({ issues: [{ reason: "no-resolver" }] });
+        await expect(loading).rejects.toMatchObject({
+            issues: [{ reason: "no-resolver", tokenFiles: [] }],
+        });
+    });
+
+    it("points to the resolver docs when there is a token file and no resolver", async () => {
+        await mkdir(join(tempDir, "tokens"));
+        await writeFile(join(tempDir, "tokens/colors.json"), COLORS);
+
+        const loading = loadInternalConfig();
+
+        await expect(loading).rejects.toThrow(
+            "No resolver found.\n\nsugarcube reads your token files through a resolver. See https://sugarcube.sh/docs/resolver to add one.",
+        );
+        await expect(loading).rejects.toMatchObject({
+            issues: [{ reason: "no-resolver", tokenFiles: ["tokens/colors.json"] }],
+        });
+        expect(isNoConfigError(await loading.catch((error) => error))).toBe(true);
+    });
+
+    it("names every token file it found when there is no resolver", async () => {
+        await mkdir(join(tempDir, "tokens"));
+        await writeFile(join(tempDir, "tokens/space.json"), SPACE);
+        await writeFile(join(tempDir, "tokens/colors.json"), COLORS);
+
+        const loading = loadInternalConfig();
+
+        await expect(loading).rejects.toThrow(
+            "No resolver found.\n\nsugarcube reads your token files through a resolver. See https://sugarcube.sh/docs/resolver to add one.",
+        );
+        await expect(loading).rejects.toMatchObject({
+            issues: [
+                { reason: "no-resolver", tokenFiles: ["tokens/colors.json", "tokens/space.json"] },
+            ],
+        });
+    });
+
+    it("refuses a token file named as the resolver", async () => {
+        await mkdir(join(tempDir, "tokens"));
+        await writeFile(join(tempDir, "tokens/colors.json"), COLORS);
+        await writeFile(
+            join(tempDir, "sugarcube.config.js"),
+            'export default { resolver: "./tokens/colors.json" };',
+        );
+
+        const loading = loadInternalConfig();
+
+        await expect(loading).rejects.toBeInstanceOf(ConfigError);
+        await expect(loading).rejects.toThrow(
+            "`./tokens/colors.json` isn't a resolver. See https://sugarcube.sh/docs/resolver to add one.",
+        );
+        await expect(loading).rejects.toMatchObject({
+            issues: [{ reason: "not-a-resolver", file: "./tokens/colors.json" }],
+        });
+        expect(isNoConfigError(await loading.catch((error) => error))).toBe(false);
+    });
+
+    it("refuses a token file passed in place of the config's resolver", async () => {
+        await writeFile(join(tempDir, "colors.json"), COLORS);
+
+        const loading = loadInternalConfig({ resolver: "colors.json" });
+
+        await expect(loading).rejects.toMatchObject({
+            issues: [{ reason: "not-a-resolver", file: "colors.json" }],
+        });
+    });
+
+    it("takes a resolver whose name doesn't end .resolver.json", async () => {
+        await writeFile(join(tempDir, "colors.json"), COLORS);
+        await writeFile(
+            join(tempDir, "main.json"),
+            JSON.stringify({
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "colors.json" }] },
+                ],
+            }),
+        );
+
+        const { config } = await loadInternalConfig({ resolver: "main.json" });
+
+        expect(config.resolver).toBe("main.json");
+    });
+
+    it("leaves a resolver it can't read to the read, which reports it", async () => {
+        const { config } = await loadInternalConfig({ resolver: "missing.json" });
+
+        expect(config.resolver).toBe("missing.json");
     });
 
     it("names every resolver it found when nothing says which to use", async () => {
@@ -264,11 +357,13 @@ describe("loadInternalConfig, after a .js config is edited", () => {
 
 describe("isNoConfigError", () => {
     it("is true when no config and no resolver were found", () => {
-        expect(isNoConfigError(new ConfigError([{ reason: "no-resolver" }]))).toBe(true);
+        expect(isNoConfigError(new ConfigError([{ reason: "no-resolver", tokenFiles: [] }]))).toBe(
+            true,
+        );
     });
 
     it("is false for an error that only has the same words", () => {
-        const words = ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
+        const words = ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER([]);
 
         expect(isNoConfigError(new Error(words))).toBe(false);
     });

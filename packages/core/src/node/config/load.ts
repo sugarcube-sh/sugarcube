@@ -6,10 +6,10 @@ import { isObject } from "../../shared/checks.js";
 import { validateSugarcubeConfig } from "../../shared/config.js";
 import { ConfigError } from "../../shared/config-error.js";
 import type { InternalConfig, SugarcubeConfig } from "../../types/config.js";
-import { findResolver } from "@sugarcube-sh/dtcg/node";
+import { findResolver, findTokenFiles } from "@sugarcube-sh/dtcg/node";
 import { fillDefaults } from "./normalize.js";
 
-export function isNoConfigError(error: unknown): boolean {
+export function isNoConfigError(error: unknown): error is ConfigError {
     return (
         error instanceof ConfigError && error.issues.some(({ reason }) => reason === "no-resolver")
     );
@@ -122,7 +122,8 @@ async function importConfigFile(configFile: string): Promise<unknown> {
  * @param options.root - The project's folder, such as `"/site"`. Paths in the config are relative to it.
  * @param options.lastConfigFile - The config file loaded last, such as `"/site/sugarcube.config.ts"`.
  * Pass it when loading again, so a deleted config file is an error.
- * @throws ConfigError if the config has mistakes, was deleted, or names no single resolver.
+ * @throws ConfigError if the config has mistakes, was deleted, or names no single resolver, or
+ * its `resolver` isn't one.
  *
  * @example
  * const { config, configFile } = await loadInternalConfig();
@@ -138,7 +139,9 @@ export async function loadInternalConfig(
         throw new ConfigError([{ reason: "deleted", file: basename(lastConfigFile) }]);
     }
     const userConfig = configFile ? validateSugarcubeConfig(await loadConfigFile(configFile)) : {};
-    const resolver = overrides.resolver ?? userConfig.resolver ?? (await findResolverPath(root));
+    const named = overrides.resolver ?? userConfig.resolver;
+    if (named !== undefined) await checkIsResolver(root, named);
+    const resolver = named ?? (await findResolverPath(root));
     const withDefaults = fillDefaults({ ...userConfig, resolver });
     const content = configFile
         ? resolveContentGlobs(withDefaults.content, dirname(configFile))
@@ -155,7 +158,16 @@ async function findResolverPath(root: string): Promise<string> {
         const paths = found.paths.map((path) => relative(root, path));
         throw new ConfigError([{ reason: "several-resolvers", paths }]);
     }
-    throw new ConfigError([{ reason: "no-resolver" }]);
+    const { tokenFiles } = await findTokenFiles(root);
+    const paths = tokenFiles.map((path) => relative(root, path));
+    throw new ConfigError([{ reason: "no-resolver", tokenFiles: paths }]);
+}
+
+async function checkIsResolver(root: string, file: string): Promise<void> {
+    const path = resolve(root, file);
+    if (!existsSync(path)) return;
+    const found = await findResolver(path, { by: "content" });
+    if (found.kind === "none") throw new ConfigError([{ reason: "not-a-resolver", file }]);
 }
 
 function applyOverrides<T>(base: T, overrides: Overrides<T>): T {

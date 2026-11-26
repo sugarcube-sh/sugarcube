@@ -129,7 +129,9 @@ export function formatConfigIssue(issue: ConfigIssue): string {
         case "wrong-form":
             return `${subject} ${FORM_DESCRIPTIONS[issue.form]}, not ${JSON.stringify(issue.value)}`;
         case "no-resolver":
-            return ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
+            return ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER(issue.tokenFiles);
+        case "not-a-resolver":
+            return ErrorMessages.CONFIG.NOT_A_RESOLVER(issue.file);
         case "several-resolvers":
             return ErrorMessages.CONFIG.MULTIPLE_RESOLVERS_FOUND(issue.paths);
         case "exports-nothing":
@@ -189,8 +191,12 @@ export const ErrorMessages = {
     CONFIG: {
         MULTIPLE_RESOLVERS_FOUND: (paths: string[]) =>
             `Several resolver files were found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nName the one to use as \`resolver\` in sugarcube.config.ts.`,
-        NO_CONFIG_OR_RESOLVER: () =>
-            "No design tokens found.\n\nRun @sugarcube-sh/cli init to set up your design tokens.\n\nStuck? https://sugarcube.sh/docs",
+        NO_CONFIG_OR_RESOLVER: (tokenFiles: readonly string[]) =>
+            tokenFiles.length === 0
+                ? "No design tokens found.\n\nRun npx @sugarcube-sh/cli init to set up your design tokens.\n\nStuck? https://sugarcube.sh/docs"
+                : "No resolver found.\n\nsugarcube reads your token files through a resolver. See https://sugarcube.sh/docs/resolver to add one.",
+        NOT_A_RESOLVER: (file: string) =>
+            `\`${file}\` isn't a resolver. See https://sugarcube.sh/docs/resolver to add one.`,
     },
 
     DIAGNOSTICS: diagnosticMessages,

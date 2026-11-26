@@ -80,14 +80,8 @@ export const ErrorMessages = {
     STARTER_KIT_UNAVAILABLE: (kitChoice: string) =>
         `Starter kit '${color.cyan(kitChoice)}' is currently unavailable.\n\nPlease try a different starter kit or run the command again in a few minutes.`,
 
-    NO_TOKENS_FOR_COMMAND: (command: string) =>
-        `No design tokens found.\n\n${color.cyan(
-            `sugarcube ${command}`,
-        )} needs your tokens to know which variables exist. Run it from a project with a sugarcube config or a discoverable ${color.cyan(
-            "*.resolver.json",
-        )}, or run ${color.cyan("@sugarcube-sh/cli init")} to set one up.\n\nSee ${color.cyan(
-            LINKS.RESOLVER,
-        )} for more information.`,
+    NO_TOKENS_FOR_COMMAND: (command: string, problem: string) =>
+        `${problem}\n\n${color.cyan(`sugarcube ${command}`)} needs your tokens to know which variables exist.`,
 
     DEPENDENCY_INSTALL_FAILED: (packageManager: string, stderr?: string) => {
         const base = `Failed to install dependencies using ${packageManager}.\nPlease check your package manager configuration and try again.`;
