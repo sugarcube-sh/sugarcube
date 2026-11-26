@@ -134,7 +134,8 @@ export interface CSSDeclarations {
 /**
  * Writes tokens as CSS custom properties.
  *
- * It writes each token once, however often you ask. So make a new one for each read.
+ * It writes each token once, however often you ask. You can keep one writer across reads, as it
+ * doesn't keep old tokens in memory.
  */
 export interface CSSWriter {
     /**
@@ -197,7 +198,7 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
     const writersByColors = new Map<Colors, ColorModeWriter>();
     const getWriter: GetWriter = (colors) =>
         getOrCompute(writersByColors, colors, () => new ColorModeWriter(colors, options));
-    const declarationsByPermutation = new Map<Permutation, CSSDeclarations>();
+    const declarationsByPermutation = new WeakMap<Permutation, CSSDeclarations>();
 
     return {
         getDeclarations: (permutation) =>
@@ -275,7 +276,7 @@ function toDeclaration(fields: DeclarationFields): CSSDeclaration {
 class ColorModeWriter {
     #colors: Colors;
     #options: CSSWriterOptions;
-    #results = new Map<Token, CSSResult | undefined>();
+    #results = new WeakMap<Token, CSSResult | undefined>();
 
     constructor(colors: Colors, options: CSSWriterOptions) {
         this.#colors = colors;
@@ -398,7 +399,11 @@ function toCSSResult(answer: CSSResult | string | undefined): CSSResult | undefi
     return answer;
 }
 
-function getOrCompute<K, V>(cache: Map<K, V>, key: K, compute: () => V): V {
+function getOrCompute<K, V>(
+    cache: { has(key: K): boolean; get(key: K): V | undefined; set(key: K, value: V): unknown },
+    key: K,
+    compute: () => V,
+): V {
     if (cache.has(key)) return cache.get(key) as V;
 
     const value = compute();
