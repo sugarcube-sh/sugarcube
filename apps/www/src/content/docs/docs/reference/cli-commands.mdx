@@ -70,13 +70,12 @@ npx sugarcube generate [options]
 
 ### Description
 
-The `generate` command processes your design tokens and generates:
+The `generate` command reads your design tokens and writes:
 
 - CSS variables from your tokens
-- Utility classes based on your configuration
-- Outputs CSS files to your configured styles directory
+- Utility classes, from the utilities in your configuration, for the classes your markup uses and any in a `safelist`
 
-The command supports **zero-config** usage with automatic resolver discovery, or you can customize everything via CLI flags.
+It works with no config at all, finding your resolver for you. You can change the main settings with flags.
 
 <SiteAside type="note">
     This command is not needed if you're using the **Vite plugin**, which generates virtual CSS modules automatically.
@@ -87,25 +86,27 @@ The command supports **zero-config** usage with automatic resolver discovery, or
 <Table>
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--resolver <path>` | Path to token resolver file | Auto-discovered recursively |
+| `--resolver <path>` | Path to your resolver file | Found for you |
 | `--variables <path>` | Output path for CSS variables | `src/styles/variables.gen.css` |
 | `--utilities <path>` | Output path for utility classes | `src/styles/utilities.gen.css` |
 | `--fluid-min <number>` | Min viewport for fluid scaling | `320` |
 | `--fluid-max <number>` | Max viewport for fluid scaling | `1200` |
 | `--color-fallback <strategy>` | Color fallback: `native` or `polyfill` | `native` |
+| `--prefix <string>` | Text put before every CSS variable name | - |
 | `--input <modifier=value>` | Select a modifier context for this build (repeatable) | - |
 | `--selector <selector>` | CSS selector for `--input` output | `:root` |
 | `--variables-only` | Generate only CSS variables, skip utilities | - |
 | `--utilities-only` | Generate only utilities, skip CSS variables | - |
-| `--force` | Skip overwrite confirmation | - |
 | `-s, --silent` | Suppress logs and prompts | - |
 | `-w, --watch` | Watch for changes and regenerate automatically | - |
 </Table>
 
+Without a `src` folder, the output paths start with `styles/` instead.
+
 ### Examples
 
 ```bash frame="none"
-# Zero-config - auto-discovers resolver, uses defaults
+# Zero-config - finds your resolver, uses defaults
 npx sugarcube generate
 
 # Specify resolver explicitly
@@ -120,6 +121,9 @@ npx sugarcube generate --fluid-min 375 --fluid-max 1440
 # Use polyfill for wide gamut colors
 npx sugarcube generate --color-fallback polyfill
 
+# Prefix every variable, such as --ds-color-accent
+npx sugarcube generate --prefix ds
+
 # Generate per-brand CSS files (each at :root)
 npx sugarcube generate --input brand=ocean --variables dist/ocean.css --variables-only
 npx sugarcube generate --input brand=forest --variables dist/forest.css --variables-only
@@ -131,31 +135,45 @@ npx sugarcube generate --input theme=dark --selector "[data-theme='dark']" --var
 # Override config file values temporarily
 npx sugarcube generate --fluid-max 1600
 
-# Watch mode - regenerate on token or markup file changes
+# Watch mode - regenerate on token, markup or config changes
 npx sugarcube generate --watch
 ```
+
+### When your tokens have mistakes
+
+`generate` prints every problem, writes no CSS, and exits with code 1. Each problem shows where it is (file, line and column), its kind, what's wrong, and the line from your file, with the fix beside it when there's a clear one. A problem in your config names only the config file:
+
+```text frame="none"
+src/design-tokens/color.json:58:17  error[missing-reference]
+  `color.bleu.500` does not exist
+  58 |       "$value": "{color.bleu.500}"
+     |                 ^^^^^^^^^^^^^^^^^^ did you mean `color.blue.500`?
+
+src/design-tokens/color.json:63:9  error[invalid-value]
+  a color needs three components
+  63 |         "components": [
+     |         ^^^^^^^^^^^^
+
+2 errors. No CSS was written.
+```
+
+Most terminals and editors turn `file:line:column` into a link. Warnings are printed too, but don't stop the build.
 
 ### Watch Mode
 
-The `--watch` flag enables continuous regeneration during development:
+The `--watch` flag regenerates while you work:
 
-- Watches your token files (resolver and all referenced JSON files)
-- Watches markup files (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.astro`, `.html`, etc.) for utility class changes
-- Regenerates CSS when changes are detected
-- Shows timing information for each regeneration
+- It watches exactly the token files your resolver uses, and your markup files (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.astro`, `.html` and so on) for utility class changes.
+- It reloads when your config file changes.
+- It keeps running when a file has a mistake, even at the start: it prints the problems, writes no CSS, and writes again once you fix them.
 
-```bash frame="none"
-npx sugarcube generate --watch
-# [sugarcube] Generated in 42ms
-# [sugarcube] Watching 5 token files + markup files...
-# [sugarcube] colors.json → src/styles/tokens.css (38ms)
+```text frame="none"
+[sugarcube] Generated in 11ms
+[sugarcube] Watching 4 token files + markup files...
+[sugarcube] space.json changed, wrote src/styles/variables.gen.css (9ms)
 ```
 
 Press `Ctrl+C` to stop watching.
-
-<SiteAside type="caution">
-    Changes to the config file are not watched. You must restart the command to apply new settings.
-</SiteAside>
 
 ### Flag Behavior
 
@@ -165,9 +183,9 @@ Press `Ctrl+C` to stop watching.
 3. Config file is never modified by flags
 
 **Without Config File:**
-- Auto-discovers `*.resolver.json` files recursively
+- Finds a `*.resolver.json` file anywhere in your project, skipping `node_modules`, build folders and hidden folders such as `.storybook`
 - All flags use default values unless specified
-- Searches entire project tree (excluding build folders)
+- When several resolvers could be found, set `resolver` in your config, or pass `--resolver` for one run
 
 **Example - Testing Different Values:**
 ```bash frame="none"
@@ -181,14 +199,14 @@ npx sugarcube generate --fluid-max 1600
 
 **One of:**
 - A sugarcube configuration file, OR
-- A `*.resolver.json` file in your project (auto-discovered), OR
+- A `*.resolver.json` file in your project (found for you), OR
 - The `--resolver` flag with a valid resolver file path
 
 If none are found, the command reports that no design tokens were found and suggests running `npx @sugarcube-sh/cli init` to set up your project.
 
 ### Output
 
-The command generates CSS files at your configured paths:
+The command writes CSS files at your configured paths:
 
 - CSS variables file (default: `src/styles/variables.gen.css`)
 - Utility classes file (default: `src/styles/utilities.gen.css`)
@@ -197,7 +215,7 @@ The command generates CSS files at your configured paths:
 
 ## `validate`
 
-Validate design token files for W3C compliance and correctness.
+Check your token files for errors.
 
 ### Usage
 
@@ -207,12 +225,9 @@ npx sugarcube validate [paths...]
 
 ### Description
 
-The `validate` command checks your design token files for:
+The `validate` command reads your tokens as `generate` does, and reports every problem without writing any CSS. Each problem is printed as `generate` prints it, with its file, line and column. It exits with code 1 when there's an error, so it can fail a CI check.
 
-- W3C Design Tokens Format compliance
-- Correct JSON syntax
-- Token reference resolution
-- Consistency across token files
+With no paths, it checks exactly what `generate` builds, so problems in the CSS, such as two tokens writing the same variable, fail it too.
 
 ### Arguments
 
@@ -225,28 +240,37 @@ The `validate` command checks your design token files for:
 ### Examples
 
 ```bash frame="none"
-# Validate tokens using config file
+# Validate what generate builds, using your config
 npx sugarcube validate
 
-# Validate specific files or directories
+# A folder, through the resolver in it
 npx sugarcube validate src/design-tokens
-npx sugarcube validate tokens/colors.json tokens/spacing.json
 
-# Validate multiple paths
-npx sugarcube validate src/tokens/colors src/tokens/spacing
+# A single token file
+npx sugarcube validate tokens/colors.json
 ```
 
 ### Behavior
 
-- **With no paths**: Tries to load config/resolver (including auto-discovery) and validates those tokens
-- **With paths**: Validates only the specified files or directories using default transform settings
-- **No config, no paths, no resolver found**: Error - paths must be specified
+- **With no paths**: reads your config and resolver, as `generate` does, and checks what it would build.
+- **A folder with a resolver**: reads the tokens through that resolver, with the settings in your config.
+- **A folder with no resolver**: reads only the files that hold tokens (a DTCG property such as `$value` or `$type`), skipping `node_modules`, build folders and hidden folders. If it finds none, it names the JSON files it passed over.
+- **Several token files with no resolver**: refused, because only a resolver says how they go together and in which order. Add a [resolver](/docs/resolver):
+
+```text frame="none"
+Several token files need a resolver to be read together:
+  - tokens/color.json
+  - tokens/space.json
+```
+
+- **Files ending `.tokens`**, the extension the spec recommends, are read too.
+- **No tokens anywhere**: reports that no design tokens were found, and exits with code 1.
 
 ---
 
 ## `lint`
 
-Check your CSS for `var()` references to variables that don't exist.
+Check that your CSS and markup only use variables your tokens declare.
 
 ### Usage
 
@@ -258,10 +282,36 @@ npx sugarcube lint [paths...] [options]
 
 When you write `var(--color-primary)` in your CSS, `lint` checks that the variable actually exists. It catches typos and references to tokens you've renamed or deleted.
 
-A variable exists if sugarcube generates it from your tokens, or if you declare it yourself in one of the scanned files. Everything else is undeclared, and there are two kinds:
+sugarcube has three checks, each answering a different question:
+
+<Table>
+| Command | Looks at | Answers |
+|---------|----------|---------|
+| [`validate`](#validate) | Your token files | Pass or fail |
+| `lint` | Your CSS and markup | Pass or fail |
+| [`analyze`](#analyze) | What's true of your token system | A report |
+</Table>
+
+Coming from Terrazzo? There, `tz lint` checks tokens. In sugarcube that's `validate`. `lint` checks the CSS that uses them.
+
+A variable exists if sugarcube generates it from your tokens, if a utility class sets it, or if you declare it yourself in one of the scanned files. Everything else is undeclared, and there are two kinds:
 
 - Without fallback, like `var(--missing)`. This is an error: the browser has nothing to use, so it drops the whole declaration.
 - With fallback, like `var(--missing, 1rem)`. This is a warning: the browser uses your fallback, so the page still renders. Pass `--fallback error` to treat these as errors too, or `--fallback off` to hide them.
+
+```text frame="none"
+■  References without fallback (1)
+│
+│  src/styles/global.css
+│   3  var(--color-border)
+│
+▲  References with fallback (1)
+│
+│  src/styles/global.css
+│   3  var(--space-xl, …)
+│
+└─  1 without fallback, 1 with fallback  6 variable references in 2 files
+```
 
 ### Arguments
 
@@ -283,20 +333,26 @@ Pass a path when your stylesheets live outside the directory you run from and yo
 | `--json` | Output JSON instead of formatted text | - |
 </Table>
 
+With `--json`, the undeclared references are in `withoutFallback` and `withFallback`, each with its `name`, `file` and `line`.
+
 ### Supported files
 
-`lint` scans `.css` files and `<style>` blocks in `.html`, `.htm`, `.vue`, `.svelte`, `.astro`, and `.php` files. It skips build folders, dependencies, and your generated variables file. CSS-in-JS and preprocessor files (`.scss`, `.sass`, `.less`, `.styl`) aren't supported yet.
+`lint` reads CSS from `.css` files and from `<style>` blocks in `.html`, `.htm`, `.vue`, `.svelte`, `.astro` and `.php` files. It doesn't read `<style>` blocks in other templates, such as `.njk`, `.erb` or `.heex`, CSS written in JavaScript, or preprocessor files (`.scss`, `.sass`, `.less`, `.styl`). It skips build folders, dependencies, and the CSS files sugarcube generates.
 
-Template formats it can't parse - (`.heex`, `.njk`, `.erb`, `.jsx` and the rest) - are skipped, including any `<style>` block inside them. That matters if `content` points only at those: `lint` then has nothing to read from your `content` globs and falls back to the CSS below your working directory. When it finds no stylesheets anywhere it says so rather than reporting a pass.
+This is only about finding CSS: sugarcube finds the utility classes you use in all of these templates, `.jsx` and `.tsx` included.
+
+When it finds no stylesheets anywhere, it says so rather than reporting a pass, and shows how to point it at your CSS: add it to `content`, such as `content: ["../css/**/*.css"]`, or name it for one run, `sugarcube lint ../css`.
 
 ### Requirements
 
 Like [`generate`](#generate), this works **zero-config** (a `sugarcube.config.ts` is optional). It needs to find your tokens, from either:
 
 - A sugarcube configuration file, OR
-- A `*.resolver.json` file in your project (auto-discovered)
+- A `*.resolver.json` file in your project (found for you)
 
 If neither is found, the command reports that no design tokens were found. It needs them to know which CSS variables your tokens actually generate — without that it can't tell an undeclared reference from a valid one.
+
+If your tokens have mistakes, `lint` prints them as [`generate`](#when-your-tokens-have-mistakes) does, then "Nothing was linted.", and exits with code 1. With `--json`, the problems go to stderr.
 
 ### Examples
 
@@ -327,13 +383,13 @@ npx sugarcube lint --json
 
 `lint` exits `0` when there are no undeclared references, and `1` when there's at least one. Fallback-only references pass unless you run with `--fallback error`, which makes them fail too. That makes `lint` a good CI check: run `npx sugarcube lint` to catch missing token references before they ship.
 
-It also exits `1` when it found no stylesheets to read, since that's a command that couldn't run rather than a project with nothing wrong. Reading *some* of your CSS still exits `0`: you get the warning, not a failure.
+It also exits `1` when your tokens have mistakes, and when it found no stylesheets to read, since those are a command that couldn't run rather than a project with nothing wrong. Reading *some* of your CSS still exits `0`: you get the warning, not a failure.
 
 ---
 
 ## `analyze`
 
-Report what's true about your token system.
+Find unused tokens, and what a change to a token affects.
 
 ### Usage
 
@@ -343,13 +399,15 @@ npx sugarcube analyze <subcommand> [options]
 
 ### Description
 
-Where `lint` and `validate` answer pass or fail, `analyze` answers questions. It builds a dependency graph of your tokens and reports on it. Nothing it finds is an error, so `analyze` always exits `0`.
+Where `lint` and `validate` answer pass or fail, `analyze` answers questions. It follows the references between your tokens in every permutation it writes, private tokens and `$ref` pointers included, and finds where your CSS and markup use them. What it finds isn't an error, so a report exits `0`.
+
+If your tokens have mistakes, it prints them as [`generate`](#when-your-tokens-have-mistakes) does, then "Nothing was analysed.", and exits with code 1.
 
 It has two subcommands: `unused` and `impact`.
 
 ### `analyze unused`
 
-List tokens that nothing in your CSS reaches.
+List tokens nothing in your CSS or markup uses, directly or through other tokens.
 
 ```bash frame="none"
 npx sugarcube analyze unused [options]
@@ -362,20 +420,23 @@ npx sugarcube analyze unused [options]
 | `--json` | Output JSON instead of formatted text | - |
 </Table>
 
-Results are grouped so a family with many unused steps reads as one row:
+Results are grouped so a family with many unused steps reads as one row, and `all` means every token in a group of several is unused. Part of the output for this site's own tokens:
 
 ```bash frame="none"
 npx sugarcube analyze unused
 ```
 
-```
+```text frame="none"
 Group                  Unused   Tokens
-────────────────────────────────────────────────────
+─────────────────────────────────────────────────
 color.accent.border         1   loud
-color.teal                  8   50 100 200 300 400 600 700 900
-radius                      5   2xl 3xl 4xl none xl
+color.accent.on             1   quiet
+color.alpha.black           5   00 12 15 25 80
+color.alpha.white           2   all
+color.amber                 3   300 400 950
+color.blue                  3   300 400 950
 
-264 of 490 tokens unused    220 files for var(), 225 for utility classes
+264 of 489 tokens unused. Read 115 stylesheets and 232 markup files.
 ```
 
 Use `--all` when you want to pipe the result somewhere:
@@ -388,19 +449,21 @@ npx sugarcube analyze unused --all
 npx sugarcube analyze unused --all | wc -l
 ```
 
+With `--json`, you get the `unused` paths, the `total` number of tokens, and how many files were `scanned`, as `stylesheets` and `markup`.
+
 <SiteAside type="caution">
     Unused doesn't necessarily mean deletable. A token may be referenced by markup sugarcube can't see, consumed by another package, or part of an API you publish deliberately. Treat the list as a starting point for a decision, not a blind to-do list.
 </SiteAside>
 
 ### `analyze impact`
 
-Show everything a change to one token would touch.
+Show what changing a token affects.
 
 ```bash frame="none"
 npx sugarcube analyze impact <token> [options]
 ```
 
-Before renaming or changing a token, this answers "what breaks?": both the tokens that alias it, directly or through a chain, and the CSS and markup that reference any of them.
+Before renaming or changing a token, this answers "what breaks?": the tokens that reference it, directly or through a chain, and the CSS and markup that use any of them.
 
 <Table>
 | Argument | Description |
@@ -411,8 +474,6 @@ Before renaming or changing a token, this answers "what breaks?": both the token
 <Table>
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--tree` | Draw the chains as a tree, indentation instead of a `References` column | - |
-| `--brief` | Flat list ranked by how often each is used, hiding pass-through tokens | - |
 | `--json` | Output JSON instead of formatted text | - |
 </Table>
 
@@ -420,74 +481,39 @@ Before renaming or changing a token, this answers "what breaks?": both the token
 npx sugarcube analyze impact color.neutral.900
 ```
 
-```
-Token                           References                      Uses   Where
-────────────────────────────────────────────────────────────────────────────────────
-color.neutral.on.loud           color.neutral.900                  7   alert-variants.css  +4 more
-color.on.loud                   color.neutral.on.loud              7   site-alert.css  +3 more
-color.neutral.surface.raised    color.neutral.900                  0
-color.surface.raised            color.neutral.surface.raised      12   site-card.css  +8 more
-color.neutral.text.normal       color.neutral.900                  0
-color.text.normal               color.neutral.text.normal         23   global.css  +7 more
-form-control.label.color        color.text.normal                  3   global.css  label.css
-form-control.value-color        color.text.normal                  1   global.css
+The chains are drawn as a tree. A child references its parent, so depth is the number of hops. For this site's own tokens:
 
-color.neutral.900 and the 12 tokens that reference it are used in 59 places.
-```
-
-#### `--tree`
-
-The same chains, with indentation carrying the relationship instead of a column. A child references its parent, so depth is the number of hops.
-
-```bash frame="none"
-npx sugarcube analyze impact color.neutral.900 --tree
-```
-
-```
+```text frame="none"
 Token                               Uses   Where
-─────────────────────────────────────────────────────────────────────────
+──────────────────────────────────────────────────────────────────────────────
 color.neutral.900                      0
-├─ color.neutral.on.loud               7   alert-variants.css  +4 more
-│  └─ color.on.loud                    7   site-alert.css  +3 more
+├─ color.neutral.on.loud               7   css/badge.css  react/badge.css  +5 more
+│  └─ color.on.loud                    8   css/badge.css  react/badge.css  +6 more
+├─ color.neutral.fill.quiet            0
+│  └─ color.fill.quiet                 0
+├─ color.neutral.surface.lowered       0
+│  └─ color.surface.lowered            6   tabs.css  site-card.css  +3 more
 ├─ color.neutral.surface.raised        0
-│  └─ color.surface.raised            12   site-card.css  +8 more
+│  └─ color.surface.raised            12   css/card.css  react/card.css  +10 more
 └─ color.neutral.text.normal           0
-   └─ color.text.normal               23   global.css  +7 more
-      ├─ form-control.label.color      3   global.css  label.css
+   └─ color.text.normal               28   accordion.css  dropdown-menu.css  +9 more
+      ├─ form-control.label.color      3   css/label.css  react/label.css  global.css
       └─ form-control.value-color      1   global.css
+
+65 uses in 32 files.
 ```
 
-If a token points at a different parent in each context it shows up under every one of those parents:
+`Where` names the stylesheets and markup files that use each token, with a folder when two files share a name, as `css/badge.css` and `react/badge.css` do.
 
-```
-├─ color.accent.on-strong                   2   checkbox.css  input_group.css
-│  └─ v.on-strong (per variant)            11   badge.css  button.css  +3 more
-│     ├─ r.primary.foreground               1   button.css
-│     └─ r.primary.icon                     1   button.css
-├─ color.danger.on-strong                   0
-│  └─ v.on-strong (per variant, above)     11   badge.css  button.css  +3 more
-└─ color.info.on-strong                     0
-   └─ v.on-strong (per variant, above)     11   badge.css  button.css  +3 more
+When a token's value differs between contexts, the first line shows each value:
+
+```text frame="none"
+color.accent.on.loud   {color.pink.50}   {color.white}
 ```
 
-#### `--brief`
+`impact` takes one token. For a group, it says so: `` `color.blue` is a group; impact takes one token. `` For a token that doesn't exist, it says `No token "color.nope" in this system.` Both exit with code 1.
 
-Only tokens something uses, ranked.
-
-```bash frame="none"
-npx sugarcube analyze impact color.neutral.900 --brief
-```
-
-```
-Token                      Uses   Where
-────────────────────────────────────────────────────────────────
-color.text.normal            23   global.css  accordion.css  +7 more
-color.surface.raised         12   site-card.css  site-dropdown-menu.css  +8 more
-color.neutral.on.loud         7   alert-variants.css  badge-variants.css  +4 more
-form-control.label.color      3   global.css  label.css
-
-5 more tokens reference it but aren't used directly — run without --brief
-```
+With `--json`, you get the `token`, its `definitions` (one per place it's written, each with its `value`, `type`, `file` and `permutations`), its `dependents`, and its `uses`, each with the `file` and `line`, and the variable or class used.
 
 ### Examples
 
@@ -498,12 +524,6 @@ npx sugarcube analyze unused
 # What would this rename break?
 npx sugarcube analyze impact color.brand.fill
 
-# The same chains drawn as a tree
-npx sugarcube analyze impact color.brand.fill --tree
-
-# Which files would I touch?
-npx sugarcube analyze impact color.brand.fill --brief
-
 # Machine-readable
 npx sugarcube analyze unused --json
 npx sugarcube analyze impact space.md --json
@@ -511,16 +531,16 @@ npx sugarcube analyze impact space.md --json
 
 ### Where analyze looks
 
-`analyze` scans the CSS below your working directory plus everything in [`content`](/docs/configuration#telling-sugarcube-which-files-to-scan).
+`analyze` scans the CSS below your working directory plus everything in [`content`](/docs/configuration#telling-sugarcube-which-files-to-scan), and reads markup files for the utility classes they use.
 
-When the scan reaches no stylesheets at all, `analyze` says so before its report, because it is inferring that the report is untrustworthy.
+When the scan reaches no stylesheets at all, `analyze` says so before its report, because the report can't be trusted.
 
 It warns about a partial scan too (i.e. when it knows, based on your configuration, that you have stylesheets somewhere but they are not being read):
 
-```
-Some of your CSS wasn't read, so tokens used only there are listed as unused below.
+```text frame="none"
+Didn't read 255 stylesheets in ../css
 
-  255 stylesheets in ../css
+Tokens used only there appear unused. Add the folder to content.
 ```
 
 The cause is almost always a missing `content` entry. Add the folder to `content` (i.e. tell sugarcube where to find your stylesheets) and the warning goes away.
@@ -555,14 +575,14 @@ The `components` command allows you to browse and install pre-built components f
 | Option | Description |
 |--------|-------------|
 | `-f, --framework <type>` | Framework to use (`react`, `css-only`) |
-| `--output <dir>` | Components output directory (auto-detected based on `src/`, or from config) |
+| `-o, --output <dir>` | Components output directory (auto-detected based on `src/`, or from config) |
 | `-s, --silent` | Suppress logs and prompts |
-| `-o, --overwrite` | Overwrite existing files without confirmation |
+| `--force` | Overwrite existing files without confirmation |
 </Table>
 
 ### Examples
 
-```bash frame="none" 
+```bash frame="none"
 # Interactive mode - browse and select components
 npx sugarcube components
 
@@ -576,7 +596,7 @@ npx sugarcube components button --framework css-only
 npx sugarcube components button --output src/ui
 
 # Overwrite existing files
-npx sugarcube components button --overwrite
+npx sugarcube components button --force
 ```
 
 ### Behavior
@@ -584,7 +604,7 @@ npx sugarcube components button --overwrite
 - **Interactive mode**: If no components or framework are specified, you'll be prompted to select a framework and browse available components
 - **Non-interactive mode**: Requires `--framework` flag when specifying components
 - **Dependencies**: Automatically installs required npm dependencies for React components
-- **Overwrite warnings**: Shows warnings before overwriting existing files (unless `--overwrite` is used)
+- **Overwrite warnings**: Shows warnings before overwriting existing files (unless you pass `--force` or `--silent`)
 - **Works without a config file**: Defaults to `src/components/ui` or `components/ui` based on whether your project has a `src/` directory. Use `--output` to override.
 - **Does not modify config files** - flag values are temporary for the command run
 
@@ -615,7 +635,7 @@ The `cube` command installs the CUBE CSS methodology files into your project. CU
 | Option | Description |
 |--------|-------------|
 | `-s, --silent` | Suppress logs and prompts |
-| `-f, --force` | Skip overwrite confirmation |
+| `--force` | Skip overwrite confirmation |
 | `-o, --output <dir>` | CUBE CSS output directory (auto-detected based on `src/`, or from config) |
 </Table>
 
@@ -652,7 +672,7 @@ Each directory includes starter files. These are starting points that you can mo
 ### Behavior
 
 - Creates the output directory if it doesn't exist
-- Shows warnings before overwriting existing files (unless `--force` is used)
+- Shows warnings before overwriting existing files (unless you pass `--force` or `--silent`)
 - **Works without a config file**: Defaults to `src/styles` or `styles` based on whether your project has a `src/` directory. Use `-o` to override.
 - **Does not modify config files** - flag values are temporary for the command run
 

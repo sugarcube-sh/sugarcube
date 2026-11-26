@@ -8,7 +8,16 @@ import SiteAside from "@/src/components/site-alert/SiteAside.astro";
   The resolver format is part of the [DTCG (Design Tokens Community Group) specification](https://www.designtokens.org/TR/2025.10/resolver/) — an industry standard, not a sugarcube invention. The DTCG spec is the source of truth. If you find sugarcube diverging from the spec, please [raise an issue](https://github.com/sugarcube-sh/sugarcube/issues).
 </SiteAside>
 
-A resolver document is a JSON file that defines how to load and combine your design tokens. It specifies which token files to load and how theming variations work.
+A resolver document is a JSON file that defines how to load and combine your design tokens. It specifies which token files to load, in which order, and how theming variations work.
+
+A resolver is how several token files are read together. With a single token file, you can name that file as `resolver` instead. `validate` refuses several token files with no resolver, since only a resolver says how they go together and which wins when two write the same token:
+
+```text frame="none"
+Several token files need a resolver to be read together:
+  - tokens/color.json
+  - tokens/space.json
+See https://sugarcube.sh/docs/resolver for more information.
+```
 
 ## Basic structure
 
@@ -42,11 +51,23 @@ A resolver document has two main parts:
 }
 ```
 
+A resolver file may have comments and trailing commas, since the spec lets tools read it as JSONC. Token files stay plain JSON.
+
 ## Auto-discovery
 
-Sugarcube automatically discovers `*.resolver.json` files in your project, so you typically don't need to configure the resolver path.
+Sugarcube automatically discovers a `*.resolver.json` file in your project, so you typically don't need to configure the resolver path. It skips `node_modules`, build folders and hidden folders such as `.storybook`, so a resolver kept in a hidden folder needs naming.
 
-If you have multiple resolver files, specify which one to use in your config:
+If there are several resolver files, sugarcube asks you to choose:
+
+```text frame="none"
+Several resolver files were found:
+  - tokens/other.resolver.json
+  - tokens/tokens.resolver.json
+
+Name the one to use as `resolver` in sugarcube.config.ts.
+```
+
+Specify which one to use in your config, or with `--resolver` on the command line:
 
 ```ts title="sugarcube.config.ts"
 import { defineConfig } from "@sugarcube-sh/vite";
@@ -133,23 +154,7 @@ Now `palette.json`'s tokens resolve as normal, but no variables are emitted for 
 }
 ```
 
-You can set visibility per source:
-
-```json
-{
-  "type": "set",
-  "name": "base",
-  "sources": [
-    {
-      "$ref": "./palette.json",
-      "$extensions": { "sh.sugarcube": { "emit": false } }
-    },
-    { "$ref": "./colors.json" }
-  ]
-}
-```
-
-Or per set:
+You can set it per source, as above, or per set, which covers every source in it:
 
 ```json
 {
@@ -160,6 +165,34 @@ Or per set:
     { "$ref": "./palette.json" },
     { "$ref": "./size.json" }
   ]
+}
+```
+
+### When settings are nested
+
+When a set and a source inside it say different things, the nearest setting wins: the source's own, then the set's. So a private set can still make one of its sources public:
+
+```json
+{
+  "type": "set",
+  "name": "raw",
+  "$extensions": { "sh.sugarcube": { "emit": false } },
+  "sources": [
+    { "$ref": "./palette.json" },
+    {
+      "$ref": "./spacing.json",
+      "$extensions": { "sh.sugarcube": { "emit": true } }
+    }
+  ]
+}
+```
+
+`palette.json`'s tokens stay private, and `spacing.json`'s are written. A public token that refers to a private one is inlined, as before:
+
+```css
+:root {
+  /* space.md -> {size.4}, a private token from palette.json, so inlined */
+  --space-md: 16px;
 }
 ```
 
@@ -180,10 +213,10 @@ Modifiers provide themed variations of your tokens. See [Theming](/docs/theming)
 ```
 
 - **`name`** — The modifier name
-- **`default`** — Which context is the baseline (per the DTCG spec, this is the value used when no input is provided)
+- **`default`** — Which context is the baseline, used when no input is given. Without `permutations` in your config, sugarcube needs one: a modifier with no default is an error
 - **`contexts`** — Map of context names to source arrays
 
-The resolver defines *what* your modifier contexts are. How they map to CSS selectors is controlled by `permutations` in your config file. See [Theming](/docs/theming) for details.
+The resolver defines *what* your modifier contexts are. By default, the default context goes to `:root`, and each other context gets a `[data-{modifier}="{context}"]` block. To use other selectors, list `permutations` in your config. See [Theming](/docs/theming) for details.
 
 ## Resolution order
 

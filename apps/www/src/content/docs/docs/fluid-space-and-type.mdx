@@ -38,20 +38,22 @@ This approach keeps your tokens DTCG-compliant. Other tools will see a valid `di
 
 ## Legacy format (removed)
 
-The `fluidDimension` type has been removed. Use a `dimension` token with the [`sh.sugarcube.fluid` extension](#adding-fluid-dimension-tokens) instead.
+The `fluidDimension` type has been removed, and a token that uses it is an error, `` `fluidDimension` is not a token type ``. Use a `dimension` token with the [`sh.sugarcube.fluid` extension](#adding-fluid-dimension-tokens) instead.
 
 ## Adjusting the scaling rate
 
 Fluid tokens generate CSS variables using `clamp()` functions:
 
 ```css
---spacing-sm: clamp(0.5rem, 0.5rem + 0.57vw, 1rem);
+--spacing-sm: clamp(0.5rem, 0.3182rem + 0.9091vw, 1rem);
 ```
 
-The preferred value scales smoothly between min and max across the viewport range. By default, sugarcube uses 320px (min) and 1200px (max). The viewport range determines the scaling slope:
+The preferred value scales smoothly between min and max across the viewport range, worked out as [Utopia](https://utopia.fyi/) does, to four decimals. By default, sugarcube uses 320px (min) and 1200px (max). The viewport range determines the scaling slope:
 
 - **Wider range** (e.g., 320px to 1440px) = gentler slope, slower scaling
 - **Narrower range** (e.g., 375px to 1200px) = steeper slope, faster scaling
+
+A size can also shrink as the screen widens: give `min` the larger value. `"min": 2rem, "max": 1rem` gives `clamp(1rem, 2.3636rem + -1.8182vw, 2rem)`.
 
 Customize viewport boundaries in your config:
 
@@ -180,7 +182,14 @@ Two formats are supported:
 Generated tokens behave like any other dimension: they pick up the global `transforms.fluid` viewport, render to `clamp()`, and can be referenced from elsewhere in your design system.
 
 <SiteAside type="note">
-    A scale config replaces what you'd otherwise write by hand. If you also author a token with the same name as one the scale generates, your version wins. This is handy for one-off overrides without abandoning the scale.
+    If you also write a token with the same name as one the scale makes, your token is used, and the rest of the scale still comes from the recipe. Pairs, such as `sm-md`, keep the recipe's values.
+
+    If you write a group where the scale makes a token, that's an error:
+
+    ```text frame="none"
+    tokens/space.json:28:5  error[token-and-group]
+      `space.md` is a group, but `sh.sugarcube.scale` on `space` makes it a token
+    ```
 </SiteAside>
 
 ## Resources
