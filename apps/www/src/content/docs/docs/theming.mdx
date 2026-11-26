@@ -8,7 +8,7 @@ Sugarcube supports theming through **modifiers** — named variations that overr
 
 ## Basic: zero-config dark mode
 
-Define a modifier in your [resolver document](/docs/resolver) and you're done. No config file needed.
+Define a modifier with a `default` in your [resolver document](/docs/resolver) and you're done. No config file needed.
 
 ```json title="tokens.resolver.json"
 {
@@ -49,7 +49,7 @@ Sugarcube generates:
 }
 ```
 
-The default context ("light") goes to `:root`. Non-default contexts get a `[data-{modifier}="{context}"]` selector automatically.
+The default context ("light") goes to `:root`. Non-default contexts get a `[data-{modifier}="{context}"]` selector automatically. Each block declares what its context changes, plus the variables that refer to what it changed, so the theme also works on a nested element (see [Theming nested elements](#theming-nested-elements)).
 
 ### Using it in HTML
 
@@ -159,7 +159,7 @@ Output:
 The `atRule` option works with any CSS at-rule — `prefers-color-scheme`, `prefers-contrast`, `pointer`, etc.
 
 <SiteAside type="note">
-  When you define `permutations`, auto-generation is disabled entirely. You must include all contexts you want in the output — including the default. If you omit the light permutation above, only the dark media query block would be generated.
+  When you define `permutations`, nothing is generated for you. List every context you want, the default first. Listed later, the default block overrides the others, and sugarcube warns: `the default isn't listed first`. Leave the light permutation out above, and you get only the dark media query block, so light users get no variables.
 </SiteAside>
 
 ### Compound selectors
@@ -241,25 +241,7 @@ A resolver can have more than one modifier. A common example is **brand** (palet
 }
 ```
 
-Define a permutation per context.
-
-```ts title="sugarcube.config.ts"
-import { defineConfig } from "@sugarcube-sh/cli";
-
-export default defineConfig({
-  resolver: "./tokens.resolver.json",
-  variables: {
-    permutations: [
-      { input: { brand: "default" }, selector: ":root" },
-      { input: { brand: "ocean" }, selector: "[data-brand=\"ocean\"]" },
-      { input: { brand: "forest" }, selector: "[data-brand=\"forest\"]" },
-      { input: { theme: "dark" }, selector: "[data-theme=\"dark\"]" },
-    ]
-  }
-});
-```
-
-Output:
+You don't need a config for this. Each context of each modifier gets its own block, in the resolver's order:
 
 ```css
 :root { --color-primary: red; --color-surface: white; }
@@ -277,11 +259,44 @@ In HTML, set a data attribute for each active context:
 
 This works because the modifiers are **orthogonal** — they override different tokens, so there's no conflict. The DTCG spec [recommends this approach](https://www.designtokens.org/TR/2025.10/resolver/#orthogonality).
 
+To use other selectors, list a permutation for each context in your config, as in [Custom selectors](#custom-selectors-the-permutations-api), in the resolver's order:
+
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  resolver: "./tokens.resolver.json",
+  variables: {
+    permutations: [
+      { input: {}, selector: ":root" },
+      { input: { brand: "ocean" }, selector: ".brand-ocean" },
+      { input: { brand: "forest" }, selector: ".brand-forest" },
+      { input: { theme: "dark" }, selector: ".dark" },
+    ]
+  }
+});
+```
+
 ### When modifiers aren't orthogonal
 
 The examples above work because brand and theme override different tokens — brand changes `color.primary`, theme changes `color.surface`. But what if Brand Ocean's dark surface needs to be a dark blue, while Brand Forest's dark surface is a dark green? Now both modifiers want to override `color.surface`, and the last one wins — you lose the brand-specific value.
 
-When this happens, add composed contexts to the theme modifier for each brand-specific combination:
+### Keep the blocks in the resolver's order
+
+When two modifiers change the same token, the resolver says which wins: the one later in `resolutionOrder`. In CSS, the block written later wins, so the blocks must come in the same order. Without a config, they do. With `permutations` in your config, list them in the resolver's order: every `brand` block before every `theme` block here.
+
+Listed the other way round, the CSS disagrees with your tokens, and nothing warns you. Say `ocean.json` sets `color.surface` to a light blue, and `dark.json` sets it to `#1a1a1a`. The resolver says `brand: ocean` with `theme: dark` has the dark surface. But with the dark block written first, the CSS has, among the rest:
+
+```css
+[data-theme="dark"] { --color-surface: #1a1a1a; }
+[data-brand="ocean"] { --color-primary: #0000ff; --color-surface: #e0f0ff; }
+```
+
+`<html data-brand="ocean" data-theme="dark">` gets the light blue surface, because the brand block comes later.
+
+### Composed contexts
+
+When a brand needs its own values in dark mode, such as Ocean's dark blue surface, add composed contexts to the theme modifier for each brand-specific combination:
 
 ```json title="tokens.resolver.json"
 {
@@ -328,6 +343,12 @@ The brand modifier stays separate — it handles brand colors. The theme modifie
 }
 ```
 
+Each context gets its own block, such as `[data-theme="dark-ocean"]`. Set the brand and its composed theme together:
+
+```html
+<html data-brand="ocean" data-theme="dark-ocean">
+```
+
 The number of theme contexts grows with the number of brand × mode combinations, but each override file stays small — only the tokens that actually differ from the generic dark mode.
 
 ### Per-brand output files
@@ -365,13 +386,15 @@ Modifiers in `resolutionOrder` are applied in sequence. Later entries override e
 }
 ```
 
-If two modifiers override the same token, the one later in the array wins. Structure your resolver accordingly.
+If two modifiers override the same token, the one later in the array wins. Structure your resolver accordingly, and keep your CSS blocks in the same order (see [above](#keep-the-blocks-in-the-resolvers-order)).
 
 ### Theming nested elements
 
 Usually you set a theme on `<html>` and everything inside inherits it. But sometimes you want to theme just part of a page — a card, a sidebar, an embedded preview — by putting `data-theme` on a nested element instead of the root.
 
-This can quietly break if your tokens reference each other in a chain. A modifier only re-emits the variables whose value actually changed, and a variable like `--background-accent: var(--binding-accent)` keeps the same value even when `--binding-accent` is repointed underneath it. CSS inherits a variable's resolved value, not its `var()` chain — so on a nested element `--background-accent` stays whatever it resolved to at `:root`:
+That needs care when your tokens reference each other in a chain. CSS works out a `var()` where the variable is declared, and inherits the result, not the `var()` chain. So if `--background-accent: var(--binding-accent)` is declared only on `:root`, a nested element keeps `:root`'s accent even when its theme repoints `--binding-accent`.
+
+sugarcube handles this for you: each block also declares again every variable that refers to something it changed, all the way down the chain, composite values included, such as a shadow whose color refers to a changed variable:
 
 ```css
 :root {
@@ -381,26 +404,24 @@ This can quietly break if your tokens reference each other in a chain. A modifie
 
 [data-theme="brand"] {
   --binding-accent: var(--teal-600);
-  /* --background-accent isn't re-emitted, so nested elements keep the :root value */
+  --background-accent: var(--binding-accent);
 }
 ```
 
-Turn on `propagateDependents` to fix it:
-
-```ts title="sugarcube.config.ts"
-export default defineConfig({
-  resolver: "./tokens.resolver.json",
-  variables: {
-    propagateDependents: true,
-    permutations: [ /* ... */ ],
-  }
-});
-```
-
-Now every modifier also re-emits the variables that point at anything it changed, all the way down the chain — so `--background-accent` re-resolves in scope and nested themes work. This includes composite values like a shadow whose color references a changed variable.
+`--background-accent` is declared again in the brand block, so it works out to teal on any element with `data-theme="brand"`.
 
 <SiteAside type="note">
-  Off by default, since it makes each modifier block bigger. Enable it when your tokens have multi-step chains **and** you theme nested elements. If your components read the variables a modifier changes directly, you don't need it.
+  This makes each block bigger. If your themes are only ever set on `<html>`, you can turn it off for smaller CSS:
+
+  ```ts title="sugarcube.config.ts"
+  export default defineConfig({
+    variables: {
+      redeclareDependents: false,
+    }
+  });
+  ```
+
+  Then the brand block above declares only `--binding-accent`. It was called `propagateDependents` and was off by default; the old name still works, with a warning, until 1.0.
 </SiteAside>
 
 ---

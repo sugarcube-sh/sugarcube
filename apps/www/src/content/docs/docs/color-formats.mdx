@@ -2,34 +2,17 @@
 title: Color Formats
 ---
 
-import Table from "@/src/components/Table.astro";
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 
-Sugarcube supports modern color spaces like OKLCH and Display P3, with fallback strategies for browser compatibility.
+Sugarcube supports modern color spaces like OKLCH and Display P3, and writes them as CSS as they are.
 
 ## Supported color spaces
 
-<Table>
-| Supported | Not yet supported |
-|-----------|-------------------|
-| OKLCH | sRGB Linear |
-| Display P3 | HWB |
-| sRGB | CIELAB |
-| HSL | LCH |
-| Hex | OKLAB |
-| | A98 RGB |
-| | ProPhoto RGB |
-| | Rec 2020 |
-</Table>
-
-<SiteAside type="note">
-    We are currently working to support more color spaces. If you need a specific color space, please [open an issue](https://github.com/sugarcube-sh/sugarcube/issues/new).
-</SiteAside>
-
+sugarcube writes every DTCG color space: sRGB, sRGB Linear, HSL, HWB, CIELAB, LCH, OKLAB, OKLCH, Display P3, A98 RGB, ProPhoto RGB, Rec 2020, XYZ-D65 and XYZ-D50, plus hex. A color in `srgb`, `hsl`, `hwb`, `lab`, `lch`, `oklab` or `oklch` is written as that CSS function, such as `oklch(0.7 0.3 328)`, and the rest as `color()`, such as `color(display-p3 1 0 0)`.
 
 ## Color fallbacks
 
-By default, sugarcube outputs modern color spaces directly without fallbacks:
+sugarcube writes modern color spaces as they are, without fallbacks:
 
 ```css
 :root {
@@ -37,47 +20,6 @@ By default, sugarcube outputs modern color spaces directly without fallbacks:
 }
 ```
 
-To support older browsers, add `colorFallbackStrategy: "polyfill"` to your config:
-
-```ts title="sugarcube.config.ts"
-import { defineConfig } from "@sugarcube-sh/cli";
-
-export default defineConfig({
-  variables: {
-    transforms: {
-      colorFallbackStrategy: "polyfill"
-    }
-  }
-});
-```
-
-This generates CSS with fallback colors using feature queries:
-
-```css
-:root {
-  --color-primary: #ff00ff;
-}
-
-@supports (color: oklch(0 0 0)) {
-  :root {
-    --color-primary: oklch(0.7 0.3 328);
-  }
-}
-```
-
-When using the `polyfill` strategy, you must include a `hex` fallback value in your design tokens:
-
-```json title="design-tokens/colors.json"
-{
-  "color": {
-    "primary": {
-      "$type": "color",
-      "$value": {
-        "colorSpace": "oklch",
-        "components": [0.7, 0.3, 328],
-        "hex": "#ff00ff"
-      }
-    }
-  }
-}
-```
+<SiteAside type="caution">
+    `colorFallbackStrategy: "polyfill"` is deprecated. It still works, with a warning, and will be removed in a later release. It writes each color's `hex` first, then the color itself inside an `@supports` check for its color space. A color outside sRGB and HSL with no `hex` warns, and is written as it is.
+</SiteAside>

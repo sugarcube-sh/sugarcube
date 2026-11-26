@@ -175,12 +175,13 @@ Given tokens like:
 ```json title="colors.json"
 {
   "color": {
+    "$type": "color",
     "text": {
-      "primary": { "$value": "#000" },
-      "muted": { "$value": "#666" }
+      "primary": { "$value": "#000000" },
+      "muted": { "$value": "#666666" }
     },
     "fill": {
-      "solid": { "$value": "#fff" },
+      "solid": { "$value": "#ffffff" },
       "soft": { "$value": "#f5f5f5" }
     }
   }
@@ -213,6 +214,12 @@ utilities: {
 
 Generates: `.text-primary`, `.text-muted` (shorter class names, only text colors)
 
+Leave out the `*` and you get the same: `source: "color.text"` means the tokens under `color.text`. A `source` that names a single token, such as `"color.text.primary"`, makes no classes, and sugarcube warns.
+
+### A token whose name is its group's
+
+A `$root` token, the spec's way to give a group a value of its own, gets a class named after its group. For `color.accent.$root` with `prefix: "bg"`, the class is `.bg-accent`, beside `.bg-accent-soft` for `color.accent.soft`.
+
 ### Avoiding duplicate prefixes with `stripDuplicates`
 
 Sometimes your prefix matches part of the token path, creating awkward names like `.text-text-primary`.
@@ -232,7 +239,26 @@ utilities: {
 ```
 
 Without `stripDuplicates`: `.text-text-primary`, `.text-text-muted`
-With `stripDuplicates`: `.text-primary`, `.text-muted`
+With `stripDuplicates`: `.text-primary`, `.text-muted`, and the long form still works.
+
+If two tokens would then make the same class, sugarcube warns, and the class uses the first. Here `color.primary` and `color.text.primary` both make `.text-primary`:
+
+```json title="colors.json"
+{
+  "color": {
+    "$type": "color",
+    "primary": { "$value": "#0066cc" },
+    "text": {
+      "primary": { "$value": "#000000" }
+    }
+  }
+}
+```
+
+```text frame="none"
+tokens/colors.json:6:7  warning[same-utility-class]
+  `text-primary` could mean `color.primary` or `color.text.primary`
+```
 
 ## Directional utilities
 
@@ -269,6 +295,8 @@ With a `space.sm` token, this generates:
 </Table>
 
 Note: Directions use CSS logical properties for better internationalization support.
+
+Shorthands come before their longhands in the CSS, so a longhand wins: in `class="px-md pl-sm"`, the left padding is `sm`. Classes from different entries come in the order of your config.
 
 ## Forcing generation with `safelist`
 
@@ -328,11 +356,36 @@ Three situations change what the segment looks like:
 
 For a nested token, join the path below the wildcard with hyphens, so `color.fill.solid` under `source: "color.*"` becomes `fill-solid`. With `stripDuplicates` turned on, write the shortened form you'd actually type, so `color.text.muted` with prefix `text` is `muted`, not `text-muted`. With `directions`, write only the token part and let sugarcube expand the variants, so `space.sm` is just `sm`.
 
-If a segment doesn't correspond to a real token under `source`, no class is produced for it; a typo costs you nothing worse than a missing utility.
+If a segment doesn't match a token under `source`, no class is made for it, and sugarcube warns, so a typo doesn't go unnoticed:
+
+```text frame="none"
+sugarcube.config.ts  warning[safelist-without-token]
+  `dangr` in `background-color`'s safelist matches no token
+```
 
 <SiteAside type="note">
     `safelist` works the same way with both the Vite plugin and the CLI, and it doesn't change anything about classes you already use in markup — those are still generated on demand as usual.
 </SiteAside>
+
+## When an entry makes no classes
+
+An entry that can't make any class warns, and says why. For example, padding needs dimension tokens:
+
+```text frame="none"
+sugarcube.config.ts  warning[utility-without-classes]
+  `padding` makes no classes: `color.*` has only color tokens
+  help: use dimension tokens
+```
+
+The usual reasons:
+
+- **The tokens are the wrong type for the property**, as above. Each property takes the types that make sense for it: `line-height`, for example, takes dimension and number tokens, and `font-weight` takes font weight and number tokens.
+- **`source` names a single token**, not a group: "no tokens under `color.primary`".
+- **`text-shadow`**: DTCG has no text shadow type. A DTCG shadow always has a `spread`, which `text-shadow` doesn't accept, so the browser would drop every class.
+- **`background-image`**: DTCG has no background image type. A gradient token's variable holds only its stops, so you write the gradient yourself, such as `background-image: linear-gradient(to right, var(--gradient-sunset))`.
+- **Typography tokens** make no classes: "`type.*` has only typography tokens".
+
+An entry whose every class an earlier entry already makes says so too, such as "`color` already makes every `color-…` class".
 
 ## Just-in-time compilation
 
@@ -358,12 +411,12 @@ Generate utilities as a static CSS file:
 
 <PackageManagerTabs command="sugarcube generate" />
 
-This scans your codebase for used utilities and writes `utilities.gen.css` to your styles directory.
+This scans your codebase for used utilities and writes `src/styles/utilities.gen.css` (or `styles/utilities.gen.css` without a `src` folder).
 
 Import it:
 
 ```css
-@import "./src/styles/utilities/utilities.gen.css";
+@import "./src/styles/utilities.gen.css";
 ```
 
 Use `--watch` to automatically regenerate when tokens or markup change:
