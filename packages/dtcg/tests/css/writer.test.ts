@@ -1,3 +1,5 @@
+import { setFlagsFromString } from "node:v8";
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { type CSSWriterOptions, toCSSValue, createCSSWriter } from "../../src/css.js";
 import type { DesignTokens, Token } from "../../src/index.js";
@@ -37,6 +39,26 @@ const typography = {
 };
 
 describe("createCSSWriter", () => {
+    it("doesn't keep old tokens in memory, so one writer can be kept across reads", async () => {
+        setFlagsFromString("--expose-gc");
+        const collectGarbage = runInNewContext("gc") as () => void;
+        const writer = createCSSWriter();
+        const held = (() => {
+            const [permutation] = one({ gap: { $type: "number", $value: 8 } }).permutations;
+            writer.getDeclarations(permutation!);
+            writer.getValue(permutation!.getToken("gap"));
+            return {
+                permutation: new WeakRef(permutation!),
+                token: new WeakRef(permutation!.getToken("gap")!),
+            };
+        })();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        collectGarbage();
+
+        expect(held.permutation.deref()).toBeUndefined();
+        expect(held.token.deref()).toBeUndefined();
+    });
+
     describe("declarations", () => {
         it("gives every custom property a permutation declares, a reference as var()", () => {
             expect(lines(modes)).toStrictEqual([
