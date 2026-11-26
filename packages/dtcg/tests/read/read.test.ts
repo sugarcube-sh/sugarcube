@@ -464,15 +464,15 @@ describe("the combination limit", () => {
     });
 
     it.for<[string, number, boolean, { permutationLimit?: number }, number, unknown[]]>([
-        ["builds every combination up to the limit, and no warning", 5, true, {}, 32, []],
-        ["takes a higher limit", 6, true, { permutationLimit: 64 }, 64, []],
+        ["builds every combination up to the limit, and no warning", 7, true, {}, 128, []],
+        ["takes a higher limit", 8, true, { permutationLimit: 256 }, 256, []],
         [
             "builds every combination above it when no modifier has a default, and says so",
-            6,
+            8,
             false,
             {},
-            64,
-            [{ kind: "permutation-limit", detail: { count: 64, limit: 32, built: 64 } }],
+            256,
+            [{ kind: "permutation-limit", detail: { count: 256, limit: 128, built: 256 } }],
         ],
     ])("%s", ([, count, defaults, options, length, diagnostics]) => {
         const tokens = readWith(withModifiers(count, defaults), options);
@@ -481,20 +481,22 @@ describe("the combination limit", () => {
     });
 
     it("builds each context on its own above it, and says so", () => {
-        const tokens = readWith(withModifiers(6));
+        const tokens = readWith(withModifiers(8));
         expect(tokens.permutations.map(({ input }) => Object.values(input).join(""))).toStrictEqual(
             [
-                "offoffoffoffoffoff",
-                "onoffoffoffoffoff",
-                "offonoffoffoffoff",
-                "offoffonoffoffoff",
-                "offoffoffonoffoff",
-                "offoffoffoffonoff",
-                "offoffoffoffoffon",
+                "offoffoffoffoffoffoffoff",
+                "onoffoffoffoffoffoffoff",
+                "offonoffoffoffoffoffoff",
+                "offoffonoffoffoffoffoff",
+                "offoffoffonoffoffoffoff",
+                "offoffoffoffonoffoffoff",
+                "offoffoffoffoffonoffoff",
+                "offoffoffoffoffoffonoff",
+                "offoffoffoffoffoffoffon",
             ],
         );
         expect(problems(tokens)).toStrictEqual([
-            { kind: "permutation-limit", detail: { count: 64, limit: 32, built: 7 } },
+            { kind: "permutation-limit", detail: { count: 256, limit: 128, built: 9 } },
         ]);
     });
 

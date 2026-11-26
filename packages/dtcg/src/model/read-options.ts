@@ -24,7 +24,7 @@ export interface ReadOptions extends ParseOptions {
      *
      * Above it, `"each-context"` is built instead, with a `permutation-limit` warning.
      *
-     * @default 32
+     * @default 128
      */
     permutationLimit?: number;
     /**
