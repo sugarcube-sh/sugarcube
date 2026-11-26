@@ -52,15 +52,15 @@ export interface DiagnosticDetailByKind {
         readonly character?: "." | "{" | "}" | "$";
     };
     /**
-     * Something is both a token and a group.
+     * Something is both a token and a group. `reason` says how:
      *
-     * `reason: "child"` means a token also has `child` inside it.
-     * `reason: "declared"` means one file writes a token where another writes a group. `declaredAs`
-     * says which this one is.
-     * `reason: "ref"` means a `$ref` makes an object a token, but it also has tokens or groups, as
-     * if it extended a group, which is `$extends`'s job.
-     * `reason: "generated"` means a file writes a group where a {@link Generator} makes a token. The
-     * group is kept, and the generator doesn't make the token.
+     * - `"child"`: a token has something in it that isn't a token property, such as a token
+     *   or `"alpha": 0`.
+     * - `"declared"`: one file writes a token where another writes a group.
+     * - `"ref"`: a `$ref` makes an object a token, but the object also has tokens or groups in
+     *   it. To build on a group, use `$extends`.
+     * - `"generated"`: a file writes a group where a {@link Generator} makes a token. The group
+     *   is kept, and the generator doesn't make the token.
      */
     "token-and-group":
         | {
@@ -71,6 +71,7 @@ export interface DiagnosticDetailByKind {
           }
         | {
               readonly reason: "declared";
+              /** Which this one is. */
               readonly declaredAs: "token" | "group";
               /** The token or group, such as `"color.blue"`. */
               readonly path: string;
@@ -248,11 +249,12 @@ export interface DiagnosticDetailByKind {
     /**
      * A property the spec doesn't define, such as `$foo` on a token.
      *
-     * It's an error, except where it's set aside with a warning: a `$` property such as
-     * `$metadata` on the group a token file starts with, which design tools write there, and a
-     * property in a value, such as `paragraphSpacing` in a typography value, with
-     * `ignoreUnknownProperties` on. Without that option, a property in a value is an
-     * `invalid-value`.
+     * It's an error, except in two places, where it's a warning and the property is ignored:
+     *
+     * - A `$` property at the top of a token file, such as `$metadata`. Design tools write them
+     *   there.
+     * - A property inside a value, such as `paragraphSpacing` in a typography value, when
+     *   `ignoreUnknownProperties` is on. When it's off, that's an `invalid-value`.
      */
     "unknown-property":
         | {
@@ -379,7 +381,7 @@ export type ResolverProblem =
 /**
  * The name of a kind of diagnostic, such as `"missing-reference"`.
  *
- * Check this in your code, not the message. Each kind has a page at {@link Diagnostic.docsUrl}.
+ * Check this in your code, not the message.
  */
 export type DiagnosticKind = keyof DiagnosticDetailByKind;
 
@@ -444,8 +446,6 @@ export type DiagnosticOf<DetailByKind> = {
          * `"unnecessary"` fades it, and `"deprecated"` strikes it through.
          */
         readonly tags?: readonly ("deprecated" | "unnecessary")[];
-        /** A page about this kind of diagnostic. */
-        readonly docsUrl: string;
         readonly detail: DetailByKind[K];
     };
 }[keyof DetailByKind];

@@ -659,10 +659,8 @@ describe("diagnostic messages from read", () => {
         expect(messagesFrom(counted)).toStrictEqual(["Expected number, received string"]);
     });
 
-    it("links invalid-value to the section for its reason", () => {
+    it("gives no link, as there are no pages about problems yet", () => {
         const tokens = oneFile({ space: { $type: "dimension", $value: "16px" } });
-        expect(tokens.diagnostics.map(({ docsUrl }) => docsUrl)).toStrictEqual([
-            "https://sugarcube.sh/errors/invalid-value#string-with-unit",
-        ]);
+        expect(tokens.diagnostics[0]).not.toHaveProperty("docsUrl");
     });
 });

@@ -15,7 +15,6 @@ const ours: DiagnosticOf<OurDetailByKind> = {
     kind: "selector-empty",
     severity: "error",
     message: "the selector is empty",
-    docsUrl: "https://example.com/errors/selector-empty",
     detail: { entry: 2 },
 };
 
