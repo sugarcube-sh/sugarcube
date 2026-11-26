@@ -16,6 +16,7 @@ interface PrefixProperty {
     property: string;
     strip?: string;
     names: Map<string, string>;
+    fullNames?: Map<string, string>;
 }
 
 export interface ClassPrefix {
@@ -132,7 +133,12 @@ export function createUtilityRules(
     const shadowed = findShadowedEntries(candidatesByClass);
     const prefixes = [...usesByPrefix].map(([prefix, uses]) => ({
         prefix,
-        uses: uses.map(({ property, strip, names }) => ({ property, strip, names })),
+        uses: uses.map(({ property, strip, names, fullNames }) => ({
+            property,
+            strip,
+            names,
+            ...(fullNames && { fullNames }),
+        })),
     }));
     const withoutClassesProblems =
         tokens.length === 0
@@ -158,11 +164,13 @@ function readEntry(
     location: UtilityEntry,
 ): ReadEntryResult {
     const { property } = location;
-    const { parts, skipped } = getParts(tokens, config, property);
+    const { parts, fullNames, skipped } = getParts(tokens, config, property);
     const entry: Entry = { location, source: config.source, parts, skipped };
+    const strip = getDuplicatePrefix(config);
     const variableLookup = {
-        strip: getDuplicatePrefix(config),
+        strip,
         names: new Map([...parts].map(([part, [first]]) => [part, first.name])),
+        ...(strip !== undefined && { fullNames }),
     };
     const { safelisted, unmatchedProblems } = matchSafelist(
         config.safelist,
@@ -240,10 +248,11 @@ function createRule({ prefix, uses }: ClassPrefix): UtilityRule {
 }
 
 function getVariableName(
-    { strip, names }: Omit<PrefixProperty, "property">,
+    { strip, names, fullNames }: Omit<PrefixProperty, "property">,
     part: string,
 ): string | undefined {
-    return names.get(stripDuplicatePrefix(part, strip));
+    const stripped = stripDuplicatePrefix(part, strip);
+    return (stripped === part ? undefined : fullNames?.get(part)) ?? names.get(stripped);
 }
 
 function findClassCandidates(
@@ -374,10 +383,15 @@ function getParts(
     tokens: UtilityToken[],
     entry: UtilityClassConfig,
     property: string,
-): { parts: Map<string, [TokenVariable, ...TokenVariable[]]>; skipped: Skipped[] } {
+): {
+    parts: Map<string, [TokenVariable, ...TokenVariable[]]>;
+    fullNames: Map<string, string>;
+    skipped: Skipped[];
+} {
     const group = getGroupPath(entry.source);
     const types = TOKEN_TYPES_BY_PROPERTY[property];
     const parts = new Map<string, [TokenVariable, ...TokenVariable[]]>();
+    const fullNames = new Map<string, string>();
     const skipped: Skipped[] = [];
     for (const utilityToken of tokens) {
         const { token } = utilityToken;
@@ -388,16 +402,15 @@ function getParts(
         else if (types && !types.includes(token.type)) skip("type");
         else if ("private" in utilityToken) skip(utilityToken.private ? "private" : "unwritten");
         else {
-            const part = stripDuplicatePrefix(
-                toCSSIdentifier(relativePath),
-                getDuplicatePrefix(entry),
-            );
+            const fullPart = toCSSIdentifier(relativePath);
+            const part = stripDuplicatePrefix(fullPart, getDuplicatePrefix(entry));
             const existing = parts.get(part);
             if (existing) existing.push(utilityToken);
             else parts.set(part, [utilityToken]);
+            if (!fullNames.has(fullPart)) fullNames.set(fullPart, utilityToken.name);
         }
     }
-    return { parts, skipped };
+    return { parts, fullNames, skipped };
 }
 
 function getGroupPath(source: string): string {

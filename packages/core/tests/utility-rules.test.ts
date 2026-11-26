@@ -294,6 +294,17 @@ describe("createUtilityRules", () => {
         });
     });
 
+    it("takes the class written in full as the token it names, when its stripped form is another token's", () => {
+        const tokens = { color: { primary: color("#0066cc"), text: { primary: color() } } };
+        const classes = { color: { source: "color.*", prefix: "text", stripDuplicates: true } };
+        expect(cssFor(tokens, classes, "text-text-primary")).toStrictEqual({
+            color: "var(--color-text-primary)",
+        });
+        expect(cssFor(tokens, classes, "text-primary")).toStrictEqual({
+            color: "var(--color-primary)",
+        });
+    });
+
     it("strips the source's first segment with stripDuplicates when there is no prefix, as if it were the prefix", () => {
         const tokens = { color: { color: { ink: color() } } };
         const classes = { color: { source: "color.*", stripDuplicates: true, safelist: true } };
@@ -440,6 +451,10 @@ describe("createUtilityRules' prefixes, the rules as data", () => {
                         names: new Map([
                             ["ink", "--color-ink"],
                             ["muted", "--color-text-muted"],
+                        ]),
+                        fullNames: new Map([
+                            ["ink", "--color-ink"],
+                            ["text-muted", "--color-text-muted"],
                         ]),
                     },
                 ],
