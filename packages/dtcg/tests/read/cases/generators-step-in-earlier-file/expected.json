@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "tokens are added after the files merge, so the extension owns a name whichever file writes it: here one read before the file with the extension, which is reported and not used",
+  "spec": "tokens are added after the files merge, so a name any file writes is kept, whichever file writes it: here one read before the file with the extension",
   "options": {
     "generators": ["steps"]
   },
@@ -8,53 +8,17 @@
     {
       "tokens": [
         {
-          "path": "space.2",
-          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
+          "path": "space.1",
+          "resolvedValue": { "value": 4, "unit": "px" },
+          "generatedFrom": null
         },
         {
-          "path": "space.1",
-          "resolvedValue": {
-            "value": 1,
-            "unit": "rem"
-          },
-          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] },
-          "definitions": [
-            {
-              "source": 1,
-              "span": {
-                "file": "recipe.json",
-                "valueAfter": "\"steps\":"
-              }
-            }
-          ]
+          "path": "space.2",
+          "resolvedValue": { "value": 2, "unit": "rem" },
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
         }
       ]
     }
   ],
-  "diagnostics": [
-    {
-      "kind": "overridden-by-generator",
-      "detail": {
-        "path": "space.1",
-        "from": "space",
-        "extension": ["com.example", "steps"],
-        "declaredAs": "token"
-      },
-      "span": {
-        "file": "steps.json",
-        "valueAfter": "\"1\":"
-      },
-      "relatedInformation": [
-        {
-          "message": "made by this extension",
-          "span": {
-            "file": "recipe.json",
-            "valueAfter": "\"steps\":"
-          },
-          "path": "space"
-        }
-      ],
-      "path": "space.1"
-    }
-  ]
+  "diagnostics": []
 }
