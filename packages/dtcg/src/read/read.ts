@@ -137,7 +137,7 @@ function findEntryFile(texts: Map<string, string>): string {
 
 function permutationOptions({
     inputs = "all",
-    permutationLimit = 32,
+    permutationLimit = 128,
 }: ReadOptions): PermutationOptions {
     return { inputs, limit: permutationLimit };
 }

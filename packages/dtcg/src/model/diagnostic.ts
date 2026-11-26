@@ -295,7 +295,7 @@ export interface DiagnosticDetailByKind {
     "permutation-limit": {
         /** How many combinations the resolver's modifiers make. */
         readonly count: number;
-        /** The `permutationLimit`, such as `32`. */
+        /** The `permutationLimit`, such as `128`. */
         readonly limit: number;
         /** How many were built instead. */
         readonly built: number;
