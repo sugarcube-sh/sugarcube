@@ -59,6 +59,8 @@ export interface DiagnosticDetailByKind {
      * - `"declared"`: one file writes a token where another writes a group.
      * - `"ref"`: a `$ref` makes an object a token, but the object also has tokens or groups in
      *   it. To build on a group, use `$extends`.
+     * - `"generated"`: a file writes a group where a {@link Generator} makes a token. The group
+     *   is kept, and the generator doesn't make the token.
      */
     "token-and-group":
         | {
@@ -76,7 +78,19 @@ export interface DiagnosticDetailByKind {
               /** The files that write it the other way, such as `["base.json"]`. */
               readonly otherFiles: readonly string[];
           }
-        | { readonly reason: "ref"; readonly ref: string };
+        | { readonly reason: "ref"; readonly ref: string }
+        | {
+              readonly reason: "generated";
+              /** The group's path, such as `"space.1"`. */
+              readonly path: string;
+              /**
+               * The group with the generator's extension, such as `"space"`, or `""` at the top of a
+               * file.
+               */
+              readonly from: string;
+              /** The generator's extension, such as `["com.example", "steps"]`. */
+              readonly extension: readonly [string, ...string[]];
+          };
     /** Something in a group isn't an object, such as `"x": "red"`. */
     "invalid-member": {
         readonly name: string;
@@ -133,25 +147,6 @@ export interface DiagnosticDetailByKind {
         readonly reason?: string;
         /** The facts the check's message is worded from. */
         readonly data?: unknown;
-    };
-    /**
-     * A file writes a token that a {@link Generator} also makes, such as `space.1`.
-     *
-     * The generated token is used, and what the file writes is not.
-     */
-    "overridden-by-generator": {
-        /** The token's path, such as `"space.1"`. */
-        readonly path: string;
-        /**
-         * The group the token is made in, such as `"space"`, or `""` at the top of a file.
-         *
-         * It can be a group that extends the one with the extension.
-         */
-        readonly from: string;
-        /** The generator's extension, such as `["com.example", "steps"]`. */
-        readonly extension: readonly [string, ...string[]];
-        /** What the file writes with that name. */
-        readonly declaredAs: "token" | "group";
     };
     /** A reference names nothing, such as `{color.primry}`. */
     "missing-reference": {

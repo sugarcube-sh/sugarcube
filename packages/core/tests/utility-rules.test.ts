@@ -22,6 +22,13 @@ const shadow = {
         color: "#00000040",
     },
 };
+const fade = {
+    $type: "gradient",
+    $value: [
+        { color: "#ffffff", position: 0 },
+        { color: "#000000", position: 1 },
+    ],
+};
 const typography = {
     $type: "typography",
     $value: {
@@ -166,6 +173,20 @@ describe("createUtilityRules", () => {
         expect(cssFor(tokens, classes, "weight-bold")).toStrictEqual({
             "font-weight": "var(--weight-bold)",
         });
+    });
+
+    it("gives background-image no class, as a gradient token doesn't say which gradient, and a custom property any", () => {
+        const tokens = { gradient: { fade } };
+        expect(
+            cssFor(
+                tokens,
+                { "background-image": { source: "gradient.*", prefix: "bg" } },
+                "bg-fade",
+            ),
+        ).toBeUndefined();
+        expect(
+            cssFor(tokens, { "--fade": { source: "gradient.*", prefix: "bg" } }, "bg-fade"),
+        ).toStrictEqual({ "--fade": "var(--gradient-fade)" });
     });
 
     it("gives text-shadow no class, as a shadow is written with a spread, and a custom property any", () => {
@@ -734,6 +755,15 @@ describe("createUtilityRules' warning for an entry that makes no classes", () =>
                 { "--font": { source: "type.*", prefix: "type" } },
             ),
         ).toStrictEqual(["`--font` makes no classes: `type.*` has only typography tokens"]);
+    });
+
+    it("for background-image, as a gradient token doesn't say which gradient", () => {
+        expect(
+            reported(
+                { gradient: { fade } },
+                { "background-image": { source: "gradient.*", prefix: "bg" } },
+            ),
+        ).toStrictEqual(["`background-image` makes no classes: DTCG has no background image type"]);
     });
 
     it("for text-shadow, which no token type can be written as", () => {

@@ -119,6 +119,20 @@ const examples: { [K in DiagnosticKind]: Example<K>[] } = {
             message: "`color.blue` is a token in `base.json` and `brand.json`",
         },
         { reason: "ref", ref: "#/base" },
+        {
+            reason: "generated",
+            path: "space.1",
+            from: "space",
+            extension: ["com.example", "steps"],
+            message: "`space.1` is a group, but `com.example.steps` on `space` makes it a token",
+        },
+        {
+            reason: "generated",
+            path: "md",
+            from: "",
+            extension: ["sh.sugarcube", "scale"],
+            message: "`md` is a group, but `sh.sugarcube.scale` on the top level makes it a token",
+        },
     ],
     "invalid-member": [
         { name: "brand", found: "string" },
@@ -408,21 +422,6 @@ const examples: { [K in DiagnosticKind]: Example<K>[] } = {
             jsonPath: ["$extensions", "sh.sugarcube", "scale", "ratio", "min"],
             reason: "ratio-not-above-one",
             data: { ratio: 1 },
-        },
-    ],
-    "overridden-by-generator": [
-        {
-            path: "size.step.3",
-            from: "size.step",
-            extension: ["sh.sugarcube", "scale"],
-            declaredAs: "token",
-        },
-        {
-            path: "md",
-            from: "",
-            extension: ["sh.sugarcube", "scale"],
-            declaredAs: "group",
-            message: "`md` is made by `sh.sugarcube.scale` on the top level",
         },
     ],
     "missing-reference": [

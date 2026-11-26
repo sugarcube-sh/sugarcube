@@ -1,32 +1,32 @@
 {
   "entry": "tokens.json",
-  "spec": "the extension owns a name a file writes as a group too: the group and everything in it are not used, the file is reported where it writes the group, and the extension's token is used",
+  "spec": "Format 6.1, applied to generated tokens as to another source: a name the extension makes as a token that a file writes as a group is reported where the file writes it, as token-and-group; the group is kept, and the extension makes no token with that name",
   "options": {
     "generators": ["steps"]
   },
   "permutations": [
     {
       "tokens": [
-        { "path": "space.2" },
         {
-          "path": "space.1",
-          "resolvedValue": { "value": 1, "unit": "rem" },
-          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
-        }
+          "path": "space.1.inside",
+          "resolvedValue": { "value": 4, "unit": "px" },
+          "generatedFrom": null
+        },
+        { "path": "space.2" }
       ],
-      "groups": [{ "path": "" }, { "path": "space" }]
+      "groups": [{ "path": "" }, { "path": "space" }, { "path": "space.1" }]
     }
   ],
   "diagnostics": [
     {
-      "kind": "overridden-by-generator",
+      "kind": "token-and-group",
       "detail": {
+        "reason": "generated",
         "path": "space.1",
         "from": "space",
-        "extension": ["com.example", "steps"],
-        "declaredAs": "group"
+        "extension": ["com.example", "steps"]
       },
-      "span": { "file": "tokens.json", "valueAfter": "\"1\":" },
+      "span": { "file": "tokens.json", "text": "\"1\"" },
       "relatedInformation": [
         {
           "message": "made by this extension",

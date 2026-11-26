@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "a generator adds every token its extension makes, at the end of the group, in the generator's order, each marked generated, with no authored value, its source the extension; the extension owns every name it makes, so a token a file writes with one of those names is not used, and the file is reported where it writes it",
+  "spec": "a generator adds every token its extension makes that no file writes, at the end of the group, in the generator's order, each marked generated, with no authored value, its source the extension; a token a file writes with one of those names is used as written, not marked generated, and nothing is reported",
   "options": {
     "generators": ["steps"]
   },
@@ -8,30 +8,30 @@
     {
       "tokens": [
         {
-          "path": "space.3",
-          "resolvedValue": {
-            "value": 3,
-            "unit": "rem"
-          },
-          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
-        },
-        {
           "path": "space.2",
           "resolvedValue": {
-            "value": 2,
-            "unit": "rem"
+            "value": 20,
+            "unit": "px"
           },
-          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] },
+          "generatedFrom": null,
 
           "definitions": [
             {
               "source": 0,
               "span": {
                 "file": "tokens.json",
-                "valueAfter": "\"steps\":"
+                "valueAfter": "\"2\":"
               }
             }
           ]
+        },
+        {
+          "path": "space.3",
+          "resolvedValue": {
+            "value": 3,
+            "unit": "rem"
+          },
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
         },
         {
           "path": "space.1",
@@ -67,30 +67,5 @@
       ]
     }
   ],
-  "diagnostics": [
-    {
-      "kind": "overridden-by-generator",
-      "detail": {
-        "path": "space.2",
-        "from": "space",
-        "extension": ["com.example", "steps"],
-        "declaredAs": "token"
-      },
-      "span": {
-        "file": "tokens.json",
-        "valueAfter": "\"2\":"
-      },
-      "relatedInformation": [
-        {
-          "message": "made by this extension",
-          "span": {
-            "file": "tokens.json",
-            "valueAfter": "\"steps\":"
-          },
-          "path": "space"
-        }
-      ],
-      "path": "space.2"
-    }
-  ]
+  "diagnostics": []
 }

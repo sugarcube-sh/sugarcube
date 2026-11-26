@@ -11,7 +11,6 @@ import type {
 } from "../../model/extension.js";
 import type { IgnoredProperty, ParseOptions, ValueError } from "../../model/parse.js";
 import type { Input } from "../../model/permutation.js";
-import type { Span } from "../../model/location.js";
 import type { StandardSchemaV1 } from "../../standard-schema.js";
 import { parseReference } from "../../values/references.js";
 import {
@@ -26,7 +25,7 @@ import {
 import { diagnostic, type DiagnosticCollector } from "../diagnostics/diagnostics.js";
 import { type JsonFile, getKeyNode, toSpan } from "../json/parse.js";
 import { relatedMessages } from "../../error-messages.js";
-import type { Merged, MergedToken } from "../merge/merge.js";
+import type { Merged, MergedGroup, MergedToken } from "../merge/merge.js";
 import { toValidType } from "../merge/walk.js";
 
 interface Extension {
@@ -175,14 +174,14 @@ class GeneratorRun {
         }
 
         const path = tokenPath.join(group, generated.name);
-        if (this.#made.has(path)) return;
+        if (this.#made.has(path) || this.#merged.tokens.has(path)) return;
+        const written = this.#merged.groups.get(path);
+        if (written) {
+            this.#reportGroup(call, written);
+            return;
+        }
 
         const generatedFrom = { path: group, extension: generator.extension };
-        const existing = findExistingSpans(this.#merged, path);
-        if (existing) {
-            this.#reportOverridden(call, path, existing);
-            this.#merged.order.delete(path);
-        }
         this.#made.set(path, createGeneratedToken(path, generated, generatedFrom, extension));
     }
 
@@ -204,6 +203,30 @@ class GeneratorRun {
         }
     }
 
+    #reportGroup({ generator, group, extension }: GeneratorCall, written: MergedGroup): void {
+        const detail = {
+            reason: "generated" as const,
+            path: written.path,
+            from: group,
+            extension: generator.extension,
+        };
+        const relatedInformation = [
+            {
+                message: relatedMessages.madeByThisExtension,
+                span: toSpan(extension.json, extension.node),
+                path: extension.group,
+            },
+        ];
+        for (const { nameSpan } of written.locations) {
+            const report = diagnostic("token-and-group", detail, {
+                span: nameSpan,
+                path: written.path,
+                relatedInformation,
+            });
+            this.#diagnostics.add(report, this.#input);
+        }
+    }
+
     #reportInvalidName(
         { group, extension }: GeneratorCall,
         detail: DiagnosticDetailByKind["invalid-name"],
@@ -214,50 +237,6 @@ class GeneratorRun {
             this.#input,
         );
     }
-
-    #reportOverridden(
-        { generator, group, extension }: GeneratorCall,
-        path: string,
-        existing: { kind: "token" | "group"; spans: Span[] },
-    ): void {
-        const detail = {
-            path,
-            from: group,
-            extension: generator.extension,
-            declaredAs: existing.kind,
-        };
-        const relatedInformation = [
-            {
-                message: relatedMessages.madeByThisExtension,
-                span: toSpan(extension.json, extension.node),
-                path: extension.group,
-            },
-        ];
-        for (const span of existing.spans) {
-            const report = diagnostic("overridden-by-generator", detail, {
-                span,
-                path,
-                relatedInformation,
-            });
-            this.#diagnostics.add(report, this.#input);
-        }
-    }
-}
-
-function findExistingSpans(
-    merged: Merged,
-    path: string,
-): { kind: "token" | "group"; spans: Span[] } | undefined {
-    const token = merged.tokens.get(path);
-    if (token) {
-        return {
-            kind: "token",
-            spans: [...(token.overridden ?? []), token].map(({ span }) => span),
-        };
-    }
-    const group = merged.groups.get(path);
-    if (group) return { kind: "group", spans: group.locations.map(({ span }) => span) };
-    return undefined;
 }
 
 function findGeneratorExtension(

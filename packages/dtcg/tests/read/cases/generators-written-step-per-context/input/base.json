@@ -1,7 +1,6 @@
 {
   "space": {
     "$type": "dimension",
-    "$extensions": { "com.example": { "steps": 2 } },
-    "2": { "$value": { "value": 4, "unit": "px" } }
+    "$extensions": { "com.example": { "steps": 2 } }
   }
 }

@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "a name the extension makes is reported in every file that writes it, each in the permutations that read that file, and the extension's token is used in each",
+  "spec": "whether a file writes a name the extension makes is decided in each permutation: here only roomy reads a file that writes space.2, so compact has the extension's token and roomy the file's",
   "options": {
     "generators": ["steps"]
   },
@@ -9,7 +9,8 @@
       "tokens": [
         {
           "path": "space.2",
-          "resolvedValue": { "value": 2, "unit": "rem" }
+          "resolvedValue": { "value": 2, "unit": "rem" },
+          "generatedFrom": { "path": "space", "extension": ["com.example", "steps"] }
         },
         { "path": "space.1" }
       ]
@@ -18,49 +19,12 @@
       "tokens": [
         {
           "path": "space.2",
-          "resolvedValue": { "value": 2, "unit": "rem" }
+          "resolvedValue": { "value": 9, "unit": "px" },
+          "generatedFrom": null
         },
         { "path": "space.1" }
       ]
     }
   ],
-  "diagnostics": [
-    {
-      "kind": "overridden-by-generator",
-      "detail": {
-        "path": "space.2",
-        "from": "space",
-        "extension": ["com.example", "steps"],
-        "declaredAs": "token"
-      },
-      "span": { "file": "base.json", "valueAfter": "\"2\":" },
-      "relatedInformation": [
-        {
-          "message": "made by this extension",
-          "span": { "file": "base.json", "valueAfter": "\"steps\":" },
-          "path": "space"
-        }
-      ],
-      "path": "space.2"
-    },
-    {
-      "kind": "overridden-by-generator",
-      "detail": {
-        "path": "space.2",
-        "from": "space",
-        "extension": ["com.example", "steps"],
-        "declaredAs": "token"
-      },
-      "span": { "file": "roomy.json", "valueAfter": "\"2\":" },
-      "relatedInformation": [
-        {
-          "message": "made by this extension",
-          "span": { "file": "base.json", "valueAfter": "\"steps\":" },
-          "path": "space"
-        }
-      ],
-      "permutations": [{ "density": "roomy" }],
-      "path": "space.2"
-    }
-  ]
+  "diagnostics": []
 }

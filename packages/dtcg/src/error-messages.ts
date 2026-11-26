@@ -224,6 +224,8 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
                 }
                 case "ref":
                     return "`$ref` doesn't extend a group";
+                case "generated":
+                    return `\`${detail.path}\` is a group, but \`${detail.extension.join(".")}\` on ${formatPath(detail.from)} makes it a token`;
             }
         },
     },
@@ -260,11 +262,6 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "extension-invalid": {
         severity: "error",
         message: ({ key }) => `invalid \`${key}\` extension`,
-    },
-    "overridden-by-generator": {
-        severity: "error",
-        message: ({ path, from, extension }) =>
-            `\`${path}\` is made by \`${extension.join(".")}\` on ${formatPath(from)}`,
     },
     "missing-reference": {
         severity: "error",
