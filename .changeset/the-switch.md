@@ -202,6 +202,7 @@ color.neutral.900                      0
 - Two utility entries with the same prefix both keep their directions.
 - More tokens get utility classes: paths that mix hyphens and dots, tokens only some themes define, `$root` tokens, names with spaces, `line-height` from dimension tokens and `font-weight` from number tokens.
 - A utility entry without a `prefix` can use `directions` and `stripDuplicates`.
+- With `stripDuplicates`, a class written in full, such as `.text-text-primary`, uses the token it names. It used to use the token with the shorter path, `color.primary`.
 - A utility `source` without `*` gives you the tokens under it, as `.*` does. A `source` naming a single token, such as `"space.gutter"`, now makes no classes and warns. It used to give every class that one token's value.
 - Settings beside a `$ref` in your resolver work, so `"default": "dark"` there makes dark the default.
 - A group written across several files is merged setting by setting, instead of the last file replacing the others.
