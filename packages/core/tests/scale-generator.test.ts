@@ -57,26 +57,12 @@ describe("scale generator", () => {
         });
     });
 
-    it("uses the scale's value for a token the file writes, and reports the file", () => {
+    it("uses the file's value for a step it writes", () => {
         const tokens = withScale(multipliers, { md: { $value: rem(1.1) } });
         const md = listed(tokens).find((t) => t.path === "size.md");
-        expect(md).toMatchObject({ resolvedValue: rem(1.6875), generatedFrom: { path: "size" } });
-        expect(md).not.toHaveProperty("authored");
-        expect(
-            tokens.diagnostics.map(({ kind, path, message, help }) => ({
-                kind,
-                path,
-                message,
-                help,
-            })),
-        ).toEqual([
-            {
-                kind: "overridden-by-generator",
-                path: "size.md",
-                message: "`size.md` is made by `sh.sugarcube.scale` on `size`",
-                help: undefined,
-            },
-        ]);
+        expect(md).toMatchObject({ resolvedValue: rem(1.1) });
+        expect(md?.generatedFrom).toBeUndefined();
+        expect(tokens.diagnostics).toEqual([]);
     });
 
     it("reports a scale it cannot use, with old sugarcube's rule, and adds nothing", () => {
