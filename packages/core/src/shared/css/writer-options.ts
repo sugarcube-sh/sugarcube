@@ -12,7 +12,7 @@ type SugarcubeWriterOptions = CSSWriterOptions & { skip: (token: Token) => boole
  * Builds the options for `dtcg`'s CSS writer from the config.
  *
  * They name variables from the config and skip private tokens.
- * A fluid dimension is written as `clamp()`, and a gradient as `linear-gradient()`.
+ * A fluid dimension is written as `clamp()`.
  *
  * @param tokens - The design tokens read with `createReadOptions`.
  * @param config - The config with its defaults.
@@ -31,7 +31,7 @@ export function createCSSWriterOptions(
     return {
         naming: { prefix, case: casing, delimiter, getName: variableName },
         skip,
-        writeValue: (token, { value, write }) => {
+        writeValue: (token, { value }) => {
             if (token.type === "dimension") {
                 const fluid = readFluid(
                     token.extensions?.[SUGARCUBE_NAMESPACE],
@@ -40,9 +40,7 @@ export function createCSSWriterOptions(
                 if (!fluid.ok) return undefined;
                 if (fluid.value) return toClamp(fluid.value, transforms.fluid);
             }
-            return token.type === "gradient" && !token.getReferenceAt()
-                ? write`linear-gradient(${value})`
-                : value;
+            return value;
         },
         ...(transforms.colorFallbackStrategy === "polyfill" && {
             writeFallback: (token, { rewrite }) => {

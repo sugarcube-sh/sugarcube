@@ -93,7 +93,7 @@ const TOKEN_TYPES_BY_PROPERTY: Record<string, TokenType[]> = {
     "border-style": ["strokeStyle"],
     "box-shadow": ["shadow"],
     "text-shadow": [],
-    "background-image": ["gradient"],
+    "background-image": [],
     "opacity": ["number"],
 };
 
