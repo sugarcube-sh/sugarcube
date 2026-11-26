@@ -219,7 +219,3 @@ export const ErrorMessages = {
             `\`${name}\` is not one of the recipe's multipliers`,
     },
 } as const;
-
-export function getDiagnosticDocsURL(kind: string): string {
-    return `https://sugarcube.sh/errors/${kind}`;
-}

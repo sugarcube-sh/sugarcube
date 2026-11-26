@@ -64,7 +64,6 @@ const polyfill: AnyDiagnostic = {
     kind: "option-deprecated",
     severity: "warning",
     message: "`polyfill` is deprecated",
-    docsUrl: "",
     detail: { option: "polyfill" },
 };
 

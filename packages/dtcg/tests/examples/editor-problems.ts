@@ -23,7 +23,6 @@ for (const d of tokens.diagnostics) {
         range: range(d.span),
         severity: severity[d.severity],
         code: d.kind,
-        codeDescription: { href: d.docsUrl },
         source: "dtcg",
         message: d.message,
         tags: d.tags?.map((t) => tag[t]),

@@ -22,15 +22,8 @@ export function diagnostic<K extends DiagnosticKind>(
         message: message(detail),
         ...(fix !== undefined && { help: fix }),
         ...extra,
-        docsUrl: getDocsLink(kind, detail),
         detail,
     } as Diagnostic;
-}
-
-function getDocsLink<K extends DiagnosticKind>(kind: K, detail: DiagnosticDetailByKind[K]): string {
-    const page = `https://sugarcube.sh/errors/${kind}`;
-    if (kind !== "invalid-value") return page;
-    return `${page}#${(detail as DiagnosticDetailByKind["invalid-value"]).reason}`;
 }
 
 export class DiagnosticCollector {

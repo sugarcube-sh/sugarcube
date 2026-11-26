@@ -19,7 +19,7 @@ if (problems.length) {
                   d.span.length,
               )
             : "";
-        showMessage(`${where}  ${d.message}\n${frame}\n  see ${d.docsUrl}`);
+        showMessage(`${where}  ${d.message}\n${frame}`);
     }
 } else {
     await emitCSS(tokens);

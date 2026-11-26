@@ -4,7 +4,7 @@ import type {
     SugarcubeDiagnosticDetailByKind,
     SugarcubeDiagnosticKind,
 } from "../types/diagnostics.js";
-import { ErrorMessages, getDiagnosticDocsURL } from "./constants/error-messages.js";
+import { ErrorMessages } from "./constants/error-messages.js";
 import { getNameSpan } from "@sugarcube-sh/dtcg/editor";
 
 export interface TokenProblem {
@@ -23,7 +23,6 @@ export function createDiagnostic<K extends SugarcubeDiagnosticKind>(
         severity,
         message: message(detail),
         ...(fix !== undefined && { help: fix }),
-        docsUrl: getDiagnosticDocsURL(kind),
         detail,
     } as SugarcubeDiagnostic;
 }
@@ -40,14 +39,13 @@ export function locateProblems(
     tokens: DesignTokens,
     found: readonly TokenProblem[],
 ): SugarcubeDiagnostic[] {
-    return found.map(({ token, problem: { kind, severity, message, help, docsUrl, detail } }) => ({
+    return found.map(({ token, problem: { kind, severity, message, help, detail } }) => ({
         kind,
         severity,
         message,
         ...(help !== undefined && { help }),
         path: token.path,
         span: getNameSpan(tokens, token.winningDefinition),
-        docsUrl,
         detail,
     })) as SugarcubeDiagnostic[];
 }

@@ -309,7 +309,6 @@ describe("emitCSS", () => {
             expect(diagnostics[0]).toMatchObject({
                 severity: "error",
                 detail: { modifiers: ["brand"] },
-                docsUrl: "https://sugarcube.sh/errors/default-required",
                 message: "`brand` has no default",
             });
         });
