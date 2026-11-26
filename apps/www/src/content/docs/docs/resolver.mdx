@@ -10,13 +10,15 @@ import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 
 A resolver document is a JSON file that defines how to load and combine your design tokens. It specifies which token files to load, in which order, and how theming variations work.
 
-A resolver is how several token files are read together. With a single token file, you can name that file as `resolver` instead. `validate` refuses several token files with no resolver, since only a resolver says how they go together and which wins when two write the same token:
+sugarcube always reads your tokens through a resolver, even when you only have one token file. For one file, the required resolver is short:
 
-```text frame="none"
-Several token files need a resolver to be read together:
-  - tokens/color.json
-  - tokens/space.json
-See https://sugarcube.sh/docs/resolver for more information.
+```json title="tokens.resolver.json"
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    { "type": "set", "name": "base", "sources": [{ "$ref": "./tokens.json" }] }
+  ]
+}
 ```
 
 ## Basic structure
