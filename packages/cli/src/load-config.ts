@@ -5,7 +5,7 @@ import { ErrorMessages } from "./constants/error-messages.js";
 /**
  * Loads the config for a command that needs tokens.
  *
- * If no resolver is found, it throws an error that names the command.
+ * If no resolver is found, it throws core's error, with a line that names the command.
  *
  * @param command - The command, such as `"lint"`.
  */
@@ -14,7 +14,7 @@ export async function loadTokenConfigOrThrow(command: string): Promise<LoadedCon
         return await loadInternalConfig();
     } catch (error) {
         if (isNoConfigError(error))
-            throw new CLIError(ErrorMessages.NO_TOKENS_FOR_COMMAND(command));
+            throw new CLIError(ErrorMessages.NO_TOKENS_FOR_COMMAND(command, error.message));
         throw error;
     }
 }

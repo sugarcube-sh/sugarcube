@@ -50,7 +50,8 @@ export type ConfigIssue =
           value: string;
           form: "repository" | "app" | "sign-in" | "source";
       }
-    | { reason: "no-resolver" }
+    | { reason: "no-resolver"; tokenFiles: string[] }
+    | { reason: "not-a-resolver"; file: string }
     | { reason: "several-resolvers"; paths: string[] }
     | { reason: "exports-nothing"; file: string };
 

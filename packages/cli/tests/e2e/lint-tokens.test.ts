@@ -78,3 +78,35 @@ describe("lint, when the tokens have errors", () => {
         expect(exitCode).toBe(0);
     });
 });
+
+describe("lint, with token files and no resolver", () => {
+    let testDir: string;
+
+    beforeEach(async () => {
+        testDir = join(tmpdir(), `sugarcube-e2e-lint-no-resolver-${Date.now()}`);
+        await mkdir(join(testDir, "tokens"), { recursive: true });
+        await createPackageJson(testDir);
+        await writeFile(join(testDir, "tokens", "base.json"), JSON.stringify(BASE));
+    });
+
+    afterEach(async () => {
+        await rm(testDir, { recursive: true, force: true });
+    });
+
+    it(
+        "points to the resolver docs, and says why lint needs it",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            const result = await cli("lint", {
+                cwd: testDir,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+                env: PLAIN_OUTPUT,
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).toContain("No resolver found.");
+            expect(result.stdout).toContain("needs your tokens to know which variables exist.");
+        },
+    );
+});
