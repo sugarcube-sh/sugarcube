@@ -49,7 +49,7 @@ These are the ones you're most likely to have:
 - **A typography token without all five parts.** The spec needs `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing` and `lineHeight`. The error names the ones that are missing.
 - **A modifier with no `default`.** Add `"default"` with the context you want, such as `"light"`. (You don't need one if your config lists `variables.permutations`.)
 - **A file listed straight in `resolutionOrder`.** Its tokens were left out of your CSS. Put the file in a set's `sources` instead, and its tokens reach your CSS for the first time.
-- **A colour's `hex` that isn't six digits,** such as `"hex": "#fff"`. Write all six. Transparency goes in `alpha`.
+- **A colour's `hex` that isn't six digits.** Write `"#fff"` as `"#ffffff"`, and `"#0000000D"` as `"#000000"`. Transparency goes in `alpha`.
 - **Two tokens that make the same CSS variable,** such as `color.brand-primary` and `color.brand.primary`. Only one of them ever reached your CSS. Rename one.
 - **`fluid: false`.** Leave `fluid` out for a size that doesn't scale.
 - **A misspelt `$value`,** such as `$vlaue`, or `value` without the `$`. The token used to vanish.
