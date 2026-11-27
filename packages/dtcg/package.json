@@ -1,7 +1,6 @@
 {
   "name": "@sugarcube-sh/dtcg",
   "version": "0.0.0",
-  "private": true,
   "description": "Read DTCG design tokens and resolver documents. Use it to build your own token-related tools.",
   "keywords": [
     "design-system",
@@ -19,7 +18,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sugarcube-sh/sugarcube"
+    "url": "https://github.com/sugarcube-sh/sugarcube",
+    "directory": "packages/dtcg"
   },
   "files": [
     "dist",
