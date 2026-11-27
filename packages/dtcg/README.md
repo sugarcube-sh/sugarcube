@@ -36,6 +36,10 @@ for (const problem of tokens.diagnostics) {
 - [Concepts](https://sugarcube.sh/dtcg/docs/concepts/how-a-read-works/)
 - [Reference](https://sugarcube.sh/dtcg/docs/reference/overview/)
 
+## Acknowledgments
+
+Thanks to [Binyamin Green](https://github.com/binyamin) and [Scott Riley](https://scott.is/), who each, separately, gave me the idea for a lower-level DTCG library.
+
 ## License
 
 MIT. See [LICENSE.md](./LICENSE.md).
