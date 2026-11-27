@@ -294,6 +294,8 @@ Listed the other way round, the CSS disagrees with your tokens, and nothing warn
 
 `<html data-brand="ocean" data-theme="dark">` gets the light blue surface, because the brand block comes later.
 
+That's for a brand and a theme on the same element. When one is inside the other, see [Nesting themes and brands](#nesting-themes-and-brands).
+
 ### Composed contexts
 
 When a brand needs its own values in dark mode, such as Ocean's dark blue surface, add composed contexts to the theme modifier for each brand-specific combination:
@@ -423,6 +425,29 @@ sugarcube handles this for you: each block also declares again every variable th
 
   Then the brand block above declares only `--binding-accent`. It was called `propagateDependents` and was off by default; the old name still works, with a warning, until 1.0.
 </SiteAside>
+
+#### Nesting themes and brands
+
+If your themes and your brands change different tokens, you can nest them any way you like. Say themes only change `color.surface`, and brands only change `color.primary`:
+
+```html
+<div data-theme="dark">
+  <div data-brand="ocean">…</div>  <!-- dark surface, ocean's primary -->
+</div>
+
+<div data-brand="ocean">
+  <div data-brand="forest">…</div>  <!-- forest's primary -->
+</div>
+```
+
+To switch back to the default inside another theme, such as a light section on a dark page, list a block for it in your config: `{ input: { theme: "light" }, selector: '[data-theme="light"]' }`.
+
+It's harder when a theme and a brand both change the same token. Say `dark.json` and `ocean.json` both set `color.surface`. Then two rules apply:
+
+- **Nest them in the order your resolver lists them.** In your resolver, the modifier listed later wins. On the page, the inner element wins. They only agree when the inner one is also the later one. So if `resolutionOrder` lists themes before brands, put brands inside themes, not themes inside brands.
+- **Nesting a brand inside a brand, or a theme inside a theme, needs the inner one to set the token itself.** If `forest.json` doesn't set `color.surface`, a forest card inside an ocean section keeps ocean's surface.
+
+You can avoid both rules by keeping each token to one modifier, as the DTCG spec recommends. See [When modifiers aren't orthogonal](#when-modifiers-arent-orthogonal).
 
 ---
 

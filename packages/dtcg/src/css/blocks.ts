@@ -1,6 +1,6 @@
 import type { DesignTokens } from "../model/design-tokens.js";
 import type { Input, Permutation } from "../model/permutation.js";
-import type { ResolverModifier } from "../model/resolver.js";
+import type { ResolverContext, ResolverModifier } from "../model/resolver.js";
 import type { Token } from "../model/token.js";
 import { findByName } from "../read/resolver/input.js";
 import { canStack } from "./can-stack.js";
@@ -13,6 +13,10 @@ export interface CSSBlockInput {
      *
      * It overrides what earlier blocks write for its modifiers. So a `{ mode: "light" }` section
      * inside a dark page is light.
+     *
+     * A token that another modifier also changes is left to that modifier, unless this block's own
+     * context writes it. So a `{ brand: "b" }` card on a dark page keeps dark's accent, if brand b
+     * sets none.
      *
      * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#orthogonality | Resolver 2.1, Orthogonality}
      */
@@ -104,7 +108,7 @@ export function getCSSBlocks(
     for (const { permutation, ...block } of blocksWithDeclarations) {
         const inEffect = findInEffect(result, block);
         const valuesThatMightApply = findValuesThatMightApply(result, block);
-        const isSetByThisBlock = createSetByThisBlockCheck(
+        const isDecidedByThisBlock = createDecidedByThisBlockCheck(
             block.input,
             permutation,
             pathsByModifier,
@@ -113,7 +117,7 @@ export function getCSSBlocks(
             block,
             inEffect,
             valuesThatMightApply,
-            isSetByThisBlock,
+            isDecidedByThisBlock,
         );
         const supportsDeclarations = chooseSupportsDeclarations(block, ruleDeclarations, inEffect);
         result.push({ ...block, ruleDeclarations, supportsDeclarations });
@@ -155,11 +159,11 @@ function chooseRuleDeclarations(
     block: BlockWithDeclarations,
     inEffect: Map<string, CSSDeclaration>,
     valuesThatMightApply: Map<string, Set<string>>,
-    isSetByThisBlock: (token: Token) => boolean,
+    isDecidedByThisBlock: (token: Token) => boolean,
 ): CSSDeclaration[] {
     const all = block.declarations;
     const changed = all.filter((line) =>
-        needsDeclaring(line, inEffect, valuesThatMightApply, isSetByThisBlock),
+        needsDeclaring(line, inEffect, valuesThatMightApply, isDecidedByThisBlock),
     );
     if (block.redeclare === false) return changed;
     return [...changed, ...findDependents(all, changed)];
@@ -169,10 +173,10 @@ function needsDeclaring(
     line: CSSDeclaration,
     inEffect: Map<string, CSSDeclaration>,
     valuesThatMightApply: Map<string, Set<string>>,
-    isSetByThisBlock: (token: Token) => boolean,
+    isDecidedByThisBlock: (token: Token) => boolean,
 ): boolean {
     if (hasChanged(inEffect.get(line.name), line)) return true;
-    if (!isSetByThisBlock(line.token)) return false;
+    if (!isDecidedByThisBlock(line.token)) return false;
     return hasConflictingValue(valuesThatMightApply.get(line.name), line.value);
 }
 
@@ -228,21 +232,40 @@ function allPathsByModifier(
     return pathsByModifier;
 }
 
-function createSetByThisBlockCheck(
+function createDecidedByThisBlockCheck(
     input: Input,
     permutation: Permutation,
     pathsByModifier: Map<ResolverModifier, Set<string>>,
 ): (token: Token) => boolean {
     const named = Object.keys(input);
-    const decided = permutation.contexts
-        .map(({ modifier }) => modifier)
-        .filter(({ name }) => findByName(named, name, (each) => each) !== undefined);
+    const decided = permutation.contexts.filter(
+        ({ modifier }) => findByName(named, modifier.name, (each) => each) !== undefined,
+    );
     if (decided.length === permutation.contexts.length) return () => true;
-    const paths = decided.flatMap((modifier) => {
-        const found = pathsByModifier.get(modifier);
-        return found ? [found] : [];
-    });
-    return ({ path }) => paths.some((each) => each.has(path));
+    const isDecided = (modifier: ResolverModifier) =>
+        decided.some((context) => context.modifier === modifier);
+    const pathsChangedBy = (isIncluded: (modifier: ResolverModifier) => boolean) =>
+        [...pathsByModifier].filter(([modifier]) => isIncluded(modifier)).map(([, paths]) => paths);
+    const changedByOwnModifiers = pathsChangedBy(isDecided);
+    const changedByOtherModifiers = pathsChangedBy((modifier) => !isDecided(modifier));
+    return (token) => {
+        if (isWrittenBy(token, decided)) return true;
+        const { path } = token;
+        return (
+            changedByOwnModifiers.some((paths) => paths.has(path)) &&
+            !changedByOtherModifiers.some((paths) => paths.has(path))
+        );
+    };
+}
+
+function isWrittenBy(token: Token, contexts: readonly ResolverContext[]): boolean {
+    return token.definitions.some(({ source }) =>
+        source.contexts?.some((written) =>
+            contexts.some(
+                ({ modifier, name }) => written.modifier === modifier && written.name === name,
+            ),
+        ),
+    );
 }
 
 function hasConflictingValue(values: Set<string> | undefined, value: string): boolean {

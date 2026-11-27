@@ -264,6 +264,67 @@ describe("getCSSBlocks, the modifiers a block's input names", () => {
         });
     });
 
+    describe("a token that both modes and brands change", () => {
+        const shared = read({
+            "tokens.resolver.json": {
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
+                    {
+                        type: "modifier",
+                        name: "mode",
+                        default: "light",
+                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                    },
+                    {
+                        type: "modifier",
+                        name: "brand",
+                        default: "none",
+                        contexts: {
+                            none: [],
+                            bold: [{ $ref: "bold.json" }],
+                            plain: [{ $ref: "plain.json" }],
+                        },
+                    },
+                ],
+            },
+            "base.json": {
+                surface: color("#ffffff"),
+                accent: color("#4444ee"),
+                logo: color("#999999"),
+                badge: color("#999999"),
+            },
+            "dark.json": { surface: color("#000000"), accent: color("#11bbdd") },
+            "bold.json": {
+                accent: color("#ff6600"),
+                logo: color("#ff6600"),
+                badge: color("#ff6600"),
+            },
+            "plain.json": { logo: color("#0018f0") },
+        });
+        const boldBlock = block({ brand: "bold" }, '[data-brand="bold"]');
+
+        it("is left out of a brand that doesn't write it, so the brand keeps the mode's value on a dark page", () => {
+            const [, , , plain] = getCSSBlocks(shared, [
+                rootBlock,
+                darkBlock,
+                boldBlock,
+                block({ brand: "plain" }, '[data-brand="plain"]'),
+            ]);
+            expect(written(plain)).toStrictEqual(["--logo: #0018f0", "--badge: #999999"]);
+        });
+
+        it("is left out of the default mode's block, which writes back only what modes alone change", () => {
+            const [, , , light] = getCSSBlocks(shared, [
+                rootBlock,
+                darkBlock,
+                boldBlock,
+                block({ mode: "light" }, '[data-mode="light"]'),
+            ]);
+            expect(written(light)).toStrictEqual(["--surface: #ffffff"]);
+        });
+    });
+
     it("still skips a value a theme restates that no other block disputes", () => {
         const restating = themed(
             { surface: color("#ffffff"), gap: { $type: "dimension", $value: px(8) } },
