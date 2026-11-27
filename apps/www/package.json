@@ -37,8 +37,8 @@
     "@sugarcube-sh/cli": "workspace:*",
     "@sugarcube-sh/core": "workspace:*",
     "@sugarcube-sh/vite": "workspace:*",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "astro": "^7.4.12",
     "astro-robots-txt": "^1.0.0",
     "astro-webmanifest": "^1.0.0",
@@ -46,12 +46,12 @@
     "cmdk": "^1.1.1",
     "cross-env": "^7.0.3",
     "lucide-react": "^1.41.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-hook-form": "^7.87.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-hook-form": "^7.92.0",
     "starlight-sidebar-topics": "^0.9.0",
     "ultrahtml": "^1.6.0",
-    "zustand": "^5.0.15"
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@astrojs/markdown-satteri": "^0.4.10",
