@@ -182,6 +182,10 @@ color.neutral.900                      0
 - New `variables.case` and `variables.delimiter` settings, for names like `--color_brandPrimary`.
 - Comments and trailing commas are allowed in your resolver.
 
+### A smaller install
+
+Installing the CLI now puts 60 packages in `node_modules` instead of 81: 7.6 MB instead of 13.8 MB. `zod` and `execa` are gone. The Vite plugin comes to 10.2 MB instead of 14.8 MB.
+
 ## 👉 Everything else
 
 ### Fixes
