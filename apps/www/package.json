@@ -60,6 +60,6 @@
     "starlight-links-validator": "^0.27.0",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3",
-    "wrangler": "^4.129.0"
+    "wrangler": "^4.165.0"
   }
 }
