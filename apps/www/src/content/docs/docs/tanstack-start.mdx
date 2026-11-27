@@ -59,7 +59,7 @@ TanStack Start requires CSS to be added via the `head` function to avoid a flash
 
 ```tsx title="src/routes/__root.tsx"
 /// <reference types="vite/client" />
-import tokensCss from "../styles/global/tokens.variables.gen.css?url";
+import tokensCss from "../styles/variables.gen.css?url";
 
 export const Route = createRootRoute({
     head: () => ({
